@@ -712,8 +712,9 @@ public class ViewerBridge {
                     throw new IOException(file + " can not be read");
                 }
 
-                long offset = 0;
-                long length = file.length();
+                final long length = file.length();
+                long range_start = 0;
+                long range_end = length - 1;
                 boolean partial = false;
 
                 if (range != null) {
@@ -727,8 +728,8 @@ public class ViewerBridge {
                             Log.w(TAG, "request out of range: " + range);
                             return createResponse(mimeType, 416, "Requested range not satisfiable", headers, null);
                         }
-                        offset = start;
-                        length = end - start + 1;
+                        range_start = start;
+                        range_end = end;
                         partial = true;
                     }
                 }
@@ -741,13 +742,13 @@ public class ViewerBridge {
                 headers.put("Accept-Ranges", "bytes");
 
                 if (partial) {
-                    if (offset > 0) {
-                        inputStream.skip(offset);
+                    if (range_start > 0) {
+                        inputStream.skip(range_start);
                     }
                     inputStream = new BoundedInputStream(inputStream, length);
                     status = 206;
                     reason = "Partial content";
-                    headers.put("Content-Range", String.format("bytes %d-%d/%d", offset, offset + length - 1, length));
+                    headers.put("Content-Range", String.format("bytes %d-%d/%d", range_start, range_end, length));
                 }
 
                 return createResponse(mimeType, status, reason, headers, inputStream);

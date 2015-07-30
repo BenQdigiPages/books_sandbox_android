@@ -19,6 +19,7 @@ import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -63,6 +64,8 @@ public class ViewerBridge {
         eval(loadAssetAsString("ViewerBridge.js"), null);
 
         mWebView.setWebViewClient(mWebViewClient);
+        mWebView.setWebChromeClient(mWebChromeClient);
+
         mWebView.loadUrl("file:///android_asset/index.html");
     }
 
@@ -128,7 +131,7 @@ public class ViewerBridge {
     ///
     public void loadBook(String url) {
         mBookUri = Uri.parse(url);
-        boolean legacy = Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
+        boolean legacy = !USE_NATIVE_API || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
         eval("Viewer.loadBook(\"" + url + "\", " + legacy + ")", null);
     }
 
@@ -791,4 +794,5 @@ public class ViewerBridge {
         }
     };
 
+    private WebChromeClient mWebChromeClient = new WebChromeClient();
 }

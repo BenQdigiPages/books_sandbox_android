@@ -223,7 +223,7 @@ public class PopupMenu {
 			mPopup.getContentView().measure(
 				View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
 				View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-			w = mPopup.getContentView().getMeasuredWidth() + 40;
+			w = mPopup.getContentView().getMeasuredWidth() * 8 / 5; // FIXME: table seems to measure first item only
 			w = Math.max(300, Math.min(w, max_w * 95 / 100));
 		} else if (mWidth == ViewGroup.LayoutParams.FILL_PARENT) {
 			w = max_w - 10;

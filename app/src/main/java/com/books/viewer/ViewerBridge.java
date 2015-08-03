@@ -45,12 +45,12 @@ import java.util.regex.Pattern;
 
 public class ViewerBridge {
     private static final String TAG = "ViewerBridge";
-    private static final boolean USE_NATIVE_API = false;
+    private static final boolean USE_NATIVE_API = true;
 
     private ViewerActivity mScene;
     private WebView mWebView;
     private Callback mCallback = new Callback();
-    private boolean mPageLoaded = false;
+    private boolean mPageLoaded = true;
     private boolean mLoadBookAfterPageLoaded = false;
 
     public ViewerBridge(ViewerActivity scene, WebView webView) {
@@ -61,6 +61,8 @@ public class ViewerBridge {
         settings.setAppCacheEnabled(false);
         settings.setJavaScriptEnabled(true);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
+        //Qisda Henry.Long add, to allow local file access
+        settings.setAllowFileAccess(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
 
         mWebView.addJavascriptInterface(mCallback, "AndroidApp");
@@ -682,8 +684,9 @@ public class ViewerBridge {
     private Uri mBookUri;
 
     private boolean isBookUri(Uri uri) {
-        if (!mBookUri.getScheme().equals(uri.getScheme())) return false;
-        if (!mBookUri.getAuthority().equals(uri.getAuthority())) return false;
+        //Avoid NPE here
+        if (mBookUri.getScheme()!=null && !mBookUri.getScheme().equals(uri.getScheme())) return false;
+        if (mBookUri.getAuthority()!=null && !mBookUri.getAuthority().equals(uri.getAuthority())) return false;
 
         List<String> seg = uri.getPathSegments();
         List<String> prefixSeg = mBookUri.getPathSegments();
@@ -812,7 +815,8 @@ public class ViewerBridge {
         @Override
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-            return shouldInterceptRequest(view, request.getUrl(), request.getRequestHeaders().get("Range"));
+            //Test
+            return null; //shouldInterceptRequest(view, request.getUrl(), request.getRequestHeaders().get("Range"));
         }
 
         @Override

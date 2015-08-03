@@ -79,7 +79,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
             }
         });
 
-        mBridge.loadBook("http://fake.benqguru.com/book/");
+        //mBridge.loadBook("http://fake.benqguru.com/book/");
     }
 
     private JSONArray mTOC;
@@ -182,6 +182,12 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         popup.add(0, "Mode: continuous", new Runnable() {
             public void run() {
                 mBridge.setLayoutMode("continuous");
+            }
+        });
+        //Qisda HenryLong add, Test local file first
+        popup.add(0, "loadBook", new Runnable() {
+            public void run() {
+                mBridge.loadBook("test.pdf");
             }
         });
 

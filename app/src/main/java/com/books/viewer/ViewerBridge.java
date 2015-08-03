@@ -61,6 +61,7 @@ public class ViewerBridge {
         settings.setAppCacheEnabled(false);
         settings.setJavaScriptEnabled(true);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
 
         mWebView.addJavascriptInterface(mCallback, "AndroidApp");
         eval(loadAssetAsString("ViewerBridge.js"), null);

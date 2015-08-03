@@ -139,6 +139,8 @@ public class PopupMenu {
 		mPopup.setFocusable(true);
 		mPopup.setInputMethodMode(PopupWindow.INPUT_METHOD_NOT_NEEDED);
 		mPopup.setWindowLayoutMode(0, ViewGroup.LayoutParams.WRAP_CONTENT);
+		mPopup.setOutsideTouchable(true);
+		mPopup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 	}
 
 	public void add(int icon, int title, Object key) {
@@ -232,8 +234,6 @@ public class PopupMenu {
 		mPopup.setWindowLayoutMode(0, ViewGroup.LayoutParams.WRAP_CONTENT);
 		mPopup.setWidth(w);
 		mPopup.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
-		mPopup.setOutsideTouchable(true);
-		mPopup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 	}
 
 	public void dismiss() {

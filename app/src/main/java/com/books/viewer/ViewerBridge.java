@@ -50,6 +50,8 @@ public class ViewerBridge {
     private ViewerActivity mScene;
     private WebView mWebView;
     private Callback mCallback = new Callback();
+    private boolean mPageLoaded = false;
+    private boolean mLoadBookAfterPageLoaded = false;
 
     public ViewerBridge(ViewerActivity scene, WebView webView) {
         mScene = scene;
@@ -131,8 +133,13 @@ public class ViewerBridge {
     ///
     public void loadBook(String url) {
         mBookUri = Uri.parse(url);
-        boolean legacy = !USE_NATIVE_API || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
-        eval("Viewer.loadBook(\"" + url + "\", " + legacy + ")", null);
+        if (mPageLoaded) {
+            boolean legacy = !USE_NATIVE_API || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
+            eval("Viewer.loadBook(\"" + url + "\", " + legacy + ")", null);
+        } else {
+            Log.w(TAG,"loadbook called before paged loaded");
+            mLoadBookAfterPageLoaded = true;
+        }
     }
 
     ///
@@ -692,7 +699,25 @@ public class ViewerBridge {
         return true;
     }
 
+
     private WebViewClient mWebViewClient = new WebViewClient() {
+
+        @Override
+        public void onPageFinished(WebView view,String uri) {
+            Log.w(TAG, "onPageFinished");
+            //Check if need to load book when page is finished.
+            if (mLoadBookAfterPageLoaded) {
+                String url = "";
+                mLoadBookAfterPageLoaded = false;
+                if (mBookUri != null) {
+                    url = mBookUri.toString();
+                }
+                boolean legacy = !USE_NATIVE_API || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
+                eval("Viewer.loadBook(\"" + url + "\", " + legacy + ")", null);
+            }
+            super.onPageFinished(view,uri);
+        }
+
         private WebResourceResponse shouldInterceptRequest(WebView view, Uri uri, String range) {
             if (!isBookUri(uri)) return null;
 

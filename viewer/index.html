@@ -41,14 +41,18 @@
         ]
     </script>
 
-    <h1>Viewer Sandbox</h1>
-    <button onclick="App.onToggleToolbar(true)">Show toolbar</button><br>
-    <button onclick="App.onToggleToolbar(false)">Hide toolbar</button><br>
-    <button onclick="App.onChangeTitle('測試標題')">Change title「測試標題」</button><br>
-    <button onclick="App.onChangeTOC(TOC)">Change TOC</button><br>
+    <div id="sample" style="display:none">
+
+        <h1>Viewer Sandbox</h1>
+        <button onclick="App.onToggleToolbar(true)">Show toolbar</button><br>
+        <button onclick="App.onToggleToolbar(false)">Hide toolbar</button><br>
+        <button onclick="App.onChangeTitle('測試標題')">Change title「測試標題」</button><br>
+        <button onclick="App.onChangeTOC(TOC)">Change TOC</button><br>
     
-    <b><a href="http://fake.benqguru.com/book/OPS/cover.xhtml">Show Cover</a></b>
-    <h1>Canvas for render pdf</h1>
+        <b><a href="http://fake.benqguru.com/book/OPS/cover.xhtml">Show Cover</a></b>
+        <h1>Canvas for render pdf</h1>
+        </div>
+
     <div>
         <canvas id="the-canvas" style="border:0px solid black"></canvas>
     </div>

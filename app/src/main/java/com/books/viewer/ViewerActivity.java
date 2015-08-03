@@ -80,6 +80,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         });
 
         //mBridge.loadBook("http://fake.benqguru.com/book/");
+        mBridge.loadBook("test.pdf");
     }
 
     private JSONArray mTOC;

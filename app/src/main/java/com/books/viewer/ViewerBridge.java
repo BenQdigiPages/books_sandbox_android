@@ -50,7 +50,7 @@ public class ViewerBridge {
     private ViewerActivity mScene;
     private WebView mWebView;
     private Callback mCallback = new Callback();
-    private boolean mPageLoaded = true;
+    private boolean mPageLoaded = false;
     private boolean mLoadBookAfterPageLoaded = false;
 
     public ViewerBridge(ViewerActivity scene, WebView webView) {
@@ -709,6 +709,7 @@ public class ViewerBridge {
         @Override
         public void onPageFinished(WebView view,String uri) {
             Log.w(TAG, "onPageFinished");
+            mPageLoaded = true;
             //Check if need to load book when page is finished.
             if (mLoadBookAfterPageLoaded) {
                 String url = "";

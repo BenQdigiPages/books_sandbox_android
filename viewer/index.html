@@ -19,7 +19,11 @@
             background: #EEE;
         }
     </style>
+    <!-- Use latest PDF.js package build from Github -->
+    <script src="compatibility.js"></script>
+    <script src="pdf.js"></script>
 
+    <!-- Part of viewer.js from PDF.js package need merge into our viewer.js -->
     <script src="viewer.js"></script>
 </head>
 
@@ -44,6 +48,10 @@
     <button onclick="App.onChangeTOC(TOC)">Change TOC</button><br>
     
     <b><a href="http://fake.benqguru.com/book/OPS/cover.xhtml">Show Cover</a></b>
+    <h1>Canvas for render pdf</h1>
+    <div>
+        <canvas id="the-canvas" style="border:0px solid black"></canvas>
+    </div>
 </body>
 
 </html>

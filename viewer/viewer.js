@@ -7,7 +7,7 @@ var pdfDoc = null,
     scale = 1.0,
     canvas,
     ctx,
-    toolBarVisible = false,
+    toolBarVisible = true,
     touchStartX = 0.0,
     touchStartY = 0.0;
 
@@ -157,6 +157,48 @@ Viewer.searchText = function(keyword) {
     window.alert("Viewer.searchText=" + keyword)
 }
 
+function load(){
+    document.addEventListener('touchstart',touch, false);
+    document.addEventListener('touchmove',touch, false);
+    document.addEventListener('touchend',touch, false);
+
+    function touch(event) {
+
+        var event = event || window.event;
+
+        switch(event.type) {
+            case "touchstart":
+                console.log("Touch started (" + event.touches[0].clientX + "," + event.touches[0].clientY + ")");
+                touchStartX = event.touches[0].clientX;
+                touchStartY = event.touches[0].clientY;
+                break;
+            case "touchend":
+                console.log("<br/>Touch end (" + event.changedTouches[0].clientX + "," + event.changedTouches[0].clientY + ")");
+                var shiftX = event.changedTouches[0].clientX - touchStartX;
+                var shiftY = event.changedTouches[0].clientY - touchStartY;
+                console.log("<br/>Touch moved (" + shiftX + "," + shiftY + ")");
+                if (Math.abs(shiftX) < 10 && Math.abs(shiftY) < 10) { //treat as click event
+                    toolBarVisible = !(toolBarVisible);
+                    AndroidApp.onToggleToolbar(toolBarVisible);
+                }
+                if (shiftX > 50) {
+                    onPrevPage();
+                } else if (shiftX < -50) {
+                    onNextPage();
+                }
+                break;
+            case "touchmove":
+                event.preventDefault();
+                //console.log("<br/>Touch moved (" + event.touches[0].clientX + "," + event.touches[0].clientY + ")");
+                break;
+            default:
+                break;
+        }
+
+    }
+}
+
+document.addEventListener('DOMContentLoaded', load, true);
 
 /**
  * Displays previous page.
@@ -190,7 +232,7 @@ function renderPage(num) {
         prePageNum = num;
         var percentage = prePageNum/pdfDoc.numPages*100;
         //chapter not implement
-        Android.onChangePage(" ", prePageNum, (percentage.toFixed()).toString()+"%");
+        AndroidApp.onChangePage("", prePageNum, percentage.toFixed());
     }
     pageRendering = true;
     // Using promise to fetch the page

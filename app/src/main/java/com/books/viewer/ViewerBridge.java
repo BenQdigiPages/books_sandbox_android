@@ -312,7 +312,7 @@ public class ViewerBridge {
     /// @cfi: string - epub cfi
     ///
     public void gotoPosition(String cfi) {
-        eval("Viewer.gotoPosition(\"\" + cfi + \"\")", null);
+        eval("Viewer.gotoPosition(\"" + cfi + "\")", null);
     }
 
     ///

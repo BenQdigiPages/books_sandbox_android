@@ -51,6 +51,7 @@ Viewer.getFontScale = function() {
 ///
 /// @scale: double - 1.0 is original size
 ///
+/// EPUB only
 Viewer.setFontScale = function(scale) {
 
 }
@@ -60,6 +61,7 @@ Viewer.setFontScale = function(scale) {
 ///
 /// @[r, g, b] - page background color
 ///
+/// EPUB only
 Viewer.getBackgroundColor = function() {
     return [0, 0, 0];
 }
@@ -69,6 +71,7 @@ Viewer.getBackgroundColor = function() {
 ///
 /// @[r, g, b] - page background color
 ///
+/// EPUB only
 Viewer.setBackgroundColor = function(rgb) {
     window.alert("Viewer.setBackgroundColor=" + rgb)
 }
@@ -109,7 +112,7 @@ Viewer.setLayoutMode = function(mode) {
 /// @total_pages: int - total number of pages
 ///
 Viewer.getCurrentPosition = function() {
-    return ["ooxx", "oooxxx", 1, 100]
+    return ["", currentPageNum, currentPageNum, pdfDoc.numPages]
 }
 
 ///
@@ -127,7 +130,15 @@ Viewer.gotoLink = function(link) {
 /// @cfi: string - epub cfi
 ///
 Viewer.gotoPosition = function(cfi) {
-    window.alert("Viewer.gotoPosition=" + cfi)
+    var regex = /^[0-9]*$/;
+    //PDF doesn't support cfi, check if cfi is page number.
+    if (regex.test(cfi)) {
+        var pageNum = parseInt(cfi);
+        if (pageNum < 0 || pageNum > pdfDoc.numPages) {
+            return;
+        }
+        queueRenderPage(pageNum);
+    }
 }
 
 ///

@@ -179,7 +179,7 @@ function load(){
                 console.log("<br/>Touch moved (" + shiftX + "," + shiftY + ")");
                 if (Math.abs(shiftX) < 10 && Math.abs(shiftY) < 10) { //treat as click event
                     toolBarVisible = !(toolBarVisible);
-                    AndroidApp.onToggleToolbar(toolBarVisible);
+                    App.onToggleToolbar(toolBarVisible);
                 }
                 if (shiftX > 50) {
                     onPrevPage();
@@ -230,9 +230,8 @@ function renderPage(num) {
     //Notify App current page is changed to different page
     if (prePageNum != num) {
         prePageNum = num;
-        var percentage = prePageNum/pdfDoc.numPages*100;
         //chapter not implement
-        AndroidApp.onChangePage("", prePageNum, percentage.toFixed());
+        App.onChangePage("", num, num, pdfDoc.numPages);
     }
     pageRendering = true;
     // Using promise to fetch the page

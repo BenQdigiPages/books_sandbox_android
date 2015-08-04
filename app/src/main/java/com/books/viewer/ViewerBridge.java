@@ -679,18 +679,6 @@ public class ViewerBridge {
                 }
             });
         }
-
-        ///
-        /// Notify App current page is changed to different page
-        ///
-        /// @chapter: string - an opaque to represent current chapter
-        /// @cfi: string - epub cfi
-        /// @percentage: 0..100 - to represent reading progress
-        ///
-        @JavascriptInterface
-        public void onChangePage(String chapter, String cfi, String percentage) {
-            Log.i(TAG,"onChangePage - chapter:" + chapter + " - cfi:" + cfi + " - percentage:" + percentage);
-        }
     };
 
     private Uri mBookUri;

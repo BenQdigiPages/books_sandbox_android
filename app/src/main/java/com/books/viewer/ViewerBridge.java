@@ -96,31 +96,27 @@ public class ViewerBridge {
     }
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
-    private void _eval(String script, final ValueCallback<String> callback) {
-        if (callback != null) {
-            mWebView.evaluateJavascript(script, new ValueCallback<String>() {
-                public void onReceiveValue(String value) {
-                    if (value.startsWith("\"")) {
-                        try {
-                            JSONTokener tokener = new JSONTokener(value);
-                            value = (String) tokener.nextValue();
-                        } catch (Exception e) {
-                            // ignore
-                        }
+    private void _eval(String script, ValueCallback<String> callback) {
+        mWebView.evaluateJavascript(script, callback);
+    }
+
+    public <T> void eval(String script, final ValueCallback<T> handler) {
+        ValueCallback<String> callback = null;
+        if (handler != null) {
+            callback = new ValueCallback<String>() {
+                public void onReceiveValue(String result) {
+                    try {
+                        JSONTokener tokener = new JSONTokener(result);
+                        Object value = tokener.nextValue();
+                        handler.onReceiveValue((T) value);
+                    } catch (Exception e) {
+                        Log.w(TAG, "fail to convert callback result", e);
+                        handler.onReceiveValue(null);
                     }
-                    callback.onReceiveValue(value);
                 }
-            });
-        } else {
-            mWebView.evaluateJavascript(script, null);
+            };
         }
-    }
 
-    public void eval(String script, ValueCallback<String> callback) {
-        eval(script, false, callback);
-    }
-
-    public void eval(String script, boolean stringify, ValueCallback<String> callback) {
         if (USE_NATIVE_API && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             _eval(script, callback);
         } else if (callback != null) {
@@ -129,9 +125,7 @@ public class ViewerBridge {
                 token = mToken++;
                 mDispatchMap.put(token, callback);
             }
-            if (stringify) {
-                script = "JSON.stringify(" + script + ")";
-            }
+            script = "JSON.stringify(" + script + ")";
             mWebView.loadUrl("javascript:App.onDispatchResult(" + token + ", " + script + ")");
         } else {
             mWebView.loadUrl("javascript:" + script);
@@ -174,15 +168,9 @@ public class ViewerBridge {
     /// @scale: double - 1.0 is original size
     ///
     public void getFontScale(final ValueCallback<Double> callback) {
-        eval("Viewer.getFontScale()", new ValueCallback<String>() {
-            public void onReceiveValue(String result) {
-                try {
-                    double value = Double.parseDouble(result);
-                    callback.onReceiveValue(value);
-                } catch (Exception e) {
-                    Log.w(TAG, "fail to parse Viewer.getFontScale", e);
-                    callback.onReceiveValue(1.0);
-                }
+        eval("Viewer.getFontScale()", new ValueCallback<Number>() {
+            public void onReceiveValue(Number value) {
+                callback.onReceiveValue(value.doubleValue());
             }
         });
     }
@@ -202,10 +190,9 @@ public class ViewerBridge {
     /// @[r, g, b] - page background color
     ///
     public void getBackgroundColor(final ValueCallback<Integer> callback) {
-        eval("Viewer.getBackgroundColor()", true, new ValueCallback<String>() {
-            public void onReceiveValue(String result) {
+        eval("Viewer.getBackgroundColor()", new ValueCallback<JSONArray>() {
+            public void onReceiveValue(JSONArray json) {
                 try {
-                    JSONArray json = new JSONArray(result);
                     int r = json.getInt(0);
                     int g = json.getInt(1);
                     int b = json.getInt(2);
@@ -233,10 +220,9 @@ public class ViewerBridge {
     /// @mode: string - either "single", "side_by_side" or "continuous"
     ///
     public void getAvailableLayoutModes(final ValueCallback<String[]> callback) {
-        eval("Viewer.getAvailableLayoutModes()", true, new ValueCallback<String>() {
-            public void onReceiveValue(String result) {
+        eval("Viewer.getAvailableLayoutModes()", new ValueCallback<JSONArray>() {
+            public void onReceiveValue(JSONArray json) {
                 try {
-                    JSONArray json = new JSONArray(result);
                     ArrayList<String> list =  new ArrayList<String>();
                     for (int i = 0; i < json.length(); i++) {
                         list.add(json.getString(i));
@@ -279,10 +265,9 @@ public class ViewerBridge {
     /// Viewer.getCurrentPosition() -> [chapter, cfi, current_page, total_pages]
     ///
     public void getCurrentPosition(final ValueCallback<Object[]> callback) {
-        eval("Viewer.getCurrentPosition()", true, new ValueCallback<String>() {
-            public void onReceiveValue(String result) {
+        eval("Viewer.getCurrentPosition()", new ValueCallback<JSONArray>() {
+            public void onReceiveValue(JSONArray json) {
                 try {
-                    JSONArray json = new JSONArray(result);
                     callback.onReceiveValue(new Object[] {
                             json.getString(0),
                             json.getString(1),

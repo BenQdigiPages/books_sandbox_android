@@ -22,10 +22,14 @@ var pdfDoc = null,
 /// query parameter "_Range_", and issue normal HTTP GET request.
 ///
 /// @url: string - base url of ebook
-/// @legacy: bool - true if legecy mode is needed
+/// @legacy: bool - true if legacy mode is needed
 ///
 Viewer.loadBook = function(url, legacy) {
      console.log("url= "+url + ", legacy= "+legacy);
+
+        // FIXME: temp
+        url = "test.pdf"
+
         /**
          * Asynchronously downloads PDF.
          */
@@ -239,7 +243,7 @@ Viewer.handleZoomOutInEvent = function(event) {
     }
 }
 
-function TouchPoint(x,y) { 
+function TouchPoint(x,y) {
     var shiftDir = {
                         "noMove"   :  0,
                         "negative" : -1,
@@ -255,7 +259,7 @@ function TouchPoint(x,y) {
     this.cutY = y,
     this.oriX = x;
     this.oriY = y;
-     
+
     this.updateCoordinate = function(x,y) {
         var deltaX,
             deltaY,
@@ -286,8 +290,8 @@ function TouchPoint(x,y) {
         }
 
         // Init parameter
-        this.cutX = x; 
-        this.cutY = y; 
+        this.cutX = x;
+        this.cutY = y;
         deltaX = this.cutX - this.oriX;
         deltaY = this.cutY - this.oriY;
 
@@ -320,7 +324,7 @@ function TouchPoint(x,y) {
         console.log("handleZoomPolicy()");
         // Delete touch element from local buffer
         zoomScanArray.forEach(function (targetTouchPoint) {
-	
+
             console.log("targetTouchPoint.xMoveDir = " + targetTouchPoint.xMoveDir);
             console.log("targetTouchPoint.yMoveDir = " + targetTouchPoint.yMoveDir);
             console.log("this.xMoveDir = " + self.xMoveDir);
@@ -364,7 +368,7 @@ function TouchPoint(x,y) {
                 return;
             }
 
-            if((self.xMoveDir + targetTouchPoint.xMoveDir) === 0 
+            if((self.xMoveDir + targetTouchPoint.xMoveDir) === 0
                 && (self.yMoveDir + targetTouchPoint.yMoveDir) === 0) {
                 var previous = Math.pow(self.oriX - targetTouchPoint.oriX,2) + Math.pow(self.oriY - targetTouchPoint.oriY,2);
                 var cur = Math.pow(self.cutX - targetTouchPoint.cutX,2) + Math.pow(self.cutY - targetTouchPoint.cutY,2);

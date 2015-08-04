@@ -22,8 +22,8 @@ if (typeof PDFJS === 'undefined') {
   (typeof window !== 'undefined' ? window : this).PDFJS = {};
 }
 
-PDFJS.version = '1.1.301';
-PDFJS.build = '61f9052';
+PDFJS.version = '1.1.6';
+PDFJS.build = 'ad510da';
 
 (function pdfjsWrapper() {
   // Use strict in our context only - users might not want it
@@ -1740,7 +1740,7 @@ PDFJS.useOnlyCssZoom = (PDFJS.useOnlyCssZoom === undefined ?
  * @var {number}
  */
 PDFJS.verbosity = (PDFJS.verbosity === undefined ?
-                   PDFJS.VERBOSITY_LEVELS.infos : PDFJS.verbosity);
+                   PDFJS.VERBOSITY_LEVELS.warnings : PDFJS.verbosity);
 
 /**
  * The maximum supported canvas size in total pixels e.g. width * height.

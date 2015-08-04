@@ -28,6 +28,7 @@ import android.webkit.WebViewClient;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -61,7 +62,6 @@ public class ViewerBridge {
         settings.setAppCacheEnabled(false);
         settings.setJavaScriptEnabled(true);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
-        //Qisda Henry.Long add, to allow local file access
         settings.setAllowFileAccess(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
 
@@ -96,11 +96,31 @@ public class ViewerBridge {
     }
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
-    private void _eval(String script, ValueCallback<String> callback) {
-        mWebView.evaluateJavascript(script, callback);
+    private void _eval(String script, final ValueCallback<String> callback) {
+        if (callback != null) {
+            mWebView.evaluateJavascript(script, new ValueCallback<String>() {
+                public void onReceiveValue(String value) {
+                    if (value.startsWith("\"")) {
+                        try {
+                            JSONTokener tokener = new JSONTokener(value);
+                            value = (String) tokener.nextValue();
+                        } catch (Exception e) {
+                            // ignore
+                        }
+                    }
+                    callback.onReceiveValue(value);
+                }
+            });
+        } else {
+            mWebView.evaluateJavascript(script, null);
+        }
     }
 
     public void eval(String script, ValueCallback<String> callback) {
+        eval(script, false, callback);
+    }
+
+    public void eval(String script, boolean stringify, ValueCallback<String> callback) {
         if (USE_NATIVE_API && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             _eval(script, callback);
         } else if (callback != null) {
@@ -108,6 +128,9 @@ public class ViewerBridge {
             synchronized (mDispatchMap) {
                 token = mToken++;
                 mDispatchMap.put(token, callback);
+            }
+            if (stringify) {
+                script = "JSON.stringify(" + script + ")";
             }
             mWebView.loadUrl("javascript:App.onDispatchResult(" + token + ", " + script + ")");
         } else {
@@ -179,7 +202,7 @@ public class ViewerBridge {
     /// @[r, g, b] - page background color
     ///
     public void getBackgroundColor(final ValueCallback<Integer> callback) {
-        eval("JSON.stringify(Viewer.getBackgroundColor())", new ValueCallback<String>() {
+        eval("Viewer.getBackgroundColor()", true, new ValueCallback<String>() {
             public void onReceiveValue(String result) {
                 try {
                     JSONArray json = new JSONArray(result);
@@ -210,7 +233,7 @@ public class ViewerBridge {
     /// @mode: string - either "single", "side_by_side" or "continuous"
     ///
     public void getAvailableLayoutModes(final ValueCallback<String[]> callback) {
-        eval("JSON.stringify(Viewer.getAvailableLayoutModes())", new ValueCallback<String>() {
+        eval("Viewer.getAvailableLayoutModes()", true, new ValueCallback<String>() {
             public void onReceiveValue(String result) {
                 try {
                     JSONArray json = new JSONArray(result);
@@ -256,7 +279,7 @@ public class ViewerBridge {
     /// Viewer.getCurrentPosition() -> [chapter, cfi, current_page, total_pages]
     ///
     public void getCurrentPosition(final ValueCallback<Object[]> callback) {
-        eval("JSON.stringify(Viewer.getCurrentPosition())", new ValueCallback<String>() {
+        eval("Viewer.getCurrentPosition()", true, new ValueCallback<String>() {
             public void onReceiveValue(String result) {
                 try {
                     JSONArray json = new JSONArray(result);
@@ -710,7 +733,7 @@ public class ViewerBridge {
         public void onPageFinished(WebView view,String uri) {
             Log.w(TAG, "onPageFinished");
             mPageLoaded = true;
-            //Check if need to load book when page is finished.
+            // Check if need to load book when page is finished.
             if (mLoadBookAfterPageLoaded) {
                 String url = "";
                 mLoadBookAfterPageLoaded = false;
@@ -816,8 +839,7 @@ public class ViewerBridge {
         @Override
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-            //Test
-            return null;//shouldInterceptRequest(view, request.getUrl(), request.getRequestHeaders().get("Range"));
+            return shouldInterceptRequest(view, request.getUrl(), request.getRequestHeaders().get("Range"));
         }
 
         @Override

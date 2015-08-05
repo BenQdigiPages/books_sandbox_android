@@ -10,7 +10,12 @@ var pdfDoc = null,
     toolBarVisible = true,
     touchStartX = 0.0,
     touchStartY = 0.0,
+    currentLayoutMode = "single",
     currentTouchs = [];
+
+var ua = navigator.userAgent;
+var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
+var isAndroidDevice = /Android/g.test(ua);
 
 ///
 /// Load ebook from server url
@@ -25,20 +30,22 @@ var pdfDoc = null,
 /// @legacy: bool - true if legacy mode is needed
 ///
 Viewer.loadBook = function(url, legacy) {
-     console.log("url= "+url + ", legacy= "+legacy);
 
-        // FIXME: temp
-        url = "test.pdf"
+    console.log("url= "+url + ", legacy= "+legacy);
 
-        /**
-         * Asynchronously downloads PDF.
-         */
-        PDFJS.getDocument(url).then(function getPdf(pdfDoc_) {
-            pdfDoc = pdfDoc_;
+    // FIXME: temp
+    url = "test.pdf"
 
-            // Initial/first page rendering
-            renderPage(currentPageNum);
-        });
+    /**
+     * Asynchronously downloads PDF.
+     */
+    PDFJS.getDocument(url).then(function getPdf(pdfDoc_) {
+        pdfDoc = pdfDoc_;
+
+        // Initial/first page rendering
+        renderPage(currentPageNum);
+    });
+
 }
 
 ///
@@ -86,6 +93,9 @@ Viewer.setBackgroundColor = function(rgb) {
 /// @mode: string - either "single", "side_by_side" or "continuous"
 ///
 Viewer.getAvailableLayoutModes = function() {
+    if (isIOSDevice || isAndroidDevice) {
+        return ["single", "side_by_side"];
+    }
     return ["single", "side_by_side", "continuous"];
 }
 
@@ -95,7 +105,7 @@ Viewer.getAvailableLayoutModes = function() {
 /// @mode: string - either "single", "side_by_side" or "continuous"
 ///
 Viewer.getLayoutMode = function() {
-    return "single";
+    return currentLayoutMode;
 }
 
 ///
@@ -104,7 +114,11 @@ Viewer.getLayoutMode = function() {
 /// @mode: string - either "single", "side_by_side" or "continuous"
 ///
 Viewer.setLayoutMode = function(mode) {
-    window.alert("Viewer.setLayoutMode=" + mode)
+    console.log("Viewer.setLayoutMode=" + mode);
+    if (mode !== currentLayoutMode) {
+        currentLayoutMode = mode;
+        //TODO:Change layout mode
+    }
 }
 
 ///
@@ -159,7 +173,38 @@ Viewer.gotoPosition = function(cfi) {
 ///     null - to remove current bookmark
 ///
 Viewer.toggleBookmark = function(color) {
-    window.alert("Viewer.toggleBookmark=" + color)
+    console.log("Viewer.toggleBookmark=" + color);
+    if (color !== null) {
+        if (false /*Current page has bookmark*/) {
+            //TODO:update bookmark in history
+            var bookmark = {
+               "uuid": "",
+               "title": "",
+               "cfi": currentPageNum,
+               "color": [0, 0, 0]
+            };
+            App.onUpdateBookmark(bookmark);
+        } else {
+            //TODO:Add bookmark in history
+            var bookmark = {
+               "uuid": "",
+               "title": "",
+               "cfi": currentPageNum,
+               "color": [0, 0, 0]
+            };
+            App.onAddBookmark("",bookmark,"AddBookmarkCallBack");
+        }
+    } else {
+        //Remove bookmark in current page.
+        if (/*current page has bookmark*/ true) {
+            //TODO: Remove bookmark from history
+            App.onRemoveBookmark("uuid");
+        }
+    }
+}
+
+function AddBookmarkCallBack(uuid) {
+    console.log("AddBookmarkCallBack uuid:" + uuid);
 }
 
 ///

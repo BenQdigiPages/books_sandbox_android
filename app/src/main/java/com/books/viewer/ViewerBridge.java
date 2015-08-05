@@ -623,8 +623,9 @@ public class ViewerBridge {
                 synchronized (mBookmarks) {
                     mBookmarks.put(uuid, new Object[] { chapter, bookmark });
                 }
+                //eval must called in the same thread.
+                mScene.runOnUiThread(new addBookmarkCallback(uuid, callback));
 
-                eval(callback + "(\"" + uuid + "\")", null);
             } catch (Exception e) {
                 Log.w(TAG, "fail onAddBookmark = " + bookmark_json, e);
             }
@@ -711,6 +712,18 @@ public class ViewerBridge {
         return true;
     }
 
+    public class addBookmarkCallback implements Runnable {
+        private String uuid;
+        private String callback;
+        public addBookmarkCallback(String uuid, String callback) {
+            this.uuid = uuid;
+            this.callback = callback;
+        }
+
+        public void run() {
+            eval(callback + "(\"" + uuid + "\")", null);
+        }
+    }
 
     private WebViewClient mWebViewClient = new WebViewClient() {
 

@@ -5,6 +5,7 @@ var pdfDoc = null,
     pageRendering = false,
     pageNumPending = null,
     scale = 1.0,
+    scaleDelta = 1.0,
     canvas,
     ctx,
     toolBarVisible = true,
@@ -380,15 +381,23 @@ function TouchPoint(x,y) {
                 var previous = Math.pow(targetTouchPoint.oriX - self.targetTouchPoint.cutX,2) + Math.pow(targetTouchPoint.oriY - self.cutY,2);
                 var cur = Math.pow(targetTouchPoint.cutX - self.targetTouchPoint.cutX,2) + Math.pow(targetTouchPoint.cutY - self.cutY,2);
                 if(cur > previous) {
+                    console.log("type1 : zoom in");
+                    // Zoom in
+                    //PDFViewerApplication.zoomOut();
+                    scale = (scale * DEFAULT_SCALE_DELTA).toFixed(2);
+                    scale = Math.ceil(scale * 10) / 10;
+                    scale = Math.min(MAX_SCALE, scale);
+                    console.log("new scale = " + scale);
+                    renderPage(currentPageNum);
+                } else if(cur < previous) {
                     console.log("type1 : zoom out");
                     // Zoom out
-                    PDFViewerApplication.pdfViewer.currentScale = DEFAULT_SCALE;
-                    PDFViewerApplication.zoomOut();
-                } else if(cur < previous) {
-                    console.log("type1 : zoom in");
-                    // Zoom In
-                    PDFViewerApplication.pdfViewer.currentScale = DEFAULT_SCALE;
-                    PDFViewerApplication.zoomIn();
+                    //PDFViewerApplication.zoomIn();
+                    scale = (scale / DEFAULT_SCALE_DELTA).toFixed(2);
+                    scale = Math.floor(scale * 10) / 10;
+                    scale = Math.max(MIN_SCALE, scale);
+                    console.log("new scale = " + scale);
+                    renderPage(currentPageNum);
                 }
                 isZoomTrigger = true;
                 return;
@@ -399,15 +408,23 @@ function TouchPoint(x,y) {
                 var previous = Math.pow(self.oriX - targetTouchPoint.cutX,2) + Math.pow(self.oriY - targetTouchPoint.cutY,2);
                 var cur = Math.pow(self.cutX - targetTouchPoint.cutX,2) + Math.pow(self.cutY - targetTouchPoint.cutY,2);
                 if(cur > previous) {
-    	            console.log("type2 : zoom out");
-                    // Zoom out
-                    PDFViewerApplication.pdfViewer.currentScale = DEFAULT_SCALE;
-                    PDFViewerApplication.zoomOut();
+    	            console.log("type2 : zoom in");
+                    // Zoom in
+                    //PDFViewerApplication.zoomOut();
+                    scale = (scale * DEFAULT_SCALE_DELTA).toFixed(2);
+                    scale = Math.ceil(scale * 10) / 10;
+                    scale = Math.min(MAX_SCALE, scale);
+                    console.log("new scale = " + scale);
+                    renderPage(currentPageNum);
                 } else if(cur < previous) {
-                    console.log("type2 : zoom in");
-                    // Zoom In
-                    PDFViewerApplication.pdfViewer.currentScale = DEFAULT_SCALE;
-                    PDFViewerApplication.zoomIn();
+                    console.log("type2 : zoom out");
+                    // Zoom out
+                    //PDFViewerApplication.zoomIn();
+                    scale = (scale / DEFAULT_SCALE_DELTA).toFixed(2);
+                    scale = Math.floor(scale * 10) / 10;
+                    scale = Math.max(MIN_SCALE, scale);
+                    console.log("new scale = " + scale);
+                    renderPage(currentPageNum);
                 }
                 isZoomTrigger = true;
                 return;
@@ -420,15 +437,23 @@ function TouchPoint(x,y) {
     	        console.log("previous = " + previous);
     	        console.log("cur = " + cur);
                 if(cur > previous) {
-                    console.log("type3 : zoom out");
-                    // Zoom out
-                    PDFViewerApplication.pdfViewer.currentScale = DEFAULT_SCALE;
-                    PDFViewerApplication.zoomOut();
-                } else if(cur < previous) {
                     console.log("type3 : zoom in");
-                    // Zoom In
-                    PDFViewerApplication.pdfViewer.currentScale = DEFAULT_SCALE;
-                    PDFViewerApplication.zoomIn();
+                    // Zoom in 
+                    //PDFViewerApplication.zoomOut();
+                    scale = (scale * DEFAULT_SCALE_DELTA).toFixed(2);
+                    scale = Math.ceil(scale * 10) / 10;
+                    scale = Math.min(MAX_SCALE, scale);
+                    console.log("new scale = " + scale);
+                    renderPage(currentPageNum);
+                } else if(cur < previous) {
+                    console.log("type3 : zoom out");
+                    // Zoom out 
+                    //PDFViewerApplication.zoomIn();
+                    scale = (scale / DEFAULT_SCALE_DELTA).toFixed(2);
+                    scale = Math.floor(scale * 10) / 10;
+                    scale = Math.max(MIN_SCALE, scale);
+                    console.log("new scale = " + scale);
+                    renderPage(currentPageNum);
                 }
                 isZoomTrigger = true;
                 return;

@@ -223,9 +223,6 @@ Viewer.handleZoomOutInEvent = function(event) {
     var event = event || window.event;
 
     if(event.type === "touchstart") {
-        console.log("touchstart event ");
-        console.log("event.changedTouches.length = " + event.changedTouches.length);
-        console.log("event.touches.length = " + event.touches.length);
         for (var id in event.touches) {
             if(event.touches[id].identifier === undefined) {
                 continue;
@@ -238,13 +235,9 @@ Viewer.handleZoomOutInEvent = function(event) {
                 continue;
             }
 
-            console.log("identifier = " + eventTouchPoint.identifier);
             currentTouchs[eventTouchPoint.identifier] = new TouchPoint(eventTouchPoint.clientX,eventTouchPoint.clientY);
         }
     } else if(event.type === "touchmove") {
-        console.log("touchmove event ");
-        console.log("event.changedTouches.length = " + event.changedTouches.length);
-        console.log("event.touches.length = " + event.touches.length);
 
         var checkedTouchPoints = [],
             isZoomFound = false;
@@ -255,7 +248,6 @@ Viewer.handleZoomOutInEvent = function(event) {
             }
             var eventTouchPoint = event.changedTouches[id];
             var innerTP = currentTouchs[eventTouchPoint.identifier];
-            console.log("identifier = " + eventTouchPoint.identifier);
             innerTP.updateCoordinate(eventTouchPoint.clientX,eventTouchPoint.clientY);
 
             // Start scan
@@ -269,16 +261,12 @@ Viewer.handleZoomOutInEvent = function(event) {
             }
         }
     } else if(event.type === "touchend") {
-        console.log("touchend event ");
-        console.log("event.changedTouches.length = " + event.changedTouches.length);
-        console.log("event.touches.length = " + event.touches.length);
         var pendingDeleteId = [];
         for (var id in event.changedTouches) {
             if(event.changedTouches[id].identifier === undefined) {
                 continue;
             }
             var eventTouchPoint = event.changedTouches[id];
-            console.log("identifier = " + eventTouchPoint.identifier);
 
             pendingDeleteId.push(eventTouchPoint.identifier);
         }
@@ -296,7 +284,6 @@ function TouchPoint(x,y) {
                         "positive" : +1
                    };
 
-    console.log("new TouchPoint() (" + x + "," + y + ")");
     this.xMoveDir = shiftDir["noMove"];
     this.yMoveDir = shiftDir["noMove"];
     this.xMoveDelta = 0;
@@ -312,26 +299,15 @@ function TouchPoint(x,y) {
             absDeltaX,
             absDeltaY;
 
-        console.log("TouchPoint.updateCoordinate() (" + x + "," + y + ")");
         absDeltaX = Math.abs(x - this.oriX);
         absDeltaY = Math.abs(y - this.oriY);
 
-        /*
-    	console.log("this.oriX = " + this.oriX);
-        console.log("this.oriY = " + this.oriY);
-        console.log("x - oriX = " + (x - this.oriX));
-        console.log("y - oriY = " + (y - this.oriY));
-        console.log("this.xMoveDelta = " + this.xMoveDelta);
-        console.log("this.yMoveDelta = " + this.yMoveDelta);
-        */
         // Check whether the move direction along X is changed
         if(absDeltaX < this.xMoveDelta) {
-            console.log("x dir changed");
             this.oriX = this.cutX;
         }
         // Check whether the move direction along Y is changed
         if(absDeltaY < this.yMoveDelta) {
-            console.log("y dir changed");
             this.oriY = this.cutY;
         }
 
@@ -345,58 +321,44 @@ function TouchPoint(x,y) {
         if(deltaX > 0) {
             this.xMoveDir = shiftDir["positive"];
             this.xMoveDelta = deltaX;
-            console.log("x dir positive , " + this.xMoveDir);
         }else if(deltaX < 0) {
             this.xMoveDir = shiftDir["negative"];
             this.xMoveDelta = Math.abs(deltaX);
-            console.log("x dir negative , " + this.xMoveDir);
         }
 
         //Handle Y
         if(deltaY > 0) {
             this.yMoveDir = shiftDir["positive"];
             this.yMoveDelta = deltaY;
-            console.log("y dir positive , " + this.yMoveDir);
         }else if(deltaY < 0) {
             this.yMoveDir = shiftDir["negative"];
             this.yMoveDelta = Math.abs(deltaY);
-            console.log("y dir negative , " + + this.yMoveDir);
         }
     };
 
     this.handleZoomPolicy = function(zoomScanArray) {
         var isZoomTrigger = false;
         var self = this;
-        console.log("handleZoomPolicy()");
         // Delete touch element from local buffer
         zoomScanArray.forEach(function (targetTouchPoint) {
-
-            console.log("targetTouchPoint.xMoveDir = " + targetTouchPoint.xMoveDir);
-            console.log("targetTouchPoint.yMoveDir = " + targetTouchPoint.yMoveDir);
-            console.log("this.xMoveDir = " + self.xMoveDir);
-            console.log("this.yMoveDir = " + self.yMoveDir);
 
             // If there is at least one finger holding , we always trigger zoom Out/In
             if(self.xMoveDir === 0 && self.yMoveDir === 0) {
                 var previous = Math.pow(targetTouchPoint.oriX - self.targetTouchPoint.cutX,2) + Math.pow(targetTouchPoint.oriY - self.cutY,2);
                 var cur = Math.pow(targetTouchPoint.cutX - self.targetTouchPoint.cutX,2) + Math.pow(targetTouchPoint.cutY - self.cutY,2);
                 if(cur > previous) {
-                    console.log("type1 : zoom in");
                     // Zoom in
                     //PDFViewerApplication.zoomOut();
                     scale = (scale * DEFAULT_SCALE_DELTA).toFixed(2);
                     scale = Math.ceil(scale * 10) / 10;
                     scale = Math.min(MAX_SCALE, scale);
-                    console.log("new scale = " + scale);
                     renderPage(currentPageNum);
                 } else if(cur < previous) {
-                    console.log("type1 : zoom out");
                     // Zoom out
                     //PDFViewerApplication.zoomIn();
                     scale = (scale / DEFAULT_SCALE_DELTA).toFixed(2);
                     scale = Math.floor(scale * 10) / 10;
                     scale = Math.max(MIN_SCALE, scale);
-                    console.log("new scale = " + scale);
                     renderPage(currentPageNum);
                 }
                 isZoomTrigger = true;
@@ -408,22 +370,18 @@ function TouchPoint(x,y) {
                 var previous = Math.pow(self.oriX - targetTouchPoint.cutX,2) + Math.pow(self.oriY - targetTouchPoint.cutY,2);
                 var cur = Math.pow(self.cutX - targetTouchPoint.cutX,2) + Math.pow(self.cutY - targetTouchPoint.cutY,2);
                 if(cur > previous) {
-    	            console.log("type2 : zoom in");
                     // Zoom in
                     //PDFViewerApplication.zoomOut();
                     scale = (scale * DEFAULT_SCALE_DELTA).toFixed(2);
                     scale = Math.ceil(scale * 10) / 10;
                     scale = Math.min(MAX_SCALE, scale);
-                    console.log("new scale = " + scale);
                     renderPage(currentPageNum);
                 } else if(cur < previous) {
-                    console.log("type2 : zoom out");
                     // Zoom out
                     //PDFViewerApplication.zoomIn();
                     scale = (scale / DEFAULT_SCALE_DELTA).toFixed(2);
                     scale = Math.floor(scale * 10) / 10;
                     scale = Math.max(MIN_SCALE, scale);
-                    console.log("new scale = " + scale);
                     renderPage(currentPageNum);
                 }
                 isZoomTrigger = true;
@@ -434,25 +392,19 @@ function TouchPoint(x,y) {
                 && (self.yMoveDir + targetTouchPoint.yMoveDir) === 0) {
                 var previous = Math.pow(self.oriX - targetTouchPoint.oriX,2) + Math.pow(self.oriY - targetTouchPoint.oriY,2);
                 var cur = Math.pow(self.cutX - targetTouchPoint.cutX,2) + Math.pow(self.cutY - targetTouchPoint.cutY,2);
-    	        console.log("previous = " + previous);
-    	        console.log("cur = " + cur);
                 if(cur > previous) {
-                    console.log("type3 : zoom in");
                     // Zoom in 
                     //PDFViewerApplication.zoomOut();
                     scale = (scale * DEFAULT_SCALE_DELTA).toFixed(2);
                     scale = Math.ceil(scale * 10) / 10;
                     scale = Math.min(MAX_SCALE, scale);
-                    console.log("new scale = " + scale);
                     renderPage(currentPageNum);
                 } else if(cur < previous) {
-                    console.log("type3 : zoom out");
                     // Zoom out 
                     //PDFViewerApplication.zoomIn();
                     scale = (scale / DEFAULT_SCALE_DELTA).toFixed(2);
                     scale = Math.floor(scale * 10) / 10;
                     scale = Math.max(MIN_SCALE, scale);
-                    console.log("new scale = " + scale);
                     renderPage(currentPageNum);
                 }
                 isZoomTrigger = true;

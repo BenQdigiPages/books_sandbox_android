@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
 public class ViewerBridge {
     private static final String TAG = "ViewerBridge";
     private static final boolean USE_NATIVE_API = true;
+    private static final boolean IS_LEGACY = !USE_NATIVE_API || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
 
     private ViewerActivity mScene;
     private WebView mWebView;
@@ -154,8 +155,7 @@ public class ViewerBridge {
     public void loadBook(String url) {
         mBookUri = Uri.parse(url);
         if (mPageLoaded) {
-            boolean legacy = !USE_NATIVE_API || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
-            eval("Viewer.loadBook(\"" + url + "\", " + legacy + ")", null);
+            eval("Viewer.loadBook(\"" + url + "\", " + IS_LEGACY + ")", null);
         } else {
             Log.w(TAG,"loadbook called before paged loaded");
             mLoadBookAfterPageLoaded = true;
@@ -455,8 +455,8 @@ public class ViewerBridge {
         ///     and the function must be accessable from global space
         ///
         @JavascriptInterface
-        public void onRequestHighlights(String chapter, String callback) {
-            JSONArray list = new JSONArray();
+        public void onRequestHighlights(String chapter, final String callback) {
+            final JSONArray list = new JSONArray();
 
             synchronized (mHighlights) {
                 for (String key : mHighlights.keySet()) {
@@ -469,7 +469,12 @@ public class ViewerBridge {
                 }
             }
 
-            eval(callback + "(" + list.toString() + ")", null);
+            // should run in async
+            mScene.runOnUiThread(new Runnable() {
+                public void run() {
+                    eval(callback + "(" + list.toString() + ")", null);
+                }
+            });
         }
 
         ///
@@ -485,16 +490,21 @@ public class ViewerBridge {
         ///     and the function must be accessable from global space
         ///
         @JavascriptInterface
-        public void onAddHighlight(String chapter, String highlight_json, String callback) {
+        public void onAddHighlight(String chapter, String highlight_json, final String callback) {
             try {
                 JSONObject highlight = new JSONObject(highlight_json);
-                String uuid = UUID.randomUUID().toString();
+                final String uuid = UUID.randomUUID().toString();
 
                 synchronized (mHighlights) {
                     mHighlights.put(uuid, new Object[] { chapter, highlight });
                 }
 
-                eval(callback + "(\"" + uuid + "\")", null);
+                // should run in async
+                mScene.runOnUiThread(new Runnable() {
+                    public void run() {
+                        eval(callback + "(\"" + uuid + "\")", null);
+                    }
+                });
             } catch (Exception e) {
                 Log.w(TAG, "fail onAddHighlight = " + highlight_json, e);
             }
@@ -585,8 +595,8 @@ public class ViewerBridge {
         ///     and the function must be accessable from global space
         ///
         @JavascriptInterface
-        public void onRequestBookmarks(String chapter, String callback) {
-            JSONArray list = new JSONArray();
+        public void onRequestBookmarks(String chapter, final String callback) {
+            final JSONArray list = new JSONArray();
 
             synchronized (mBookmarks) {
                 for (String key : mBookmarks.keySet()) {
@@ -599,7 +609,12 @@ public class ViewerBridge {
                 }
             }
 
-            eval(callback + "(" + list.toString() + ")", null);
+            // should run in async
+            mScene.runOnUiThread(new Runnable() {
+                public void run() {
+                    eval(callback + "(" + list.toString() + ")", null);
+                }
+            });
         }
 
         ///
@@ -615,17 +630,21 @@ public class ViewerBridge {
         ///     and the function must be accessable from global space
         ///
         @JavascriptInterface
-        public void onAddBookmark(String chapter, String bookmark_json, String callback) {
+        public void onAddBookmark(String chapter, String bookmark_json, final String callback) {
             try {
                 JSONObject bookmark = new JSONObject(bookmark_json);
-                String uuid = UUID.randomUUID().toString();
+                final String uuid = UUID.randomUUID().toString();
 
                 synchronized (mBookmarks) {
                     mBookmarks.put(uuid, new Object[] { chapter, bookmark });
                 }
-                //eval must called in the same thread.
-                mScene.runOnUiThread(new addBookmarkCallback(uuid, callback));
 
+                // should run in async
+                mScene.runOnUiThread(new Runnable() {
+                    public void run() {
+                        eval(callback + "(\"" + uuid + "\")", null);
+                    }
+                });
             } catch (Exception e) {
                 Log.w(TAG, "fail onAddBookmark = " + bookmark_json, e);
             }
@@ -712,36 +731,18 @@ public class ViewerBridge {
         return true;
     }
 
-    public class addBookmarkCallback implements Runnable {
-        private String uuid;
-        private String callback;
-        public addBookmarkCallback(String uuid, String callback) {
-            this.uuid = uuid;
-            this.callback = callback;
-        }
-
-        public void run() {
-            eval(callback + "(\"" + uuid + "\")", null);
-        }
-    }
-
     private WebViewClient mWebViewClient = new WebViewClient() {
 
         @Override
-        public void onPageFinished(WebView view,String uri) {
-            Log.w(TAG, "onPageFinished");
+        public void onPageFinished(WebView view, String uri) {
+            super.onPageFinished(view, uri);
             mPageLoaded = true;
+
             // Check if need to load book when page is finished.
             if (mLoadBookAfterPageLoaded) {
-                String url = "";
                 mLoadBookAfterPageLoaded = false;
-                if (mBookUri != null) {
-                    url = mBookUri.toString();
-                }
-                boolean legacy = !USE_NATIVE_API || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
-                eval("Viewer.loadBook(\"" + url + "\", " + legacy + ")", null);
+                eval("Viewer.loadBook(\"" + mBookUri.toString() + "\", " + IS_LEGACY + ")", null);
             }
-            super.onPageFinished(view,uri);
         }
 
         private WebResourceResponse shouldInterceptRequest(WebView view, Uri uri, String range) {
@@ -830,7 +831,10 @@ public class ViewerBridge {
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
             Uri uri = Uri.parse(url);
-            String range = uri.getQueryParameter("_Range_");
+            String range = null;
+            if (uri.isHierarchical()) {
+                range = uri.getQueryParameter("_Range_");
+            }
             return shouldInterceptRequest(view, uri, range);
         }
 

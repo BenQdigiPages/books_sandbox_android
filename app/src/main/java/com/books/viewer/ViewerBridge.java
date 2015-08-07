@@ -15,6 +15,7 @@ import android.app.AlertDialog;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
+import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.MimeTypeMap;
@@ -49,9 +50,14 @@ public class ViewerBridge {
     private static final boolean USE_NATIVE_API = true;
     private static final boolean IS_LEGACY = !USE_NATIVE_API || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
 
+    // This is for sandbox only, sandbox has direct mapping from ROOT_URI to ROOT_DIR
+    public static final Uri ROOT_URI = Uri.parse("http://fake.benqguru.com/books/");
+    public static final File ROOT_DIR = new File(System.getenv("EXTERNAL_STORAGE"), "books");
+
     private ViewerActivity mScene;
     private WebView mWebView;
     private Callback mCallback = new Callback();
+    private Boolean mIsPdf;
     private boolean mPageLoaded = false;
     private boolean mLoadBookAfterPageLoaded = false;
 
@@ -67,12 +73,26 @@ public class ViewerBridge {
         settings.setAllowUniversalAccessFromFileURLs(true);
 
         mWebView.addJavascriptInterface(mCallback, "AndroidApp");
-        eval(loadAssetAsString("ViewerBridge.js"), null);
-
         mWebView.setWebViewClient(mWebViewClient);
         mWebView.setWebChromeClient(mWebChromeClient);
+    }
 
-        mWebView.loadUrl("file:///android_asset/index.html");
+    private void loadLibrary(boolean is_pdf) {
+        if (mIsPdf != null) {
+            if (mIsPdf == is_pdf) return;
+
+            // reset all states
+            mWebView.loadUrl("about:blank");
+        }
+
+        mIsPdf = is_pdf;
+        eval(loadAssetAsString("ViewerBridge.js"), null);
+
+        if (mIsPdf) {
+            mWebView.loadUrl("file:///android_asset/pdf/index.html");
+        } else {
+            mWebView.loadUrl("file:///android_asset/epub/index.html");
+        }
     }
 
     private String loadAssetAsString(String name) {
@@ -152,8 +172,11 @@ public class ViewerBridge {
     /// @url: string - base url of ebook
     /// @legacy: bool - true if legacy mode is needed
     ///
-    public void loadBook(String url) {
+    public void loadBook(String url, boolean is_pdf) {
+        loadLibrary(is_pdf);
+
         mBookUri = Uri.parse(url);
+
         if (mPageLoaded) {
             eval("Viewer.loadBook(\"" + url + "\", " + IS_LEGACY + ")", null);
         } else {
@@ -712,9 +735,8 @@ public class ViewerBridge {
     private Uri mBookUri;
 
     private boolean isBookUri(Uri uri) {
-        //Avoid NPE here
-        if (mBookUri.getScheme()!=null && !mBookUri.getScheme().equals(uri.getScheme())) return false;
-        if (mBookUri.getAuthority()!=null && !mBookUri.getAuthority().equals(uri.getAuthority())) return false;
+        if (!TextUtils.equals(ROOT_URI.getScheme(), uri.getScheme())) return false;
+        if (!TextUtils.equals(ROOT_URI.getAuthority(), uri.getAuthority())) return false;
 
         List<String> seg = uri.getPathSegments();
         List<String> prefixSeg = mBookUri.getPathSegments();
@@ -756,9 +778,8 @@ public class ViewerBridge {
             }
 
             try {
-                String path = uri.getPath().substring(mBookUri.getPath().length());
-                File root = new File(System.getenv("EXTERNAL_STORAGE"), "book");
-                File file = new File(root, path);
+                String path = uri.getPath().substring(ROOT_URI.getPath().length());
+                File file = new File(ROOT_DIR, path);
 
                 if (!file.canRead()) {
                     throw new IOException(file + " can not be read");

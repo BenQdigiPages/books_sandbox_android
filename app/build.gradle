@@ -20,7 +20,7 @@ android {
     sourceSets {
         main.java.srcDirs = ['src/main/java']
         main.res.srcDirs = ['src/main/res']
-        main.assets.srcDirs = ['../viewer', 'src/main/assets']
+        main.assets.srcDirs = ['../viewer', '../books', 'src/main/assets']
     }
 }
 

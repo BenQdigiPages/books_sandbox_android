@@ -46,6 +46,14 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         setContentView(R.layout.viewer);
         getActionBar().hide();
 
+        String url = getIntent().getStringExtra("url");
+        boolean is_pdf = getIntent().getBooleanExtra("is_pdf", false);
+
+        if (url == null) {
+            finish();
+            return;
+        }
+
         mTitleBar = (RelativeLayout) findViewById(R.id.title_bar);
         mTitle = (TextView) findViewById(R.id.title);
         mWebView = (WebView) findViewById(R.id.webview);
@@ -79,7 +87,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
             }
         });
 
-        mBridge.loadBook("http://fake.benqguru.com/book/");
+        mBridge.loadBook(url, is_pdf);
     }
 
     private JSONArray mTOC;
@@ -182,12 +190,6 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         popup.add(0, "Mode: continuous", new Runnable() {
             public void run() {
                 mBridge.setLayoutMode("continuous");
-            }
-        });
-        //Qisda HenryLong add, Test local file first
-        popup.add(0, "loadBook", new Runnable() {
-            public void run() {
-                mBridge.loadBook("test.pdf");
             }
         });
 

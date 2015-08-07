@@ -73,6 +73,8 @@ public class ViewerBridge {
         settings.setAllowUniversalAccessFromFileURLs(true);
 
         mWebView.addJavascriptInterface(mCallback, "AndroidApp");
+        mWebView.loadData("", "text/html", null);
+
         mWebView.setWebViewClient(mWebViewClient);
         mWebView.setWebChromeClient(mWebChromeClient);
     }

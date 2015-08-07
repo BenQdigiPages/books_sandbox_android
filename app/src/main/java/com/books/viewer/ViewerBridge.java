@@ -15,6 +15,7 @@ import android.app.AlertDialog;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
@@ -57,6 +58,7 @@ public class ViewerBridge {
     private ViewerActivity mScene;
     private WebView mWebView;
     private Callback mCallback = new Callback();
+    private Handler mHandler = new Handler();
 
     private String mBookUri;
     private boolean mIsPdf;
@@ -378,7 +380,7 @@ public class ViewerBridge {
                 callback = mDispatchMap.remove(token);
             }
             if (callback != null) {
-                mScene.runOnUiThread(new Runnable() {
+                mHandler.post(new Runnable() {
                     @Override
                     public void run() {
                         callback.onReceiveValue(result);
@@ -394,7 +396,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onChangeTitle(final String title) {
-            mScene.runOnUiThread(new Runnable() {
+            mHandler.post(new Runnable() {
                 public void run() {
                     mScene.setTitle(title);
                 }
@@ -408,7 +410,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onChangeTOC(final String toc_json) {
-            mScene.runOnUiThread(new Runnable() {
+            mHandler.post(new Runnable() {
                 public void run() {
                     try {
                         mScene.setTableOfContent(new JSONArray(toc_json));
@@ -466,7 +468,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onToggleToolbar(final boolean visible) {
-            mScene.runOnUiThread(new Runnable() {
+            mHandler.post(new Runnable() {
                 public void run() {
                     mScene.setTitleVisible(visible);
                 }
@@ -503,7 +505,7 @@ public class ViewerBridge {
             }
 
             // should run in async
-            mScene.runOnUiThread(new Runnable() {
+            mHandler.post(new Runnable() {
                 public void run() {
                     eval(callback + "(" + list.toString() + ")", null);
                 }
@@ -533,7 +535,7 @@ public class ViewerBridge {
                 }
 
                 // should run in async
-                mScene.runOnUiThread(new Runnable() {
+                mHandler.post(new Runnable() {
                     public void run() {
                         eval(callback + "(\"" + uuid + "\")", null);
                     }
@@ -586,7 +588,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onShareHighlight(final String uuid) {
-            mScene.runOnUiThread(new Runnable() {
+            mHandler.post(new Runnable() {
                 public void run() {
                     new AlertDialog.Builder(mScene)
                             .setTitle("onShareHighlight")
@@ -603,7 +605,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onAnnotateHighlight(final String uuid) {
-            mScene.runOnUiThread(new Runnable() {
+            mHandler.post(new Runnable() {
                 public void run() {
                     new AlertDialog.Builder(mScene)
                             .setTitle("onAnnotateHighlight")
@@ -643,7 +645,7 @@ public class ViewerBridge {
             }
 
             // should run in async
-            mScene.runOnUiThread(new Runnable() {
+            mHandler.post(new Runnable() {
                 public void run() {
                     eval(callback + "(" + list.toString() + ")", null);
                 }
@@ -673,7 +675,7 @@ public class ViewerBridge {
                 }
 
                 // should run in async
-                mScene.runOnUiThread(new Runnable() {
+                mHandler.post(new Runnable() {
                     public void run() {
                         eval(callback + "(\"" + uuid + "\")", null);
                     }
@@ -727,7 +729,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onSearchResult(final String keyword, final String result_json) {
-            mScene.runOnUiThread(new Runnable() {
+            mHandler.post(new Runnable() {
                 public void run() {
                     try {
                         JSONArray result = new JSONArray(result_json);
@@ -773,7 +775,7 @@ public class ViewerBridge {
             }
 
             if (callback != null) {
-                mScene.runOnUiThread(callback);
+                mHandler.post(callback);
             }
         }
 

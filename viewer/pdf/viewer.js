@@ -32,10 +32,31 @@ var isAndroidDevice = /Android/g.test(ua);
 ///
 Viewer.loadBook = function(url, legacy) {
 
-    console.log("url= "+url + ", legacy= "+legacy);
+    console.log("url= "+ url + ", legacy= "+legacy);
 
-    // FIXME: need to parse META-INF/container.xml and get .opf, and then get the .pdf
-    url = url + "PDF/快樂王子_standard.pdf"
+    var containerDoc = null;
+    var opfDoc = null;
+
+    //Parsing container.xml and get .opf
+    var xhttp = new XMLHttpRequest();
+    xhttp.open('GET', url + "META-INF/container.xml", false);
+    xhttp.send();
+    containerDoc = xhttp.responseXML;
+    var rootFileAttr = containerDoc.getElementsByTagName("rootfile")[0].attributes;
+    var opfFile = rootFileAttr.getNamedItem("full-path").value
+    console.log("OPF file:" + opfFile);
+
+    //Parsing .pdf from .opf
+    xhttp.open('GET', url + opfFile, false);
+    xhttp.send();
+    opfDoc = xhttp.responseXML;
+
+    var attr = opfDoc.getElementById("pdf").attributes;
+    var pdfFile = attr.getNamedItem("href").value;
+    console.log("PDF file:" + pdfFile);
+
+    //combine url and pdf file path
+    url = url + pdfFile;
 
     /**
      * Asynchronously downloads PDF.

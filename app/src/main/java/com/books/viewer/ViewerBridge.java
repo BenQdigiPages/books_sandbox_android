@@ -52,8 +52,9 @@ public class ViewerBridge {
     private static final boolean IS_LEGACY = !USE_NATIVE_API || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
 
     // This is for sandbox only, sandbox has direct mapping from ROOT_URI to ROOT_DIR
-    public static final Uri ROOT_URI = Uri.parse("http://fake.benqguru.com/books/");
     public static final File ROOT_DIR = new File(System.getenv("EXTERNAL_STORAGE"), "books");
+    public static final Uri ROOT_URI = Uri.parse("http://fake.benqguru.com/books/");
+    private static final Uri ASSETS_URI = ROOT_URI.buildUpon().path("/(ASSETS)/").build();
 
     private ViewerActivity mScene;
     private WebView mWebView;
@@ -73,8 +74,6 @@ public class ViewerBridge {
         settings.setAppCacheEnabled(false);
         settings.setJavaScriptEnabled(true);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
-        settings.setAllowFileAccess(true);
-        settings.setAllowUniversalAccessFromFileURLs(true);
 
         mWebView.addJavascriptInterface(mCallback, "AndroidApp");
         mWebView.setWebViewClient(mWebViewClient);
@@ -177,9 +176,12 @@ public class ViewerBridge {
 
         loadPage("about:blank", new Runnable() {
             public void run() {
-                String libraryUrl = mIsPdf
-                        ? "file:///android_asset/pdf/index.html"
-                        : "file:///android_asset/epub/index.html";
+                String libraryUrl = ASSETS_URI.toString();
+                if (mIsPdf) {
+                    libraryUrl += "pdf/index.html";
+                } else {
+                    libraryUrl += "epub/index.html";
+                }
 
                 loadPage(libraryUrl, new Runnable() {
                     public void run() {
@@ -744,27 +746,7 @@ public class ViewerBridge {
         }
     };
 
-    private boolean isBookUri(Uri uri) {
-        if (!TextUtils.equals(ROOT_URI.getScheme(), uri.getScheme())) return false;
-        if (!TextUtils.equals(ROOT_URI.getAuthority(), uri.getAuthority())) return false;
-
-        List<String> seg = uri.getPathSegments();
-        List<String> prefixSeg = ROOT_URI.getPathSegments();
-
-        final int prefixSize = prefixSeg.size();
-        if (seg.size() < prefixSize) return false;
-
-        for (int i = 0; i < prefixSize; i++) {
-            if (!prefixSeg.get(i).equals(seg.get(i))) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     private WebViewClient mWebViewClient = new WebViewClient() {
-
         @Override
         public void onPageFinished(WebView view, String uri) {
             super.onPageFinished(view, uri);
@@ -779,15 +761,53 @@ public class ViewerBridge {
             }
         }
 
-        private WebResourceResponse shouldInterceptRequest(WebView view, Uri uri, String range) {
-            if (!isBookUri(uri)) return null;
+        private boolean isRelativeUri(Uri prefixUri, Uri uri) {
+            if (!TextUtils.equals(prefixUri.getScheme(), uri.getScheme())) return false;
+            if (!TextUtils.equals(prefixUri.getAuthority(), uri.getAuthority())) return false;
 
-            HashMap<String, String> headers = new HashMap<String, String>();
-            String mimeType = "application/octet-stream";
+            List<String> seg = uri.getPathSegments();
+            List<String> prefixSeg = prefixUri.getPathSegments();
+
+            final int prefixSize = prefixSeg.size();
+            if (seg.size() < prefixSize) return false;
+
+            for (int i = 0; i < prefixSize; i++) {
+                if (!prefixSeg.get(i).equals(seg.get(i))) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private String getMimeType(Uri uri) {
             String extension = MimeTypeMap.getFileExtensionFromUrl(uri.toString());
             if (extension != null) {
-                mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+                return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+            } else {
+                return "application/octet-stream";
             }
+        }
+
+        private WebResourceResponse loadAssetUri(WebView view, Uri uri, String range) {
+            HashMap<String, String> headers = new HashMap<String, String>();
+            String mimeType = getMimeType(uri);
+
+            try {
+                String path = uri.getPath().substring(ASSETS_URI.getPath().length());
+                InputStream inputStream = mScene.getAssets().open(path);
+                headers.put("Cache-Control", "no-cache");
+
+                return createResponse(mimeType, 200, "OK", headers, inputStream);
+            } catch (Exception e) {
+                Log.w(TAG, "fail to read asset", e);
+                return createResponse(mimeType, 404, "Not found", headers, null);
+            }
+        }
+
+        private WebResourceResponse loadBookUri(WebView view, Uri uri, String range) {
+            HashMap<String, String> headers = new HashMap<String, String>();
+            String mimeType = getMimeType(uri);
 
             try {
                 String path = uri.getPath().substring(ROOT_URI.getPath().length());
@@ -823,7 +843,6 @@ public class ViewerBridge {
                 InputStream inputStream = new FileInputStream(file);
                 int status = 200;
                 String reason = "OK";
-                headers.put("Access-Control-Allow-Origin", "*");
                 headers.put("Cache-Control", "no-cache");
                 headers.put("Accept-Ranges", "bytes");
                 headers.put("Content-Length", String.valueOf(range_length));
@@ -861,6 +880,18 @@ public class ViewerBridge {
         private WebResourceResponse _createResponse(String mimeType, int status, String reason,
                 Map<String, String> headers, InputStream inputStream) {
             return new WebResourceResponse(mimeType, "UTF-8", status, reason, headers, inputStream);
+        }
+
+        private WebResourceResponse shouldInterceptRequest(WebView view, Uri uri, String range) {
+            if (isRelativeUri(ASSETS_URI, uri)) {
+                return loadAssetUri(view, uri, range);
+            }
+
+            if (isRelativeUri(ROOT_URI, uri)) {
+                return loadBookUri(view, uri, range);
+            }
+
+            return null;
         }
 
         @Override

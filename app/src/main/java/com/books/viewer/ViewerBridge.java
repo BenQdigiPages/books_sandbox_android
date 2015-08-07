@@ -809,18 +809,20 @@ public class ViewerBridge {
                     }
                 }
 
+                final long range_length = range_end - range_start + 1;
                 InputStream inputStream = new FileInputStream(file);
                 int status = 200;
                 String reason = "OK";
                 headers.put("Access-Control-Allow-Origin", "*");
                 headers.put("Cache-Control", "no-cache");
                 headers.put("Accept-Ranges", "bytes");
+                headers.put("Content-Length", String.valueOf(range_length));
 
                 if (partial) {
                     if (range_start > 0) {
                         inputStream.skip(range_start);
                     }
-                    inputStream = new BoundedInputStream(inputStream, range_end - range_start + 1);
+                    inputStream = new BoundedInputStream(inputStream, range_length);
                     status = 206;
                     reason = "Partial content";
                     headers.put("Content-Range", String.format("bytes %d-%d/%d", range_start, range_end, length));

@@ -869,10 +869,10 @@ public class ViewerBridge {
             if (inputStream == null) {
                 inputStream = new ByteArrayInputStream(new byte[0]);
             }
-            if (USE_NATIVE_API && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                return _createResponse(mimeType, status, reason, headers, inputStream);
-            } else {
+            if (IS_LEGACY) {
                 return new WebResourceResponse(mimeType, "UTF-8", inputStream);
+            } else {
+                return _createResponse(mimeType, status, reason, headers, inputStream);
             }
         }
 
@@ -907,7 +907,11 @@ public class ViewerBridge {
         @Override
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-            return shouldInterceptRequest(view, request.getUrl(), request.getRequestHeaders().get("Range"));
+            if (IS_LEGACY) {
+                return super.shouldInterceptRequest(view, request);
+            } else {
+                return shouldInterceptRequest(view, request.getUrl(), request.getRequestHeaders().get("Range"));
+            }
         }
 
         @Override

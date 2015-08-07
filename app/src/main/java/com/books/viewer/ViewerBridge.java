@@ -57,9 +57,11 @@ public class ViewerBridge {
     private ViewerActivity mScene;
     private WebView mWebView;
     private Callback mCallback = new Callback();
-    private Boolean mIsPdf;
-    private boolean mPageLoaded = false;
-    private boolean mLoadBookAfterPageLoaded = false;
+
+    private String mBookUri;
+    private boolean mIsPdf;
+    private boolean mIsLibraryLoaded;
+    private HashMap<String, Runnable> onPageFinishedCallback = new HashMap<String, Runnable>();
 
     public ViewerBridge(ViewerActivity scene, WebView webView) {
         mScene = scene;
@@ -73,28 +75,15 @@ public class ViewerBridge {
         settings.setAllowUniversalAccessFromFileURLs(true);
 
         mWebView.addJavascriptInterface(mCallback, "AndroidApp");
-        mWebView.loadData("", "text/html", null);
-
         mWebView.setWebViewClient(mWebViewClient);
         mWebView.setWebChromeClient(mWebChromeClient);
     }
 
-    private void loadLibrary(boolean is_pdf) {
-        if (mIsPdf != null) {
-            if (mIsPdf == is_pdf) return;
-
-            // reset all states
-            mWebView.loadUrl("about:blank");
+    private void loadPage(String url, Runnable callback) {
+        synchronized (onPageFinishedCallback) {
+            onPageFinishedCallback.put(url, callback);
         }
-
-        mIsPdf = is_pdf;
-        eval(loadAssetAsString("ViewerBridge.js"), null);
-
-        if (mIsPdf) {
-            mWebView.loadUrl("file:///android_asset/pdf/index.html");
-        } else {
-            mWebView.loadUrl("file:///android_asset/epub/index.html");
-        }
+        mWebView.loadUrl(url);
     }
 
     private String loadAssetAsString(String name) {
@@ -174,17 +163,36 @@ public class ViewerBridge {
     /// @url: string - base url of ebook
     /// @legacy: bool - true if legacy mode is needed
     ///
-    public void loadBook(String url, boolean is_pdf) {
-        loadLibrary(is_pdf);
+    public void loadBook(final String url, boolean isPdf) {
+        mBookUri = url;
 
-        mBookUri = Uri.parse(url);
-
-        if (mPageLoaded) {
-            eval("Viewer.loadBook(\"" + url + "\", " + IS_LEGACY + ")", null);
-        } else {
-            Log.w(TAG,"loadbook called before paged loaded");
-            mLoadBookAfterPageLoaded = true;
+        if (mIsLibraryLoaded && mIsPdf == isPdf) {
+            reloadBook();
+            return;
         }
+
+        mIsPdf = isPdf;
+
+        loadPage("about:blank", new Runnable() {
+            public void run() {
+                eval(loadAssetAsString("ViewerBridge.js"), null);
+
+                String libraryUrl = mIsPdf
+                        ? "file:///android_asset/pdf/index.html"
+                        : "file:///android_asset/epub/index.html";
+
+                loadPage(libraryUrl, new Runnable() {
+                    public void run() {
+                        mIsLibraryLoaded = true;
+                        reloadBook();
+                    }
+                });
+            }
+        });
+    }
+
+    private void reloadBook() {
+        eval("Viewer.loadBook(\"" + mBookUri + "\", " + IS_LEGACY + ")", null);
     }
 
     ///
@@ -734,14 +742,12 @@ public class ViewerBridge {
         }
     };
 
-    private Uri mBookUri;
-
     private boolean isBookUri(Uri uri) {
         if (!TextUtils.equals(ROOT_URI.getScheme(), uri.getScheme())) return false;
         if (!TextUtils.equals(ROOT_URI.getAuthority(), uri.getAuthority())) return false;
 
         List<String> seg = uri.getPathSegments();
-        List<String> prefixSeg = mBookUri.getPathSegments();
+        List<String> prefixSeg = ROOT_URI.getPathSegments();
 
         final int prefixSize = prefixSeg.size();
         if (seg.size() < prefixSize) return false;
@@ -760,12 +766,14 @@ public class ViewerBridge {
         @Override
         public void onPageFinished(WebView view, String uri) {
             super.onPageFinished(view, uri);
-            mPageLoaded = true;
 
-            // Check if need to load book when page is finished.
-            if (mLoadBookAfterPageLoaded) {
-                mLoadBookAfterPageLoaded = false;
-                eval("Viewer.loadBook(\"" + mBookUri.toString() + "\", " + IS_LEGACY + ")", null);
+            final Runnable callback;
+            synchronized (onPageFinishedCallback) {
+                callback = onPageFinishedCallback.remove(uri);
+            }
+
+            if (callback != null) {
+                mScene.runOnUiThread(callback);
             }
         }
 

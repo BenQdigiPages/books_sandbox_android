@@ -177,15 +177,15 @@ public class ViewerBridge {
 
         loadPage("about:blank", new Runnable() {
             public void run() {
-                eval(loadAssetAsString("ViewerBridge.js"), null);
-
                 String libraryUrl = mIsPdf
                         ? "file:///android_asset/pdf/index.html"
                         : "file:///android_asset/epub/index.html";
 
                 loadPage(libraryUrl, new Runnable() {
                     public void run() {
+                        eval(loadAssetAsString("ViewerBridge.js"), null);
                         mIsLibraryLoaded = true;
+
                         reloadBook();
                     }
                 });

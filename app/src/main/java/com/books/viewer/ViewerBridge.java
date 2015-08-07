@@ -56,15 +56,22 @@ public class ViewerBridge {
     public static final Uri ROOT_URI = Uri.parse("http://fake.benqguru.com/books/");
     private static final Uri ASSETS_URI = ROOT_URI.buildUpon().path("/(ASSETS)/").build();
 
+    public static final String LAYOUT_SINGLE = "single";
+    public static final String LAYOUT_SIDE_BY_SIDE = "side_by_side";
+    public static final String LAYOUT_CONTINUOUS = "continuous";
+
     private ViewerActivity mScene;
     private WebView mWebView;
-    private Callback mCallback = new Callback();
+    private JavascriptCallback mJavascriptInterface = new JavascriptCallback();
     private Handler mHandler = new Handler();
 
     private String mBookUri;
     private boolean mIsPdf;
     private boolean mIsLibraryLoaded;
-    private HashMap<String, Runnable> onPageFinishedCallback = new HashMap<String, Runnable>();
+    private HashMap<String, Runnable> mLoadUrlCallbacks = new HashMap<String, Runnable>();
+
+    private int mEvalToken = 1;
+    private HashMap<Integer, ValueCallback<String>> mEvalCallbacks = new HashMap<Integer, ValueCallback<String>>();
 
     public ViewerBridge(ViewerActivity scene, WebView webView) {
         mScene = scene;
@@ -75,14 +82,14 @@ public class ViewerBridge {
         settings.setJavaScriptEnabled(true);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
 
-        mWebView.addJavascriptInterface(mCallback, "AndroidApp");
+        mWebView.addJavascriptInterface(mJavascriptInterface, "_App");
         mWebView.setWebViewClient(mWebViewClient);
         mWebView.setWebChromeClient(mWebChromeClient);
     }
 
-    private void loadPage(String url, Runnable callback) {
-        synchronized (onPageFinishedCallback) {
-            onPageFinishedCallback.put(url, callback);
+    private void loadUrl(String url, Runnable callback) {
+        synchronized (mLoadUrlCallbacks) {
+            mLoadUrlCallbacks.put(url, callback);
         }
         mWebView.loadUrl(url);
     }
@@ -134,9 +141,9 @@ public class ViewerBridge {
             _eval(script, callback);
         } else if (callback != null) {
             int token;
-            synchronized (mDispatchMap) {
-                token = mToken++;
-                mDispatchMap.put(token, callback);
+            synchronized (mEvalCallbacks) {
+                token = mEvalToken++;
+                mEvalCallbacks.put(token, callback);
             }
             script = "JSON.stringify(" + script + ")";
             mWebView.loadUrl("javascript:App.onDispatchResult(" + token + ", " + script + ")");
@@ -144,13 +151,6 @@ public class ViewerBridge {
             mWebView.loadUrl("javascript:" + script);
         }
     }
-
-    private int mToken = 1;
-    private HashMap<Integer, ValueCallback<String>> mDispatchMap = new HashMap<Integer, ValueCallback<String>>();
-
-    public static final String LAYOUT_SINGLE = "single";
-    public static final String LAYOUT_SIDE_BY_SIDE = "side_by_side";
-    public static final String LAYOUT_CONTINUOUS = "continuous";
 
     ///
     /// Load ebook from server url
@@ -174,7 +174,7 @@ public class ViewerBridge {
 
         mIsPdf = isPdf;
 
-        loadPage("about:blank", new Runnable() {
+        loadUrl("about:blank", new Runnable() {
             public void run() {
                 String libraryUrl = ASSETS_URI.toString();
                 if (mIsPdf) {
@@ -183,7 +183,7 @@ public class ViewerBridge {
                     libraryUrl += "epub/index.html";
                 }
 
-                loadPage(libraryUrl, new Runnable() {
+                loadUrl(libraryUrl, new Runnable() {
                     public void run() {
                         eval(loadAssetAsString("ViewerBridge.js"), null);
                         mIsLibraryLoaded = true;
@@ -374,16 +374,15 @@ public class ViewerBridge {
         eval("Viewer.searchText(null)", null);
     }
 
-    public class Callback {
+    public class JavascriptCallback {
         @JavascriptInterface
         public void onDispatchResult(int token, final String result) {
             final ValueCallback<String> callback;
-            synchronized (mDispatchMap) {
-                callback = mDispatchMap.remove(token);
+            synchronized (mEvalCallbacks) {
+                callback = mEvalCallbacks.remove(token);
             }
             if (callback != null) {
                 mHandler.post(new Runnable() {
-                    @Override
                     public void run() {
                         callback.onReceiveValue(result);
                     }
@@ -752,8 +751,8 @@ public class ViewerBridge {
             super.onPageFinished(view, uri);
 
             final Runnable callback;
-            synchronized (onPageFinishedCallback) {
-                callback = onPageFinishedCallback.remove(uri);
+            synchronized (mLoadUrlCallbacks) {
+                callback = mLoadUrlCallbacks.remove(uri);
             }
 
             if (callback != null) {

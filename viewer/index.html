@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link rel="stylesheet" href="viewer.css"/>
+    <link rel="stylesheet" href="owlcarousel/owl.carousel.css">
+    <link rel="stylesheet" href="owlcarousel/owl.theme.default.min.css">
     <style type="text/css">
         html, body {
             margin: 0;
@@ -27,6 +29,19 @@
 
     <!-- Part of viewer.js from PDF.js package need merge into our viewer.js -->
     <script src="viewer.js"></script>
+
+    <!-- NOTE : jquery and owl.carousel must be put in the bottom of <head></head> -->
+    <script src="jquery-2.1.4.min.js"></script>
+    <script src="owlcarousel/owl.carousel.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            $('.owl-carousel').owlCarousel({
+                items: 1,
+                margin: 0,
+                rtl: true,
+            });
+        });
+    </script>
 </head>
 
 <body tabindex="1" class="loadingInProgress">
@@ -55,6 +70,7 @@
         <h1>Canvas for render pdf</h1>
     </div>
 
+    <!-- 
     <div id="outerContainer">
         <div id="mainContainer">
             <div id="viewerContainer" tabindex="0">
@@ -62,7 +78,14 @@
             </div>
         </div> <!-- mainContainer -->
     </div> <!-- outerContainer -->
-
+    -->
+    <div id="outerContainer">
+        <div id="mainContainer">
+            <div id="viewerContainer">
+                <div id="viewer" class="owl-carousel"></div>
+            </div>
+        </div> <!-- mainContainer -->
+    </div> <!-- outerContainer -->
     <!-- 
         <canvas id="the-canvas" style="border:0px solid black"></canvas>
     -->

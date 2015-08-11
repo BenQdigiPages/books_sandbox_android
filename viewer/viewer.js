@@ -4071,13 +4071,21 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     var div = document.createElement('div');
     div.id = 'pageContainer' + this.id;
-    div.className = 'page';
+    //[Bruce]
+    //div.className = 'page';
+    div.className = 'item';
+    //End : [Bruce]
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';
     div.setAttribute('data-page-number', this.id);
     this.div = div;
 
-    container.appendChild(div);
+    //[Bruce]
+    //container.appendChild(div);
+    var owl = $('.owl-carousel');
+    owl.owlCarousel();
+    owl.trigger('add.owl.carousel',[this.div,(this.id - 1)]);
+    //End : [Bruce]
   }
 
   PDFPageView.prototype = {

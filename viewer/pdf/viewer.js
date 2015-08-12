@@ -14,11 +14,26 @@ var pdfDoc = null,
     currentLayoutMode = "single",
     currentTouchs = [],
     tmpBookmark = null,
-    savedBookmarks = [];
+    savedBookmarks = [],
+    pdfOutlineArray = null,
+    pdfLinkService = null;
 
 var ua = navigator.userAgent;
 var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
 var isAndroidDevice = /Android/g.test(ua);
+
+function pdfStoreOutline(outline, level){
+   for (var i = 0, len = outline.length; i < len; i++) {
+     var item = outline[i];
+     pdfOutlineArray.push({outline:item, level:level});
+     if(item.items.length > 0){
+      level++;
+      pdfStoreOutline(item.items, level);     
+     }
+     if( i == (len -1))
+      level--;
+   }
+}
 
 ///
 /// Load ebook from server url
@@ -68,6 +83,44 @@ Viewer.loadBook = function(url, legacy) {
 
         // Initial/first page rendering
         renderPage(currentPageNum);
+        //callback title
+        pdfDoc.getMetadata().then(function(data) {
+        	var info = data.info, metadata = data.metadata;
+      	var pdfTitle;
+      	if (metadata && metadata.has('dc:title')) {
+        		var title = metadata.get('dc:title');
+        		// Ghostscript sometimes return 'Untitled', sets the title to 'Untitled'
+       		if (title !== 'Untitled') {
+          			pdfTitle = title;
+        		}
+      	}
+
+      	if (!pdfTitle && info && info['Title']) {
+        		pdfTitle = info['Title'];
+      	}
+
+      	if (pdfTitle) {
+        		App.onChangeTitle(pdfTitle);
+      	}
+        });
+        //for TOC page parse
+        pdfLinkService = new PDFLinkService();
+        pdfLinkService.setDocument(pdfDoc, null);
+        //callback TOC
+        pdfDoc.getOutline().then(function(outline) {
+        	pdfOutlineArray = new Array();
+        	pdfStoreOutline(outline, 0);
+        	var tocarray = new Array();
+        	for (var i = 0, len = pdfOutlineArray.length; i < len; i++) {
+        		tocarray.push(
+        		{
+        			title:pdfOutlineArray[i].outline.title,
+        			url:i.toString(),
+        			level:pdfOutlineArray[i].level
+        		});         		
+            	}
+            	App.onChangeTOC(tocarray);
+         });
     });
 
     //Request bookmarks from app when book is loaded.
@@ -166,7 +219,9 @@ Viewer.getCurrentPosition = function() {
 /// @link: string - target file link (relative to base url)
 ///
 Viewer.gotoLink = function(link) {
-    window.alert("Viewer.gotoLink=" + link)
+   var index = parseInt(link);
+   var dest = pdfOutlineArray[index].outline.dest;
+   pdfLinkService.navigateTo(dest);
 }
 
 ///
@@ -182,6 +237,7 @@ Viewer.gotoPosition = function(cfi) {
         if (pageNum < 0 || pageNum > pdfDoc.numPages) {
             return;
         }
+        currentPageNum = pageNum;
         queueRenderPage(pageNum);
     }
 }
@@ -534,7 +590,7 @@ function renderPage(num) {
     if (prePageNum != num) {
         prePageNum = num;
         //chapter not implement
-        App.onChangePage("", num, num, pdfDoc.numPages);
+//        App.onChangePage("", num, num, pdfDoc.numPages);
     }
     pageRendering = true;
     // Using promise to fetch the page
@@ -2103,8 +2159,11 @@ var PDFLinkService = (function () {
           if (pageNumber > self.pagesCount) {
             pageNumber = self.pagesCount;
           }
-          self.pdfViewer.scrollPageIntoView(pageNumber, dest);
-
+           //esther, oem custom viewer
+ //          self.pdfViewer.scrollPageIntoView(pageNumber, dest);         
+          currentPageNum = pageNumber;
+          queueRenderPage(currentPageNum); 
+          
           if (self.pdfHistory) {
             // Update the browsing history.
             self.pdfHistory.push({

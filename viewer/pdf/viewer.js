@@ -590,7 +590,7 @@ function renderPage(num) {
     if (prePageNum != num) {
         prePageNum = num;
         //chapter not implement
-//        App.onChangePage("", num, num, pdfDoc.numPages);
+        App.onChangePage("", num, num, pdfDoc.numPages);
     }
     pageRendering = true;
     // Using promise to fetch the page

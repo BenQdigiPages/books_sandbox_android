@@ -797,10 +797,10 @@ public class ViewerBridge {
                 InputStream inputStream = mScene.getAssets().open(path);
                 headers.put("Cache-Control", "no-cache");
 
-                return createResponse(mimeType, 200, "OK", headers, inputStream);
+                return createResponse(mimeType, 200, "OK", headers, inputStream, 0);
             } catch (Exception e) {
                 Log.w(TAG, "fail to read asset", e);
-                return createResponse(mimeType, 404, "Not found", headers, null);
+                return createResponse(mimeType, 404, "Not found", headers, null, 0);
             }
         }
 
@@ -830,7 +830,7 @@ public class ViewerBridge {
                         long end = str.isEmpty() ? length - 1 : Long.parseLong(str);
                         if (start >= length || end >= length || start > end) {
                             Log.w(TAG, "request out of range: " + range);
-                            return createResponse(mimeType, 416, "Requested range not satisfiable", headers, null);
+                            return createResponse(mimeType, 416, "Requested range not satisfiable", headers, null, length);
                         }
                         range_start = start;
                         range_end = end;
@@ -838,37 +838,36 @@ public class ViewerBridge {
                     }
                 }
 
-                final long range_length = range_end - range_start + 1;
                 InputStream inputStream = new FileInputStream(file);
                 int status = 200;
                 String reason = "OK";
                 headers.put("Cache-Control", "no-cache");
                 headers.put("Accept-Ranges", "bytes");
-                headers.put("Content-Length", String.valueOf(range_length));
+                headers.put("Content-Encoding", "identity");
 
                 if (partial) {
-                    if (range_start > 0) {
-                        inputStream.skip(range_start);
-                    }
-                    inputStream = new BoundedInputStream(inputStream, range_length);
+                    inputStream = new BrokenInputStream(inputStream, range_start, range_end + 1, length);
                     status = 206;
                     reason = "Partial content";
                     headers.put("Content-Range", String.format("bytes %d-%d/%d", range_start, range_end, length));
                 }
 
-                return createResponse(mimeType, status, reason, headers, inputStream);
+                return createResponse(mimeType, status, reason, headers, inputStream, length);
             } catch (Exception e) {
                 Log.w(TAG, "fail to read file", e);
-                return createResponse(mimeType, 404, "Not found", headers, null);
+                return createResponse(mimeType, 404, "Not found", headers, null, 0);
             }
         }
 
         private WebResourceResponse createResponse(String mimeType, int status, String reason,
-                Map<String, String> headers, InputStream inputStream) {
+                Map<String, String> headers, InputStream inputStream, long totalLength) {
             if (inputStream == null) {
                 inputStream = new ByteArrayInputStream(new byte[0]);
             }
             if (IS_LEGACY) {
+                if (status == 206) {
+                    mimeType += "; size=" + totalLength;
+                }
                 return new WebResourceResponse(mimeType, "UTF-8", inputStream);
             } else {
                 return _createResponse(mimeType, status, reason, headers, inputStream);

@@ -28,7 +28,7 @@ function pdfStoreOutline(outline, level){
      pdfOutlineArray.push({outline:item, level:level});
      if(item.items.length > 0){
       level++;
-      pdfStoreOutline(item.items, level);     
+      pdfStoreOutline(item.items, level);
      }
      if( i == (len -1))
       level--;
@@ -50,6 +50,10 @@ function pdfStoreOutline(outline, level){
 Viewer.loadBook = function(url, legacy) {
 
     console.log("url= "+ url + ", legacy= "+legacy);
+
+    // turn on streaming for App
+    PDFJS.disableRange = false;
+    PDFJS.disableStream = false;
 
     var containerDoc = null;
     var opfDoc = null;
@@ -117,7 +121,7 @@ Viewer.loadBook = function(url, legacy) {
         			title:pdfOutlineArray[i].outline.title,
         			url:i.toString(),
         			level:pdfOutlineArray[i].level
-        		});         		
+        		});
             	}
             	App.onChangeTOC(tocarray);
          });
@@ -2160,10 +2164,10 @@ var PDFLinkService = (function () {
             pageNumber = self.pagesCount;
           }
            //esther, oem custom viewer
- //          self.pdfViewer.scrollPageIntoView(pageNumber, dest);         
+ //          self.pdfViewer.scrollPageIntoView(pageNumber, dest);
           currentPageNum = pageNumber;
-          queueRenderPage(currentPageNum); 
-          
+          queueRenderPage(currentPageNum);
+
           if (self.pdfHistory) {
             // Update the browsing history.
             self.pdfHistory.push({

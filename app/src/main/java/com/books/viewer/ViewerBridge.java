@@ -865,7 +865,7 @@ public class ViewerBridge {
                 inputStream = new ByteArrayInputStream(new byte[0]);
             }
             if (IS_LEGACY) {
-                if (status == 206) {
+                if (status == 206 || status == 416) {
                     mimeType += "; size=" + totalLength;
                 }
                 return new WebResourceResponse(mimeType, "UTF-8", inputStream);

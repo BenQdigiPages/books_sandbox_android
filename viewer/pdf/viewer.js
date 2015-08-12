@@ -12,7 +12,9 @@ var pdfDoc = null,
     touchStartX = 0.0,
     touchStartY = 0.0,
     currentLayoutMode = "single",
-    currentTouchs = [];
+    currentTouchs = [],
+    tmpBookmark = null,
+    savedBookmarks = [];
 
 var ua = navigator.userAgent;
 var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
@@ -67,6 +69,9 @@ Viewer.loadBook = function(url, legacy) {
         // Initial/first page rendering
         renderPage(currentPageNum);
     });
+
+    //Request bookmarks from app when book is loaded.
+    App.onRequestBookmarks("bookmarks", "RequestBookmarksCallback")
 
 }
 
@@ -197,36 +202,53 @@ Viewer.gotoPosition = function(cfi) {
 Viewer.toggleBookmark = function(color) {
     console.log("Viewer.toggleBookmark=" + color);
     if (color !== null) {
-        if (false /*Current page has bookmark*/) {
-            //TODO:update bookmark in history
-            var bookmark = {
-               "uuid": "",
-               "title": "",
-               "cfi": currentPageNum,
-               "color": [0, 0, 0]
-            };
+        var bookmark = null;
+        if ((bookmark = isBookmarkExist()) !== null) {
+            bookmark.color = color;
             App.onUpdateBookmark(bookmark);
         } else {
-            //TODO:Add bookmark in history
-            var bookmark = {
+            //send tmp bookmark to app for getting uuid.
+            tmpBookmark = {
                "uuid": "",
                "title": "",
                "cfi": currentPageNum,
-               "color": [0, 0, 0]
+               "color": color
             };
-            App.onAddBookmark("",bookmark,"AddBookmarkCallBack");
+            App.onAddBookmark("bookmarks",tmpBookmark,"AddBookmarkCallBack");
         }
     } else {
         //Remove bookmark in current page.
-        if (/*current page has bookmark*/ true) {
-            //TODO: Remove bookmark from history
-            App.onRemoveBookmark("uuid");
+        var bookmark = null;
+        if ((bookmark = isBookmarkExist()) !== null) {
+            App.onRemoveBookmark(bookmark.uuid);
         }
     }
 }
 
+function RequestBookmarksCallback(bookmarks) {
+    console.log("RequestBookmarksCallback:" + JSON.stringify(bookmarks));
+    savedBookmarks = bookmarks;
+}
+
 function AddBookmarkCallBack(uuid) {
     console.log("AddBookmarkCallBack uuid:" + uuid);
+    //update uuid in tmpBookmark and push it to savedBookmarks.
+    tmpBookmark['uuid'] = uuid;
+    savedBookmarks.push(tmpBookmark);
+    tmpBookmark = null;
+}
+
+///
+/// Check if current page has bookmark in saved bookmarks.
+/// return null if not found, or saved bookmark in current page if exist.
+///
+function isBookmarkExist() {
+    for(var i in savedBookmarks) {
+        if (savedBookmarks[i].cfi === currentPageNum) {
+            return savedBookmarks[i];
+        }
+    }
+    return null;
 }
 
 ///

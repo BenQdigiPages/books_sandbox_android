@@ -1690,6 +1690,10 @@ var NetworkManager = (function NetworkManagerClosure() {
       return this.request(args);
     },
 
+    requestFileSize: function NetworkManager_requestFull(listeners) {
+      return this.request(listeners);
+    },
+
     requestFull: function NetworkManager_requestFull(listeners) {
       return this.request(listeners);
     },
@@ -1712,6 +1716,7 @@ var NetworkManager = (function NetworkManagerClosure() {
       }
       if (this.isHttp && 'begin' in args && 'end' in args) {
         var rangeStr = args.begin + '-' + (args.end - 1);
+        console.log("request rangeStr:" + rangeStr);
         xhr.setRequestHeader('Range', 'bytes=' + rangeStr);
         pendingRequest.expectedStatus = 206;
       } else {
@@ -1775,6 +1780,7 @@ var NetworkManager = (function NetworkManagerClosure() {
       var pendingRequest = this.pendingRequests[xhrId];
       if (!pendingRequest) {
         // Maybe abortRequest was called...
+        console.log("onStateChange  Maybe abortRequest was called...");
         return;
       }
 
@@ -1801,6 +1807,7 @@ var NetworkManager = (function NetworkManagerClosure() {
         if (pendingRequest.onError) {
           pendingRequest.onError(xhr.status);
         }
+        console.log("onStateChange !!! xhr.status = 0");
         return;
       }
       var xhrStatus = xhr.status || OK_RESPONSE;
@@ -1825,8 +1832,12 @@ var NetworkManager = (function NetworkManagerClosure() {
       var chunk = getArrayBuffer(xhr);
       if (xhrStatus === PARTIAL_CONTENT_RESPONSE) {
         var rangeHeader = xhr.getResponseHeader('Content-Range');
+        console.log("onStateChange rangeHeader: " + rangeHeader);
+        console.log("onStateChange Cache-Control: " + xhr.getResponseHeader('Cache-Control'));
+        console.log("onStateChange Content-Length: " + xhr.getResponseHeader('Content-Length'));
         var matches = /bytes (\d+)-(\d+)\/(\d+)/.exec(rangeHeader);
         var begin = parseInt(matches[1], 10);
+        console.log("onStateChange onDone() begin:" + begin  + ", chunk.byteLength: "+ chunk.byteLength);
         pendingRequest.onDone({
           begin: begin,
           chunk: chunk
@@ -1834,6 +1845,7 @@ var NetworkManager = (function NetworkManagerClosure() {
       } else if (pendingRequest.onProgressiveData) {
         pendingRequest.onDone(null);
       } else {
+        console.log("onStateChange onDone() begin:" + begin  + ", chunk.byteLength: "+ chunk.byteLength);
         pendingRequest.onDone({
           begin: 0,
           chunk: chunk
@@ -2228,6 +2240,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         var groupedChunk = groupedChunksToRequest[i];
         var begin = groupedChunk.beginChunk * this.chunkSize;
         var end = Math.min(groupedChunk.endChunk * this.chunkSize, this.length);
+        console.log('requestChunks('+begin+', ' + end +')');
         this.sendRequest(begin, end);
       }
     },
@@ -2303,6 +2316,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     onProgress: function ChunkedStreamManager_onProgress(args) {
       var bytesLoaded = (this.stream.numChunksLoaded * this.chunkSize +
                          args.loaded);
+      console.log('onProgress() ' + bytesLoaded + '/' + this.length);
       this.msgHandler.send('DocProgress', {
         loaded: bytesLoaded,
         total: this.length
@@ -34194,120 +34208,115 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         withCredentials: source.withCredentials
       });
       var cachedChunks = [];
-      var fullRequestXhrId = networkManager.requestFull({
+
+      //get book file size first
+      var fileSizeRequestXhrId = networkManager.requestFileSize({
+        begin: 0,
+        end: 1024,
         onHeadersReceived: function onHeadersReceived() {
-          if (disableRange) {
-            return;
-          }
-
-          var fullRequestXhr = networkManager.getRequestXhr(fullRequestXhrId);
-          if (fullRequestXhr.getResponseHeader('Accept-Ranges') !== 'bytes') {
-            return;
-          }
-
-          var contentEncoding =
-            fullRequestXhr.getResponseHeader('Content-Encoding') || 'identity';
-          if (contentEncoding !== 'identity') {
-            return;
-          }
-
-          var length = fullRequestXhr.getResponseHeader('Content-Length');
-          length = parseInt(length, 10);
-          if (!isInt(length)) {
-            return;
-          }
-          source.length = length;
-          if (length <= 2 * RANGE_CHUNK_SIZE) {
-            // The file size is smaller than the size of two chunks, so it does
-            // not make any sense to abort the request and retry with a range
-            // request.
-            return;
-          }
-
-          if (networkManager.isStreamingRequest(fullRequestXhrId)) {
-            // We can continue fetching when progressive loading is enabled,
-            // and we don't need the autoFetch feature.
-            source.disableAutoFetch = true;
-          } else {
-            // NOTE: by cancelling the full request, and then issuing range
-            // requests, there will be an issue for sites where you can only
-            // request the pdf once. However, if this is the case, then the
-            // server should not be returning that it can support range
-            // requests.
-            networkManager.abortRequest(fullRequestXhrId);
-          }
-
-          try {
-            pdfManager = new NetworkPdfManager(source, handler);
-            pdfManagerCapability.resolve(pdfManager);
-          } catch (ex) {
-            pdfManagerCapability.reject(ex);
-          }
+          var fileSizeRequestXhr = networkManager.getRequestXhr(fileSizeRequestXhrId);
+          var res = fileSizeRequestXhr.getResponseHeader('Content-Range').split("/");
+          source.length = res[1];
         },
-
-        onProgressiveData: source.disableStream ? null :
-            function onProgressiveData(chunk) {
-          if (!pdfManager) {
-            cachedChunks.push(chunk);
-            return;
-          }
-          pdfManager.sendProgressiveData(chunk);
-        },
-
         onDone: function onDone(args) {
-          if (pdfManager) {
-            return; // already processed
-          }
+          console.log('disableRange: ' + disableRange);
 
-          var pdfFile;
-          if (args === null) {
-            // TODO add some streaming manager, e.g. for unknown length files.
-            // The data was returned in the onProgressiveData, combining...
-            var pdfFileLength = 0, pos = 0;
-            cachedChunks.forEach(function (chunk) {
-              pdfFileLength += chunk.byteLength;
-            });
-            if (source.length && pdfFileLength !== source.length) {
-              warn('reported HTTP length is different from actual');
+          if (!disableRange && source.length > 2 * RANGE_CHUNK_SIZE) {
+            console.log('requestRange()');
+            try {
+              pdfManager = new NetworkPdfManager(source, handler);
+              pdfManagerCapability.resolve(pdfManager);
+            } catch (ex) {
+              pdfManagerCapability.reject(ex);
             }
-            var pdfFileArray = new Uint8Array(pdfFileLength);
-            cachedChunks.forEach(function (chunk) {
-              pdfFileArray.set(new Uint8Array(chunk), pos);
-              pos += chunk.byteLength;
-            });
-            pdfFile = pdfFileArray.buffer;
           } else {
-            pdfFile = args.chunk;
-          }
+            console.log('requestFull()');
+            var fullRequestXhrId = networkManager.requestFull({
+              onHeadersReceived: function onHeadersReceived() {
+                if (disableRange) {
+                  return;
+                }
 
-          // the data is array, instantiating directly from it
-          try {
-            pdfManager = new LocalPdfManager(pdfFile, source.password);
-            pdfManagerCapability.resolve();
-          } catch (ex) {
-            pdfManagerCapability.reject(ex);
-          }
-        },
+                var fullRequestXhr = networkManager.getRequestXhr(fullRequestXhrId);
+                if (fullRequestXhr.getResponseHeader('Accept-Ranges') !== 'bytes') {
+                  console.log('onHeadersReceived() Accept-Ranges != bytes');
+                  return;
+                }
 
-        onError: function onError(status) {
-          var exception;
-          if (status === 404) {
-            exception = new MissingPDFException('Missing PDF "' +
+                var contentEncoding =
+                  fullRequestXhr.getResponseHeader('Content-Encoding') || 'identity';
+                if (contentEncoding !== 'identity') {
+                  return;
+                }
+              },
+
+              onProgressiveData: source.disableStream ? null :
+                  function onProgressiveData(chunk) {
+                if (!pdfManager) {
+                  cachedChunks.push(chunk);
+                  return;
+                }
+                pdfManager.sendProgressiveData(chunk);
+              },
+
+              onDone: function onDone(args) {
+                if (pdfManager) {
+                  return; // already processed
+                }
+
+                var pdfFile;
+                if (args === null) {
+                  // TODO add some streaming manager, e.g. for unknown length files.
+                  // The data was returned in the onProgressiveData, combining...
+                  var pdfFileLength = 0, pos = 0;
+                  cachedChunks.forEach(function (chunk) {
+                    pdfFileLength += chunk.byteLength;
+                  });
+                  if (source.length && pdfFileLength !== source.length) {
+                    warn('reported HTTP length is different from actual');
+                  }
+                  var pdfFileArray = new Uint8Array(pdfFileLength);
+                  cachedChunks.forEach(function (chunk) {
+                    pdfFileArray.set(new Uint8Array(chunk), pos);
+                    pos += chunk.byteLength;
+                  });
+                  pdfFile = pdfFileArray.buffer;
+                } else {
+                  pdfFile = args.chunk;
+                }
+
+                // the data is array, instantiating directly from it
+                try {
+                  pdfManager = new LocalPdfManager(pdfFile, source.password);
+                  pdfManagerCapability.resolve();
+                } catch (ex) {
+                  pdfManagerCapability.reject(ex);
+                }
+              },
+
+              onError: function onError(status) {
+                var exception;
+                if (status === 404) {
+                  exception = new MissingPDFException('Missing PDF "' +
                                                 source.url + '".');
-            handler.send('MissingPDF', exception);
-          } else {
-            exception = new UnexpectedResponseException(
-              'Unexpected server response (' + status +
-              ') while retrieving PDF "' + source.url + '".', status);
-            handler.send('UnexpectedResponse', exception);
-          }
-        },
+                  handler.send('MissingPDF', exception);
+                } else {
+                  exception = new UnexpectedResponseException(
+                    'Unexpected server response (' + status +
+                    ') while retrieving PDF "' + source.url + '".', status);
+                  handler.send('UnexpectedResponse', exception);
+                }
+              },
 
-        onProgress: function onProgress(evt) {
-          handler.send('DocProgress', {
-            loaded: evt.loaded,
-            total: evt.lengthComputable ? evt.total : source.length
-          });
+              onProgress: function onProgress(evt) {
+                console.log('onProgress(' + evt.loaded + '/' + evt.total +')');
+                handler.send('DocProgress', {
+                  loaded: evt.loaded,
+                  total: evt.lengthComputable ? evt.total : source.length
+                });
+              }
+            });
+          }
         }
       });
 
@@ -34345,10 +34354,12 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     handler.on('GetDocRequest', function wphSetupDoc(data) {
 
       var onSuccess = function(doc) {
+        console.log("GetDocRequest() onSuccess");
         handler.send('GetDoc', { pdfInfo: doc });
       };
 
       var onFailure = function(e) {
+        console.log("GetDocRequest() onFailure");
         if (e instanceof PasswordException) {
           if (e.code === PasswordResponses.NEED_PASSWORD) {
             handler.send('NeedPassword', e);

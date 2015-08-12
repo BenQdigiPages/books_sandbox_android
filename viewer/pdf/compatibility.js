@@ -473,6 +473,8 @@ if (typeof PDFJS === 'undefined') {
   var isChromeWithRangeBug = /Chrome\/(39|40)\./.test(navigator.userAgent);
 
   if (isSafari || isOldAndroid || isChromeWithRangeBug) {
+    console.log("navigator.userAgent: " + navigator.userAgent);
+    console.log("disable Range and Stream");
     PDFJS.disableRange = true;
     PDFJS.disableStream = true;
   }

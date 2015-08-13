@@ -1633,6 +1633,7 @@ var NetworkManager = (function NetworkManagerClosure() {
     this.url = url;
     args = args || {};
     this.isHttp = /^https?:/i.test(url);
+    this.legacy = args.legacy;
     this.httpHeaders = (this.isHttp && args.httpHeaders) || {};
     this.withCredentials = args.withCredentials || false;
     this.getXhr = args.getXhr ||
@@ -1721,6 +1722,10 @@ var NetworkManager = (function NetworkManagerClosure() {
         if (PDFJS.Range_debug) console.log("request rangeStr:" + rangeStr);
         xhr.setRequestHeader('Range', 'bytes=' + rangeStr);
         pendingRequest.expectedStatus = 206;
+        if (this.legacy) {
+          //handle range
+          xhr.open('GET', this.url + '?_Range_=' + rangeStr);
+        }
       } else {
         pendingRequest.expectedStatus = 200;
       }
@@ -2162,6 +2167,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       };
       this.networkManager = new NetworkManager(this.url, {
         getXhr: getXhr,
+        legacy: args.legacy,
         httpHeaders: args.httpHeaders,
         withCredentials: args.withCredentials
       });
@@ -2550,6 +2556,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
 
     var params = {
       msgHandler: msgHandler,
+      legacy: args.legacy,
       httpHeaders: args.httpHeaders,
       withCredentials: args.withCredentials,
       chunkedViewerLoading: args.chunkedViewerLoading,
@@ -34206,6 +34213,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       }
 
       var networkManager = new NetworkManager(source.url, {
+        legacy: source.legacy,
         httpHeaders: source.httpHeaders,
         withCredentials: source.withCredentials
       });
@@ -34217,8 +34225,15 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         end: 1024,
         onHeadersReceived: function onHeadersReceived() {
           var fileSizeRequestXhr = networkManager.getRequestXhr(fileSizeRequestXhrId);
-          var res = fileSizeRequestXhr.getResponseHeader('Content-Range').split("/");
-          source.length = res[1];
+          if (source.legacy) {
+            var mimeType = fileSizeRequestXhr.getResponseHeader('Content-Type');
+            if (PDFJS.Range_debug) console.log('mimeType: ' + mimeType);
+            var res = fileSizeRequestXhr.getResponseHeader('Content-Type').split("; size=")
+            source.length = res[1];
+          } else {
+            var res = fileSizeRequestXhr.getResponseHeader('Content-Range').split("/");
+            source.length = res[1];
+          }
         },
         onDone: function onDone(args) {
           if (PDFJS.Range_debug) console.log('disableRange: ' + disableRange);
@@ -34232,7 +34247,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
               pdfManagerCapability.reject(ex);
             }
           } else {
-            console.log('requestFull()');
+            if (PDFJS.Range_debug) console.log('requestFull()');
             var fullRequestXhrId = networkManager.requestFull({
               onHeadersReceived: function onHeadersReceived() {
                 if (disableRange) {

@@ -82,7 +82,7 @@ Viewer.loadBook = function(url, legacy) {
     /**
      * Asynchronously downloads PDF.
      */
-    PDFJS.getDocument(url).then(function getPdf(pdfDoc_) {
+    PDFJS.getDocument(url, null, null, null, legacy).then(function getPdf(pdfDoc_) {
         pdfDoc = pdfDoc_;
 
         // Initial/first page rendering

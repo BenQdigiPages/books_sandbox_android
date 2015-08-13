@@ -1816,7 +1816,8 @@ PDFJS.openExternalLinksInNewWindow = (
 PDFJS.getDocument = function getDocument(src,
                                          pdfDataRangeTransport,
                                          passwordCallback,
-                                         progressCallback) {
+                                         progressCallback,
+                                         legacy) {
   var task = new PDFDocumentLoadingTask();
 
   // Support of the obsolete arguments (for compatibility with API v1.0)
@@ -1854,6 +1855,7 @@ PDFJS.getDocument = function getDocument(src,
   }
 
   var params = {};
+  params['legacy'] = legacy;
   for (var key in source) {
     if (key === 'url' && typeof window !== 'undefined') {
       // The full path is required in the 'url' field.

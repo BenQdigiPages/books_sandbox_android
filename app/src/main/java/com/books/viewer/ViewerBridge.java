@@ -901,6 +901,7 @@ public class ViewerBridge {
             String range = null;
             if (uri.isHierarchical()) {
                 range = uri.getQueryParameter("_Range_");
+                range = "bytes=" + range;
             }
             return shouldInterceptRequest(view, uri, range);
         }

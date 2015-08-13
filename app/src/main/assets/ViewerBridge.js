@@ -64,7 +64,7 @@ App.onUpdateBookmark = function(bookmark) {
     _App.onUpdateBookmark(JSON.stringify(bookmark));
 };
 
-App.onRemoveBookmark = function((uuid) {
+App.onRemoveBookmark = function(uuid) {
     _App.onRemoveBookmark(uuid);
 };
 

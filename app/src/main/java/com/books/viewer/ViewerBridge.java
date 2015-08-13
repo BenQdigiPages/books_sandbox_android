@@ -849,7 +849,7 @@ public class ViewerBridge {
                     if (range_start > 0) {
                         inputStream.skip(range_start);
                     }
-                    inputStream = new BrokenInputStream(inputStream, range_start, range_end - range_start + 1);
+                    inputStream = new BrokenInputStream(inputStream, IS_LEGACY ? 0 : range_start, range_end - range_start + 1);
                     status = 206;
                     reason = "Partial content";
                     headers.put("Content-Range", String.format("bytes %d-%d/%d", range_start, range_end, total_length));

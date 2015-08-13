@@ -51,9 +51,9 @@ public class BrokenInputStream extends InputStream {
     private long mPos = 0;
 
     public BrokenInputStream(InputStream in, long offset, long length) {
-        this.mStart = offset;
-        this.mEnd = offset + length;
-        this.mInput = in;
+        mStart = offset;
+        mEnd = offset + length;
+        mInput = in;
     }
 
     private void ensureReadingSafety() throws IOException {

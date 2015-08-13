@@ -797,10 +797,10 @@ public class ViewerBridge {
                 InputStream inputStream = mScene.getAssets().open(path);
                 headers.put("Cache-Control", "no-cache");
 
-                return createResponse(mimeType, 200, "OK", headers, inputStream, 0);
+                return createResponse(mimeType, 200, "OK", headers, inputStream);
             } catch (Exception e) {
                 Log.w(TAG, "fail to read asset", e);
-                return createResponse(mimeType, 404, "Not found", headers, null, 0);
+                return createResponse(mimeType, 404, "Not found", headers, null);
             }
         }
 
@@ -822,19 +822,21 @@ public class ViewerBridge {
                 boolean partial = false;
 
                 if (range != null) {
-                    Pattern p = Pattern.compile("bytes\\s*=\\s*(\\d+)\\-(\\d*)");
+                    range = range.replace("bytes=", "");
+                    Pattern p = Pattern.compile("(\\d+)\\-(\\d*)");
                     Matcher m = p.matcher(range);
                     if (m.find()) {
-                        long start = Long.parseLong(m.group(1));
-                        String str = m.group(2);
-                        long end = str.isEmpty() ? total_length - 1 : Long.parseLong(str);
-                        if (start >= total_length || end >= total_length || start > end) {
-                            Log.w(TAG, "request out of range: " + range);
-                            return createResponse(mimeType, 416, "Requested range not satisfiable", headers, null, total_length);
-                        }
-                        range_start = start;
-                        range_end = end;
                         partial = true;
+                        range_start = Long.parseLong(m.group(1));
+                        String str = m.group(2);
+                        if (!str.isEmpty()) {
+                            range_end = Long.parseLong(str);
+                        }
+                        if (range_start >= total_length || range_end >= total_length || range_start > range_end) {
+                            Log.w(TAG, "request out of range: " + range);
+                            headers.put("Content-Range", String.format("bytes */%d", total_length));
+                            return createResponse(mimeType, 416, "Requested range not satisfiable", headers, null);
+                        }
                     }
                 }
 
@@ -855,21 +857,22 @@ public class ViewerBridge {
                     headers.put("Content-Range", String.format("bytes %d-%d/%d", range_start, range_end, total_length));
                 }
 
-                return createResponse(mimeType, status, reason, headers, inputStream, total_length);
+                return createResponse(mimeType, status, reason, headers, inputStream);
             } catch (Exception e) {
                 Log.w(TAG, "fail to read file", e);
-                return createResponse(mimeType, 404, "Not found", headers, null, 0);
+                return createResponse(mimeType, 404, "Not found", headers, null);
             }
         }
 
         private WebResourceResponse createResponse(String mimeType, int status, String reason,
-                Map<String, String> headers, InputStream inputStream, long totalLength) {
+                Map<String, String> headers, InputStream inputStream) {
             if (inputStream == null) {
                 inputStream = new ByteArrayInputStream(new byte[0]);
             }
             if (IS_LEGACY) {
-                if (status == 206 || status == 416) {
-                    mimeType += "; size=" + totalLength;
+                String range = headers.get("Content-Range");
+                if (range != null) {
+                    mimeType += "; " + range.replace("bytes ", "bytes=");
                 }
                 return new WebResourceResponse(mimeType, "UTF-8", inputStream);
             } else {
@@ -901,7 +904,6 @@ public class ViewerBridge {
             String range = null;
             if (uri.isHierarchical()) {
                 range = uri.getQueryParameter("_Range_");
-                range = "bytes=" + range;
             }
             return shouldInterceptRequest(view, uri, range);
         }

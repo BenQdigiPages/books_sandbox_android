@@ -25,6 +25,8 @@ if (typeof PDFJS === 'undefined') {
 PDFJS.version = '1.1.6';
 PDFJS.build = 'ad510da';
 
+PDFJS.Range_debug = false;
+
 (function pdfjsWrapper() {
   // Use strict in our context only - users might not want it
   'use strict';
@@ -1716,7 +1718,7 @@ var NetworkManager = (function NetworkManagerClosure() {
       }
       if (this.isHttp && 'begin' in args && 'end' in args) {
         var rangeStr = args.begin + '-' + (args.end - 1);
-        console.log("request rangeStr:" + rangeStr);
+        if (PDFJS.Range_debug) console.log("request rangeStr:" + rangeStr);
         xhr.setRequestHeader('Range', 'bytes=' + rangeStr);
         pendingRequest.expectedStatus = 206;
       } else {
@@ -1832,12 +1834,12 @@ var NetworkManager = (function NetworkManagerClosure() {
       var chunk = getArrayBuffer(xhr);
       if (xhrStatus === PARTIAL_CONTENT_RESPONSE) {
         var rangeHeader = xhr.getResponseHeader('Content-Range');
-        console.log("onStateChange rangeHeader: " + rangeHeader);
-        console.log("onStateChange Cache-Control: " + xhr.getResponseHeader('Cache-Control'));
-        console.log("onStateChange Content-Length: " + xhr.getResponseHeader('Content-Length'));
+        if (PDFJS.Range_debug) console.log("onStateChange rangeHeader: " + rangeHeader);
+        if (PDFJS.Range_debug) console.log("onStateChange Cache-Control: " + xhr.getResponseHeader('Cache-Control'));
+        if (PDFJS.Range_debug) console.log("onStateChange Content-Length: " + xhr.getResponseHeader('Content-Length'));
         var matches = /bytes (\d+)-(\d+)\/(\d+)/.exec(rangeHeader);
         var begin = parseInt(matches[1], 10);
-        console.log("onStateChange onDone() begin:" + begin  + ", chunk.byteLength: "+ chunk.byteLength);
+        if (PDFJS.Range_debug) console.log("onStateChange onDone() begin:" + begin  + ", chunk.byteLength: "+ chunk.byteLength);
         pendingRequest.onDone({
           begin: begin,
           chunk: chunk
@@ -1845,7 +1847,7 @@ var NetworkManager = (function NetworkManagerClosure() {
       } else if (pendingRequest.onProgressiveData) {
         pendingRequest.onDone(null);
       } else {
-        console.log("onStateChange onDone() begin:" + begin  + ", chunk.byteLength: "+ chunk.byteLength);
+        if (PDFJS.Range_debug) console.log("onStateChange onDone() begin:" + begin  + ", chunk.byteLength: "+ chunk.byteLength);
         pendingRequest.onDone({
           begin: 0,
           chunk: chunk
@@ -2240,7 +2242,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         var groupedChunk = groupedChunksToRequest[i];
         var begin = groupedChunk.beginChunk * this.chunkSize;
         var end = Math.min(groupedChunk.endChunk * this.chunkSize, this.length);
-        console.log('requestChunks('+begin+', ' + end +')');
+        if (PDFJS.Range_debug) console.log('requestChunks('+groupedChunk.beginChunk+', ' + groupedChunk.endChunk +')');
         this.sendRequest(begin, end);
       }
     },
@@ -2316,7 +2318,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     onProgress: function ChunkedStreamManager_onProgress(args) {
       var bytesLoaded = (this.stream.numChunksLoaded * this.chunkSize +
                          args.loaded);
-      console.log('onProgress() ' + bytesLoaded + '/' + this.length);
+      if (PDFJS.Range_debug) console.log('onProgress() ' + bytesLoaded + '/' + this.length);
       this.msgHandler.send('DocProgress', {
         loaded: bytesLoaded,
         total: this.length
@@ -34219,10 +34221,10 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           source.length = res[1];
         },
         onDone: function onDone(args) {
-          console.log('disableRange: ' + disableRange);
+          if (PDFJS.Range_debug) console.log('disableRange: ' + disableRange);
 
           if (!disableRange && source.length > 2 * RANGE_CHUNK_SIZE) {
-            console.log('requestRange()');
+            if (PDFJS.Range_debug) console.log('requestRange()');
             try {
               pdfManager = new NetworkPdfManager(source, handler);
               pdfManagerCapability.resolve(pdfManager);
@@ -34309,7 +34311,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
               },
 
               onProgress: function onProgress(evt) {
-                console.log('onProgress(' + evt.loaded + '/' + evt.total +')');
+                if (PDFJS.Range_debug) console.log('onProgress(' + evt.loaded + '/' + evt.total +')');
                 handler.send('DocProgress', {
                   loaded: evt.loaded,
                   total: evt.lengthComputable ? evt.total : source.length
@@ -34354,7 +34356,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     handler.on('GetDocRequest', function wphSetupDoc(data) {
 
       var onSuccess = function(doc) {
-        console.log("GetDocRequest() onSuccess");
+        if (PDFJS.Range_debug) console.log("GetDocRequest() onSuccess");
         handler.send('GetDoc', { pdfInfo: doc });
       };
 

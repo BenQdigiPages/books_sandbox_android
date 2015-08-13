@@ -52,6 +52,7 @@ var TextRenderingMode = {
   ADD_TO_PATH_FLAG: 4
 };
 
+
 var ImageKind = {
   GRAYSCALE_1BPP: 1,
   RGB_24BPP: 2,
@@ -1720,11 +1721,13 @@ var NetworkManager = (function NetworkManagerClosure() {
       if (this.isHttp && 'begin' in args && 'end' in args) {
         var rangeStr = args.begin + '-' + (args.end - 1);
         if (PDFJS.Range_debug) console.log("request rangeStr:" + rangeStr);
-        xhr.setRequestHeader('Range', 'bytes=' + rangeStr);
-        pendingRequest.expectedStatus = 206;
         if (this.legacy) {
           //handle range
           xhr.open('GET', this.url + '?_Range_=' + rangeStr);
+          pendingRequest.expectedStatus = 200;
+        } else {
+          xhr.setRequestHeader('Range', 'bytes=' + rangeStr);
+          pendingRequest.expectedStatus = 206;
         }
       } else {
         pendingRequest.expectedStatus = 200;
@@ -1840,11 +1843,9 @@ var NetworkManager = (function NetworkManagerClosure() {
       if (xhrStatus === PARTIAL_CONTENT_RESPONSE) {
         var rangeHeader = xhr.getResponseHeader('Content-Range');
         if (PDFJS.Range_debug) console.log("onStateChange rangeHeader: " + rangeHeader);
-        if (PDFJS.Range_debug) console.log("onStateChange Cache-Control: " + xhr.getResponseHeader('Cache-Control'));
-        if (PDFJS.Range_debug) console.log("onStateChange Content-Length: " + xhr.getResponseHeader('Content-Length'));
         var matches = /bytes (\d+)-(\d+)\/(\d+)/.exec(rangeHeader);
         var begin = parseInt(matches[1], 10);
-        if (PDFJS.Range_debug) console.log("onStateChange onDone() begin:" + begin  + ", chunk.byteLength: "+ chunk.byteLength);
+        if (PDFJS.Range_debug) console.log("onStateChange onDone206() begin:" + begin  + ", chunk.byteLength: "+ chunk.byteLength);
         pendingRequest.onDone({
           begin: begin,
           chunk: chunk
@@ -1852,11 +1853,25 @@ var NetworkManager = (function NetworkManagerClosure() {
       } else if (pendingRequest.onProgressiveData) {
         pendingRequest.onDone(null);
       } else {
-        if (PDFJS.Range_debug) console.log("onStateChange onDone() begin:" + begin  + ", chunk.byteLength: "+ chunk.byteLength);
-        pendingRequest.onDone({
-          begin: 0,
-          chunk: chunk
-        });
+        if (PDFJS.Range_debug) console.log("onStateChange onDone() begin:" + begin  + ", chunk.byteLength: " + chunk.byteLength + ", legacy: " + this.legacy);
+        if (this.legacy) {
+          var data = xhr.getResponseHeader('Content-Type').split("; bytes=");
+          var matches = /(\d+)-(\d+)\/(\d+)/.exec(data[1]);
+          if (matches != null) {
+            var begin = parseInt(matches[1], 10);
+            pendingRequest.onDone({
+              begin: begin,
+              chunk: chunk
+            });
+          } else {
+            console.log('parse error. ' + xhr.getResponseHeader('Content-Type'));
+          }
+        } else {
+          pendingRequest.onDone({
+            begin: 0,
+            chunk: chunk
+          });
+        }
       }
     },
 
@@ -34226,14 +34241,22 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         onHeadersReceived: function onHeadersReceived() {
           var fileSizeRequestXhr = networkManager.getRequestXhr(fileSizeRequestXhrId);
           if (source.legacy) {
-            var mimeType = fileSizeRequestXhr.getResponseHeader('Content-Type');
-            if (PDFJS.Range_debug) console.log('mimeType: ' + mimeType);
-            var res = fileSizeRequestXhr.getResponseHeader('Content-Type').split("; size=")
-            source.length = res[1];
+            var data = fileSizeRequestXhr.getResponseHeader('Content-Type').split("; bytes=");
+            var matches = /(\d+)-(\d+)\/(\d+)/.exec(data[1]);
+            if (matches != null) {
+              source.length = parseInt(matches[3], 10);
+            } else {
+              console.log('parse error. ' + fileSizeRequestXhr.getResponseHeader('Content-Type'));
+            }
           } else {
-            var res = fileSizeRequestXhr.getResponseHeader('Content-Range').split("/");
-            source.length = res[1];
+            var matches = /bytes (\d+)-(\d+)\/(\d+)/.exec(fileSizeRequestXhr.getResponseHeader('Content-Range'));
+            if (matches != null) {
+              source.length = parseInt(matches[3], 10);
+            } else {
+              console.log('parse error. ' + fileSizeRequestXhr.getResponseHeader('Content-Range'));
+            }
           }
+          if (PDFJS.Range_debug) console.log('source.length: ' + source.length);
         },
         onDone: function onDone(args) {
           if (PDFJS.Range_debug) console.log('disableRange: ' + disableRange);

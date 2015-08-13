@@ -54,6 +54,7 @@ Viewer.loadBook = function(url, legacy) {
     // turn on streaming for App
     PDFJS.disableRange = false;
     PDFJS.disableStream = false;
+    PDFJS.disableAutoFetch = true;
 
     var containerDoc = null;
     var opfDoc = null;

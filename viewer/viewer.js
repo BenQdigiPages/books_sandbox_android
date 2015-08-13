@@ -37,15 +37,20 @@ Viewer.loadBook = function(url, legacy) {
     // FIXME: temp
     url = "test.pdf"
 
+    PDFViewerApplication.appInitializedPromise.then(function(){
+        PDFViewerApplication.open(url, 0);
     /**
      * Asynchronously downloads PDF.
      */
+        /*
     PDFJS.getDocument(url).then(function getPdf(pdfDoc_) {
             PDFViewerApplication.load(pdfDoc_, scale);
         pdfDoc = pdfDoc_;
 
         // Initial/first page rendering
             //renderPage(currentPageNum);
+    });
+        */
     });
 }
 
@@ -6647,6 +6652,10 @@ var PDFViewerApplication = {
   preferenceDefaultZoomValue: '',
   isViewerEmbedded: (window.parent !== window),
   url: '',
+  //[Bruce]
+  resolveAppInitialized: null,
+  appInitializedPromise: null,
+  //End : [Bruce]
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -6829,6 +6838,8 @@ var PDFViewerApplication = {
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
 
+    //[Bruce]
+    this.resolveAppInitialized();
     return initializedPromise.then(function () {
       PDFViewerApplication.initialized = true;
     });
@@ -7627,6 +7638,11 @@ window.PDFView = PDFViewerApplication; // obsolete name, using it as an alias
 
 
 function webViewerLoad(evt) {
+  //[Bruce]
+  PDFViewerApplication.appInitializedPromise = new Promise(function (resolve) {
+      PDFViewerApplication.resolveAppInitialized = resolve;
+  });
+  //End : [Bruce]
   PDFViewerApplication.initialize().then(webViewerInitialized);
 }
 

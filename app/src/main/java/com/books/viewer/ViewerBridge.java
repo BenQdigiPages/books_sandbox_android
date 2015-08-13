@@ -816,9 +816,9 @@ public class ViewerBridge {
                     throw new IOException(file + " can not be read");
                 }
 
-                final long length = file.length();
+                final long total_length = file.length();
                 long range_start = 0;
-                long range_end = length - 1;
+                long range_end = total_length - 1;
                 boolean partial = false;
 
                 if (range != null) {
@@ -827,10 +827,10 @@ public class ViewerBridge {
                     if (m.find()) {
                         long start = Long.parseLong(m.group(1));
                         String str = m.group(2);
-                        long end = str.isEmpty() ? length - 1 : Long.parseLong(str);
-                        if (start >= length || end >= length || start > end) {
+                        long end = str.isEmpty() ? total_length - 1 : Long.parseLong(str);
+                        if (start >= total_length || end >= total_length || start > end) {
                             Log.w(TAG, "request out of range: " + range);
-                            return createResponse(mimeType, 416, "Requested range not satisfiable", headers, null, length);
+                            return createResponse(mimeType, 416, "Requested range not satisfiable", headers, null, total_length);
                         }
                         range_start = start;
                         range_end = end;
@@ -846,13 +846,16 @@ public class ViewerBridge {
                 headers.put("Content-Encoding", "identity");
 
                 if (partial) {
-                    inputStream = new BrokenInputStream(inputStream, range_start, range_end + 1, length);
+                    if (range_start > 0) {
+                        inputStream.skip(range_start);
+                    }
+                    inputStream = new BrokenInputStream(inputStream, range_start, range_end - range_start + 1);
                     status = 206;
                     reason = "Partial content";
-                    headers.put("Content-Range", String.format("bytes %d-%d/%d", range_start, range_end, length));
+                    headers.put("Content-Range", String.format("bytes %d-%d/%d", range_start, range_end, total_length));
                 }
 
-                return createResponse(mimeType, status, reason, headers, inputStream, length);
+                return createResponse(mimeType, status, reason, headers, inputStream, total_length);
             } catch (Exception e) {
                 Log.w(TAG, "fail to read file", e);
                 return createResponse(mimeType, 404, "Not found", headers, null, 0);

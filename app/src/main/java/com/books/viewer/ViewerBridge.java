@@ -12,6 +12,7 @@ package com.books.viewer;
 
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -65,6 +66,12 @@ public class ViewerBridge {
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
         settings.setAllowFileAccess(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
+        //[Bruce] Enable webView Database to let javascript access the localStorage
+        settings.setDatabaseEnabled(true);
+        String dir = mScene.getApplicationContext().getDir("database", Context.MODE_PRIVATE).getPath();
+        settings.setDatabasePath(dir);
+        settings.setDomStorageEnabled(true);
+        //End : [Bruce]
 
         mWebView.addJavascriptInterface(mCallback, "AndroidApp");
         eval(loadAssetAsString("ViewerBridge.js"), null);

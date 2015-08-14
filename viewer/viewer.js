@@ -7195,8 +7195,7 @@ var PDFViewerApplication = {
     //End : [Bruce][TempDisable]
 
     var id = this.documentFingerprint = pdfDocument.fingerprint;
-    //[Bruce]
-    //var store = this.store = new ViewHistory(id);
+    var store = this.store = new ViewHistory(id);
 
     var baseDocumentUrl = null;
     this.pdfLinkService.setDocument(pdfDocument, baseDocumentUrl);
@@ -7245,8 +7244,6 @@ var PDFViewerApplication = {
         }
       }
 
-      //[Bruce]
-      /*
       store.initializedPromise.then(function resolved() {
         var storedHash = null;
         if (self.preferenceShowPreviousViewOnLoad &&
@@ -7273,12 +7270,6 @@ var PDFViewerApplication = {
         console.error(reason);
         self.setInitialView(null, scale);
       });
-      */
-      onePageRendered.then(function () {
-        storedHash = "page=1&zoom=auto";
-        self.setInitialView(storedHash, scale);
-      });
-      //End : [Bruce]
     });
 
     pagesPromise.then(function() {

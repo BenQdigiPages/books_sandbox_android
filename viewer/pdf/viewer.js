@@ -120,7 +120,7 @@ Viewer.loadBook = function(url, legacy) {
         		tocarray.push(
         		{
         			title:pdfOutlineArray[i].outline.title,
-        			url:i.toString(),
+				link:i.toString(),
         			level:pdfOutlineArray[i].level
         		});
             	}

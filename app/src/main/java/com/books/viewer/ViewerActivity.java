@@ -123,7 +123,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
                 while (level-- > 0) {
                     title = "    " + title;
                 }
-                final String link = item.getString("url");
+                final String link = item.getString("link");
                 popup.add(0, title, new Runnable() {
                     public void run() {
                         mBridge.gotoLink(link);

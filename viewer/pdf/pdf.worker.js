@@ -1853,18 +1853,26 @@ var NetworkManager = (function NetworkManagerClosure() {
       } else if (pendingRequest.onProgressiveData) {
         pendingRequest.onDone(null);
       } else {
-        if (PDFJS.Range_debug) console.log("onStateChange onDone() begin:" + begin  + ", chunk.byteLength: " + chunk.byteLength + ", legacy: " + this.legacy);
+        if (PDFJS.Range_debug) console.log("onStateChange onDone() begin:" + begin  + ", xhrStatus: " + xhrStatus + ", legacy: " + this.legacy);
         if (this.legacy) {
+          if (chunk === null) {
+            if (PDFJS.Range_debug) console.log("onStateChange onDone() legacy and chunk is null");
+            pendingRequest.onError(416);
+            return;
+          }
           var data = xhr.getResponseHeader('Content-Type').split("; bytes=");
           var matches = /(\d+)-(\d+)\/(\d+)/.exec(data[1]);
-          if (matches != null) {
+          if (matches !== null) {
             var begin = parseInt(matches[1], 10);
             pendingRequest.onDone({
               begin: begin,
               chunk: chunk
             });
           } else {
-            console.log('parse error. ' + xhr.getResponseHeader('Content-Type'));
+            pendingRequest.onDone({
+              begin: 0,
+              chunk: chunk
+            });
           }
         } else {
           pendingRequest.onDone({
@@ -34204,6 +34212,101 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       return loadDocumentCapability.promise;
     }
 
+    function requestFull(networkManager, source, pdfManagerCapability) {
+      if (PDFJS.Range_debug) console.log('requestFull()');
+      var fullRequestXhrId = networkManager.requestFull({
+        onHeadersReceived: function onHeadersReceived() {
+          var fullRequestXhr = networkManager.getRequestXhr(fullRequestXhrId);
+          if (!source.legacy && fullRequestXhr.getResponseHeader('Accept-Ranges') !== 'bytes') {
+            console.log('onHeadersReceived() Accept-Ranges != bytes');
+            return;
+          }
+          var contentEncoding =
+              fullRequestXhr.getResponseHeader('Content-Encoding') || 'identity';
+          if (contentEncoding !== 'identity') {
+            return;
+          }
+        },
+
+        onProgressiveData: source.disableStream ? null :
+            function onProgressiveData(chunk) {
+           if (!pdfManager) {
+             cachedChunks.push(chunk);
+             return;
+           }
+           pdfManager.sendProgressiveData(chunk);
+        },
+
+        onDone: function onDone(args) {
+          if (pdfManager) {
+            return; // already processed
+          }
+          var pdfFile;
+
+          if (args === null) {
+            // TODO add some streaming manager, e.g. for unknown length files.
+            // The data was returned in the onProgressiveData, combining...
+            var pdfFileLength = 0, pos = 0;
+            cachedChunks.forEach(function (chunk) {
+              pdfFileLength += chunk.byteLength;
+            });
+
+            if (source.length && pdfFileLength !== source.length) {
+              warn('reported HTTP length is different from actual');
+            }
+            var pdfFileArray = new Uint8Array(pdfFileLength);
+            cachedChunks.forEach(function (chunk) {
+              pdfFileArray.set(new Uint8Array(chunk), pos);
+              pos += chunk.byteLength;
+            });
+            pdfFile = pdfFileArray.buffer;
+          } else {
+            pdfFile = args.chunk;
+          }
+
+          // the data is array, instantiating directly from it
+          try {
+            pdfManager = new LocalPdfManager(pdfFile, source.password);
+            pdfManagerCapability.resolve();
+          } catch (ex) {
+            pdfManagerCapability.reject(ex);
+          }
+        },
+
+        onError: function onError(status) {
+          var exception;
+          if (status === 404) {
+            exception = new MissingPDFException('Missing PDF "' +
+                source.url + '".');
+            handler.send('MissingPDF', exception);
+          } else {
+            exception = new UnexpectedResponseException(
+                'Unexpected server response (' + status +
+                ') while retrieving PDF "' + source.url + '".', status);
+            handler.send('UnexpectedResponse', exception);
+          }
+        },
+
+        onProgress: function onProgress(evt) {
+          if (PDFJS.Range_debug) console.log('onProgress(' + evt.loaded + '/' + evt.total +')');
+          handler.send('DocProgress', {
+            loaded: evt.loaded,
+            total: evt.lengthComputable ? evt.total : source.length
+          });
+        }
+      });
+    }
+
+    function requestRange(pdfManagerCapability, source, handler) {
+      if (PDFJS.Range_debug) console.log('requestRange()');
+      try {
+        pdfManager = new NetworkPdfManager(source, handler);
+        pdfManagerCapability.resolve(pdfManager);
+      } catch (ex) {
+        pdfManagerCapability.reject(ex);
+      }
+    }
+
     function getPdfManager(data) {
       var pdfManagerCapability = createPromiseCapability();
 
@@ -34243,119 +34346,64 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           if (source.legacy) {
             var data = fileSizeRequestXhr.getResponseHeader('Content-Type').split("; bytes=");
             var matches = /(\d+)-(\d+)\/(\d+)/.exec(data[1]);
-            if (matches != null) {
+            if (matches !== null) {
               source.length = parseInt(matches[3], 10);
             } else {
-              console.log('parse error. ' + fileSizeRequestXhr.getResponseHeader('Content-Type'));
+              //application/pdf; bytes=*/3634247
+              var matches = fileSizeRequestXhr.getResponseHeader('Content-Type').split("; bytes=*/");
+              if (matches !== null) {
+                source.length = parseInt(matches[1], 10);
+              } else {
+                console.log('parse error. ' + fileSizeRequestXhr.getResponseHeader('Content-Type'));
+              }
             }
           } else {
             var matches = /bytes (\d+)-(\d+)\/(\d+)/.exec(fileSizeRequestXhr.getResponseHeader('Content-Range'));
-            if (matches != null) {
+            if (matches !== null) {
               source.length = parseInt(matches[3], 10);
             } else {
-              console.log('parse error. ' + fileSizeRequestXhr.getResponseHeader('Content-Range'));
+              //bytes */3634247
+              var matches = fileSizeRequestXhr.getResponseHeader('Content-Range').split("bytes */");
+              if (matches !== null) {
+                source.length = parseInt(matches[1], 10);
+              } else {
+                console.log('parse error. ' + fileSizeRequestXhr.getResponseHeader('Content-Range'));
+              }
             }
           }
           if (PDFJS.Range_debug) console.log('source.length: ' + source.length);
         },
         onDone: function onDone(args) {
-          if (PDFJS.Range_debug) console.log('disableRange: ' + disableRange);
-
+          if (PDFJS.Range_debug) console.log('onDone() disableRange: ' + disableRange);
           if (!disableRange && source.length > 2 * RANGE_CHUNK_SIZE) {
-            if (PDFJS.Range_debug) console.log('requestRange()');
-            try {
-              pdfManager = new NetworkPdfManager(source, handler);
-              pdfManagerCapability.resolve(pdfManager);
-            } catch (ex) {
-              pdfManagerCapability.reject(ex);
+            requestRange(pdfManagerCapability, source, handler);
+          } else {
+            requestFull(networkManager, source, pdfManagerCapability);
+          }
+        },
+        onError: function onError(status) {
+          console.log('onError() status: ' + status);
+          var exception;
+          if (status === 404) {
+            exception = new MissingPDFException('Missing PDF "' +
+                              source.url + '".');
+            handler.send('MissingPDF', exception);
+          } else if (status === 416) {
+            if (typeof source.length === 'undefined') {
+              console.log('onError() source.length = undefined and requestFull()');
+              requestFull(networkManager, source, pdfManagerCapability);
+            } else {
+              if (!disableRange && source.length > 2 * RANGE_CHUNK_SIZE) {
+                requestRange(pdfManagerCapability, source, handler);
+              } else {
+                requestFull(networkManager, source, pdfManagerCapability);
+              }
             }
           } else {
-            if (PDFJS.Range_debug) console.log('requestFull()');
-            var fullRequestXhrId = networkManager.requestFull({
-              onHeadersReceived: function onHeadersReceived() {
-                if (disableRange) {
-                  return;
-                }
-
-                var fullRequestXhr = networkManager.getRequestXhr(fullRequestXhrId);
-                if (fullRequestXhr.getResponseHeader('Accept-Ranges') !== 'bytes') {
-                  console.log('onHeadersReceived() Accept-Ranges != bytes');
-                  return;
-                }
-
-                var contentEncoding =
-                  fullRequestXhr.getResponseHeader('Content-Encoding') || 'identity';
-                if (contentEncoding !== 'identity') {
-                  return;
-                }
-              },
-
-              onProgressiveData: source.disableStream ? null :
-                  function onProgressiveData(chunk) {
-                if (!pdfManager) {
-                  cachedChunks.push(chunk);
-                  return;
-                }
-                pdfManager.sendProgressiveData(chunk);
-              },
-
-              onDone: function onDone(args) {
-                if (pdfManager) {
-                  return; // already processed
-                }
-
-                var pdfFile;
-                if (args === null) {
-                  // TODO add some streaming manager, e.g. for unknown length files.
-                  // The data was returned in the onProgressiveData, combining...
-                  var pdfFileLength = 0, pos = 0;
-                  cachedChunks.forEach(function (chunk) {
-                    pdfFileLength += chunk.byteLength;
-                  });
-                  if (source.length && pdfFileLength !== source.length) {
-                    warn('reported HTTP length is different from actual');
-                  }
-                  var pdfFileArray = new Uint8Array(pdfFileLength);
-                  cachedChunks.forEach(function (chunk) {
-                    pdfFileArray.set(new Uint8Array(chunk), pos);
-                    pos += chunk.byteLength;
-                  });
-                  pdfFile = pdfFileArray.buffer;
-                } else {
-                  pdfFile = args.chunk;
-                }
-
-                // the data is array, instantiating directly from it
-                try {
-                  pdfManager = new LocalPdfManager(pdfFile, source.password);
-                  pdfManagerCapability.resolve();
-                } catch (ex) {
-                  pdfManagerCapability.reject(ex);
-                }
-              },
-
-              onError: function onError(status) {
-                var exception;
-                if (status === 404) {
-                  exception = new MissingPDFException('Missing PDF "' +
-                                                source.url + '".');
-                  handler.send('MissingPDF', exception);
-                } else {
-                  exception = new UnexpectedResponseException(
-                    'Unexpected server response (' + status +
-                    ') while retrieving PDF "' + source.url + '".', status);
-                  handler.send('UnexpectedResponse', exception);
-                }
-              },
-
-              onProgress: function onProgress(evt) {
-                if (PDFJS.Range_debug) console.log('onProgress(' + evt.loaded + '/' + evt.total +')');
-                handler.send('DocProgress', {
-                  loaded: evt.loaded,
-                  total: evt.lengthComputable ? evt.total : source.length
-                });
-              }
-            });
+            exception = new UnexpectedResponseException(
+                      'Unexpected server response (' + status +
+                      ') while retrieving PDF "' + source.url + '".', status);
+            handler.send('UnexpectedResponse', exception);
           }
         }
       });

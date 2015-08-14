@@ -6947,8 +6947,12 @@ var PDFViewerApplication = {
   },
 
   close: function pdfViewClose() {
+    //[Bruce]
+    /*
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.setAttribute('hidden', 'true');
+    */
+    //End : [Bruce]
 
     if (!this.pdfDocument) {
       return;

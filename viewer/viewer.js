@@ -4135,7 +4135,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     //container.appendChild(div);
     var owl = $('.owl-carousel');
     owl.owlCarousel();
-    owl.trigger('add.owl.carousel',[this.div,(this.id - 1)]);
+    owl.trigger('add.owl.carousel',[this.div]);
     //End : [Bruce]
   }
 

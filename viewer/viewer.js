@@ -38,19 +38,18 @@ Viewer.loadBook = function(url, legacy) {
     url = "test.pdf"
 
     PDFViewerApplication.appInitializedPromise.then(function(){
-        PDFViewerApplication.open(url, 0);
+        var owl = $('.owl-carousel');
+        owl.owlCarousel();
+        // Listen to owl events:
+        owl.on('dragged.owl.carousel',
+            function callback(event) {
+                // Update current page number
+                currentPageNum  = event.item.index;
+        });
     /**
      * Asynchronously downloads PDF.
      */
-        /*
-    PDFJS.getDocument(url).then(function getPdf(pdfDoc_) {
-            PDFViewerApplication.load(pdfDoc_, scale);
-        pdfDoc = pdfDoc_;
-
-        // Initial/first page rendering
-            //renderPage(currentPageNum);
-    });
-        */
+        PDFViewerApplication.open(url, 0);
     });
 }
 
@@ -4122,9 +4121,6 @@ var PDFPageView = (function PDFPageViewClosure() {
     //[Bruce]
     //div.className = 'page';
     div.className = 'item';
-    //Set top offset
-    div.style.top = 0 + 'px';
-    div.style.left = this.id * Math.floor(this.viewport.width) + 'px';
     //End : [Bruce]
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';
@@ -5428,14 +5424,6 @@ var PDFViewer = (function pdfViewer() {
           bindOnAfterAndBeforeDraw(pageView);
           this._pages.push(pageView);
         }
-        //[Bruce] 
-        var widthCounter = this._pages[1].div.offsetParent.offsetWidth;
-        var heightCounter = this._pages[1].div.offsetParent.offsetHeight;
-        this.viewer.style.width = widthCounter + 'px';
-        this.viewer.style.height = heightCounter + 'px';
-        console.log('this.viewer.width = ' + this.viewer.style.width);
-        //End : [Bruce]
-
         var linkService = this.linkService;
 
         // Fetch all the pages since the viewport is needed before printing
@@ -5605,6 +5593,12 @@ var PDFViewer = (function pdfViewer() {
                                                               dest) {
       var pageView = this._pages[pageNumber - 1];
 
+      //[Bruce]
+      var owl = $('.owl-carousel');
+      owl.owlCarousel();
+      owl.trigger('to.owl.carousel',[pageNumber - 1, 200, true]);
+      //End : [Bruce]
+
       if (this.isInPresentationMode) {
         if (this._currentPageNumber !== pageView.id) {
           // Avoid breaking getVisiblePages in presentation mode.
@@ -5688,7 +5682,10 @@ var PDFViewer = (function pdfViewer() {
       }
 
       if (scale === 'page-fit' && !dest[4]) {
-        scrollIntoView(pageView.div);
+        //[Bruce]
+        scrollIntoView_with_X_axis(pageView.div);
+        //scrollIntoView(pageView.div);
+        //[Bruce]
         return;
       }
 
@@ -5699,7 +5696,10 @@ var PDFViewer = (function pdfViewer() {
       var left = Math.min(boundingRect[0][0], boundingRect[1][0]);
       var top = Math.min(boundingRect[0][1], boundingRect[1][1]);
 
-      scrollIntoView(pageView.div, { left: left, top: top });
+      //[Bruce]
+      scrollIntoView_with_X_axis(pageView.div, { left: left, top: top });
+      //scrollIntoView(pageView.div, { left: left, top: top });
+      //[Bruce]
     },
 
     _updateLocation: function (firstPage) {
@@ -6961,7 +6961,11 @@ var PDFViewerApplication = {
     this.pdfDocument.destroy();
     this.pdfDocument = null;
 
+    //[Bruce]
+    /*
     this.pdfThumbnailViewer.setDocument(null);
+    */
+    //End : [Bruce]
     this.pdfViewer.setDocument(null);
     this.pdfLinkService.setDocument(null, null);
 
@@ -7011,6 +7015,9 @@ var PDFViewerApplication = {
     PDFJS.getDocument(parameters, pdfDataRangeTransport, passwordNeeded,
                       getDocumentProgress).then(
       function getDocumentCallback(pdfDocument) {
+        //[Bruce] 
+        pdfDoc = pdfDocument;
+        //End : [Bruce]
         self.load(pdfDocument, scale);
       },
       function getDocumentError(exception) {
@@ -7417,7 +7424,11 @@ var PDFViewerApplication = {
 
   cleanup: function pdfViewCleanup() {
     this.pdfViewer.cleanup();
+    //[Bruce]
+    /*
     this.pdfThumbnailViewer.cleanup();
+    */
+    //End : [Bruce]
     this.pdfDocument.cleanup();
   },
 

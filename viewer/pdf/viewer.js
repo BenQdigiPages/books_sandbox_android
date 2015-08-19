@@ -65,13 +65,16 @@ Viewer.loadBook = function(url, legacy) {
     xhttp.send();
     containerDoc = xhttp.responseXML;
     var rootFileAttr = containerDoc.getElementsByTagName("rootfile")[0].attributes;
-    var opfFile = rootFileAttr.getNamedItem("full-path").value
+    var opfFile = rootFileAttr.getNamedItem("full-path").value;
     console.log("OPF file:" + opfFile);
 
     //Parsing .pdf from .opf
     xhttp.open('GET', url + opfFile, false);
     xhttp.send();
     opfDoc = xhttp.responseXML;
+
+    //Create thumbnail owlcarousel view.
+    createThumbnailView(url,opfDoc);
 
     var attr = opfDoc.getElementById("pdf").attributes;
     var pdfFile = attr.getNamedItem("href").value;
@@ -88,25 +91,26 @@ Viewer.loadBook = function(url, legacy) {
 
         // Initial/first page rendering
         renderPage(currentPageNum);
+
         //callback title
         pdfDoc.getMetadata().then(function(data) {
-        	var info = data.info, metadata = data.metadata;
-      	var pdfTitle;
-      	if (metadata && metadata.has('dc:title')) {
-        		var title = metadata.get('dc:title');
-        		// Ghostscript sometimes return 'Untitled', sets the title to 'Untitled'
-       		if (title !== 'Untitled') {
-          			pdfTitle = title;
-        		}
-      	}
+            var info = data.info, metadata = data.metadata;
+      	    var pdfTitle;
+      	    if (metadata && metadata.has('dc:title')) {
+        	    var title = metadata.get('dc:title');
+        	    // Ghostscript sometimes return 'Untitled', sets the title to 'Untitled'
+       		    if (title !== 'Untitled') {
+          	        pdfTitle = title;
+        	    }
+      	    }
 
-      	if (!pdfTitle && info && info['Title']) {
-        		pdfTitle = info['Title'];
-      	}
+      	    if (!pdfTitle && info && info['Title']) {
+        	    pdfTitle = info['Title'];
+      	    }
 
-      	if (pdfTitle) {
-        		App.onChangeTitle(pdfTitle);
-      	}
+      	    if (pdfTitle) {
+                App.onChangeTitle(pdfTitle);
+      	    }
         });
         //for TOC page parse
         pdfLinkService = new PDFLinkService();
@@ -120,11 +124,11 @@ Viewer.loadBook = function(url, legacy) {
         		tocarray.push(
         		{
         			title:pdfOutlineArray[i].outline.title,
-				link:i.toString(),
+				    link:i.toString(),
         			level:pdfOutlineArray[i].level
         		});
-            	}
-            	App.onChangeTOC(tocarray);
+            }
+            App.onChangeTOC(tocarray);
          });
     });
 
@@ -381,12 +385,58 @@ Viewer.handleZoomOutInEvent = function(event) {
     }
 }
 
+function createThumbnailView(url,opfFile) {
+    var items = opfFile.getElementsByTagName("item");
+    var container = document.getElementById("thumbnailContainer")
+    var index = 0;
+
+    for (i = 0 ; i < items.length ; i++) {
+        if (items[i].attributes.getNamedItem("media-type").value === "image/png") {
+            index ++;
+            var thumbnailName = url + items[i].attributes.getNamedItem("href").value;
+            var div = document.createElement('div');
+            var img = document.createElement('img');
+            img.id = 'thumbnailContainer' + i;
+            img.className = 'item link';
+            img.style.width = '72px'; //FIX ME. hardcode currently
+            img.style.paddingTop = "5px";
+            img.setAttribute('data-index',index);
+            img.src = thumbnailName;
+            div.appendChild(img);
+
+            var p = document.createElement('p');
+            p.className='index';
+            p.style.color = 'white';
+            p.innerHTML=index;
+            div.appendChild(p);
+            container.appendChild(div);
+        }
+    }
+
+    var owl = $('.owl-carousel');
+
+    owl.owlCarousel({
+        margin:10,
+        stagePadding: 50,
+        autoWidth:true,
+        items:5,
+        center:true,
+    });
+
+    $('.link').on('click', function(event){
+        var pageNum = parseInt(this.getAttribute('data-index'));
+        currentPageNum = pageNum;
+        queueRenderPage(pageNum);
+    });
+}
+
+
 function TouchPoint(x,y) {
     var shiftDir = {
-                        "noMove"   :  0,
-                        "negative" : -1,
-                        "positive" : +1
-                   };
+        "noMove"   :  0,
+        "negative" : -1,
+        "positive" : +1
+    };
 
     this.xMoveDir = shiftDir["noMove"];
     this.yMoveDir = shiftDir["noMove"];
@@ -521,9 +571,25 @@ function TouchPoint(x,y) {
 }
 
 function load(){
-    document.addEventListener('touchstart',touch, false);
-    document.addEventListener('touchmove',touch, false);
-    document.addEventListener('touchend',touch, false);
+
+    //Handle pdf view canvas click event.
+    $('#the-canvas').click(function() {
+        console.log("canvas click");
+        toolBarVisible = !(toolBarVisible);
+        if (toolBarVisible) {
+            var owl = $('.owl-carousel');
+            owl.owlCarousel();
+            owl.trigger('to.owl.carousel', [currentPageNum-1,300]);
+            $('#footer').show();
+        } else {
+            $('#footer').hide();
+        }
+        App.onToggleToolbar(toolBarVisible);
+    });
+
+    document.getElementById('the-canvas').addEventListener('touchstart',touch, false);
+    document.getElementById("the-canvas").addEventListener('touchmove',touch, false);
+    document.getElementById("the-canvas").addEventListener('touchend',touch, false);
 
     function touch(event) {
 
@@ -540,11 +606,6 @@ function load(){
                 console.log("<br/>Touch end (" + event.changedTouches[0].clientX + "," + event.changedTouches[0].clientY + ")");
                 var shiftX = event.changedTouches[0].clientX - touchStartX;
                 var shiftY = event.changedTouches[0].clientY - touchStartY;
-                console.log("<br/>Touch moved (" + shiftX + "," + shiftY + ")");
-                if (Math.abs(shiftX) < 10 && Math.abs(shiftY) < 10) { //treat as click event
-                    toolBarVisible = !(toolBarVisible);
-                    App.onToggleToolbar(toolBarVisible);
-                }
                 if (shiftX > 50) {
                     onPrevPage();
                 } else if (shiftX < -50) {

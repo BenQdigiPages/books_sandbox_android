@@ -1,0 +1,13 @@
+footer {
+    position:fixed;
+    left:0px;
+    bottom:0px;
+    height:160px;
+    width:100%;
+    background:#5A595B;
+}
+
+p.index {
+    text-align:center;
+    margin-top:2px;
+}

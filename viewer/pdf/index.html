@@ -4,12 +4,18 @@
 <head>
     <meta charset="UTF-8">
 
+    <link rel="stylesheet" href="owlcarousel/owl.carousel.css">
+    <link rel="stylesheet" href="viewer.css">
+
     <!-- Use latest PDF.js package build from Github -->
     <script src="compatibility.js"></script>
     <script src="pdf.js"></script>
 
     <!-- Part of viewer.js from PDF.js package need merge into our viewer.js -->
     <script src="viewer.js"></script>
+
+    <script src="jquery-2.1.4.min.js"></script>
+    <script src="owlcarousel/owl.carousel.js"></script>
 </head>
 
 <body>
@@ -17,5 +23,10 @@
         <canvas id="the-canvas" style="border:0px solid black"></canvas>
     </div>
 </body>
+
+<footer id="footer">
+    <div class="owl-carousel" id="thumbnailContainer">
+    </div>
+</footer>
 
 </html>

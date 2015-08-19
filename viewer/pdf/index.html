@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="owlcarousel/owl.carousel.css">
+    <link rel="stylesheet" href="owlcarousel/owl.theme.default.min.css">
+    <!-- Use latest PDF.js package build from Github -->
+    <script src="compatibility.js"></script>
+    <script src="pdf.js"></script>
+
+    <!-- Part of viewer.js from PDF.js package need merge into our viewer.js -->
+    <script src="viewer.js"></script>
+
+    <!-- NOTE : jquery and owl.carousel must be put in the bottom of <head></head> -->
+    <script src="jquery-2.1.4.min.js"></script>
+    <script src="owlcarousel/owl.carousel.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            $('.owl-carousel').owlCarousel({
+                items: 1,
+                margin: 0,
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <div id="outerContainer">
+        <div id="mainContainer">
+            <div id="loadingBar">
+                <div class="progress">
+                    <div class="glimmer">
+                    </div>
+                </div>
+            </div>
+            <div id="viewerContainer">
+                <div id="viewer" class="owl-carousel"></div>
+            </div>
+        </div> <!-- mainContainer -->
+    </div> <!-- outerContainer -->
+</body>
+
+</html>

@@ -4,8 +4,10 @@ books_sandbox_android
 Proof of concept app for Android viewer
 
 + Require Android Studio
-+ Viewer code should be placed into `books_sandbox_ios/viewer`
-+ Sample book should be placed into sdcard with `book` folder name
++ Viewer code should be placed into `books_sandbox_android/viewer`
++ Sample books should be placed into `books_sandbox_android/books`
+    + epub file should be in `.epub` (compressed) format, sandbox will unzip the file if necessary
+    + pdf file need to be packaged with `.epub` format, and with `.pdf.epub` suffix
 
 Notes
 -----

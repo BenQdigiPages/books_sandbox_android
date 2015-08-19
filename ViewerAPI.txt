@@ -43,12 +43,12 @@
 /// Json format for entry of table of content
 ///
 /// @title: string - title of entry, may contain <span> level html tag
-/// @url: string - url to this entry
+/// @link: string - link to this entry (opaque, defined by Viewer)
 /// @level: int - level of this entry, start from 0
 ///
 {
     "title": title,
-    "url": url,
+    "link": link,
     "level": level,
 }
 
@@ -143,9 +143,10 @@ Viewer.setLayoutMode(mode)
 Viewer.getCurrentPosition() -> [chapter, cfi, current_page, total_pages]
 
 ///
-/// Goto the given link in this ebook
+/// Goto the given link in this ebook, the link is from table of content
+/// that Viewer sent back to App with App.onChangeTOC
 ///
-/// @link: string - target file link (relative to base url)
+/// @link: string - target link (opaque, defined by Viewer)
 ///
 Viewer.gotoLink(link)
 

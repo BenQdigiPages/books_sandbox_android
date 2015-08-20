@@ -9,6 +9,7 @@ var pdfDoc = null,
     canvas,
     ctx,
     toolBarVisible = true,
+    thumbnailBarVisible = false,
     touchStartX = 0.0,
     touchStartY = 0.0,
     currentLayoutMode = "single",
@@ -130,11 +131,45 @@ Viewer.loadBook = function(url, legacy) {
             }
             App.onChangeTOC(tocarray);
          });
+         webUIInitialized();
     });
 
     //Request bookmarks from app when book is loaded.
     App.onRequestBookmarks("bookmarks", "RequestBookmarksCallback")
 
+}
+
+function webUIInitialized() {
+    document.getElementById('current_page').textContent = currentPageNum;
+    document.getElementById('paginate').value = currentPageNum;
+    document.getElementById('paginate').max = pdfDoc.numPages;
+    document.getElementById('total_pages').textContent = pdfDoc.numPages;
+
+    document.getElementById('previous').addEventListener('click',
+        function() {
+            onPrevPage();
+    });
+    document.getElementById('next').addEventListener('click',
+        function() {
+            onNextPage();
+    });
+    document.getElementById('paginate').addEventListener('change',
+        function() {
+            var page = parseInt(document.getElementById('paginate').value,10);
+            queueRenderPage(page);
+    });
+    document.getElementById('thumbnailbar').addEventListener('click',
+        function() {
+            thumbnailBarVisible = !(thumbnailBarVisible);
+            if (thumbnailBarVisible) {
+                var owl = $('.owl-carousel');
+                owl.owlCarousel();
+                owl.trigger('to.owl.carousel', [currentPageNum-1,300]);
+                $('#thumbnailContainer').show();
+            } else {
+                $('#thumbnailContainer').hide();
+            }
+    });
 }
 
 ///
@@ -577,11 +612,19 @@ function load(){
         console.log("canvas click");
         toolBarVisible = !(toolBarVisible);
         if (toolBarVisible) {
-            var owl = $('.owl-carousel');
-            owl.owlCarousel();
-            owl.trigger('to.owl.carousel', [currentPageNum-1,300]);
+            if (thumbnailBarVisible) {
+                var owl = $('.owl-carousel');
+                owl.owlCarousel();
+                owl.trigger('to.owl.carousel', [currentPageNum-1,300]);
+                $('#thumbnailContainer').show();
+            } else {
+                $('#thumbnailContainer').hide();
+            }
             $('#footer').show();
         } else {
+            if (thumbnailBarVisible) {
+                $('#thumbnailContainer').hide();
+            }
             $('#footer').hide();
         }
         App.onToggleToolbar(toolBarVisible);
@@ -652,6 +695,9 @@ function onNextPage() {
  * @param num Page number.
  */
 function renderPage(num) {
+    document.getElementById('current_page').textContent = num;
+    document.getElementById('paginate').value = num;
+    currentPageNum = num;
     //Notify App current page is changed to different page
     if (prePageNum != num) {
         prePageNum = num;

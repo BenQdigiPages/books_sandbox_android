@@ -1,8 +1,8 @@
-footer {
+#thumbnailContainer {
     position:fixed;
     left:0px;
-    bottom:0px;
-    height:160px;
+    bottom:40px;
+    height:140px;
     width:100%;
     background:#5A595B;
 }
@@ -11,3 +11,93 @@ p.index {
     text-align:center;
     margin-top:2px;
 }
+
+footer.bar {
+    position: fixed;
+    left:0px;
+	bottom: 0;
+	width: 100%;
+	height: 40px;
+	background: #5A595B;
+	margin-top: 2px;
+}
+footer.bar a {
+	display: inline-block;
+	height: 32px;
+}
+
+footer.bar a.arrow_1 {
+	margin-left: 5px;
+    margin-Right: 2.5px;
+	width: 5%;
+	background: url(img/arrow_icon1.png) no-repeat center;
+}
+
+footer.bar a.arrow_2 {
+	width: 5%;
+    margin-left: 2.5px;
+    margin-Right: 2.5px;
+	background: url(img/arrow_icon2.png) no-repeat center;
+}
+
+footer.bar a.number {
+	position: fixed;
+	width: 20%;
+	right: 10%;
+	margin-top: 2px;
+    margin-left: 2.5px;
+    margin-Right: 2.5px;
+	line-height: 32px;
+	color: #fff;
+}
+
+footer.bar .thumbnail {
+	right: 5px;
+	width: 10%;
+	height: 32px;
+    margin-left: 2.5px;
+    margin-Right: 5px;
+	position: fixed;
+	background: url(img/footer-icon1.png) no-repeat center;
+	display: inline-block;
+	cursor: pointer;
+}
+
+footer.bar input[type=range] {
+	display: inline-block;
+	margin-top=: 4 px
+    margin-left: 2.5px;
+    margin-Right: 2.5px;
+	height: 32px;
+	width: 50%;
+    background: #5A595B;
+}
+
+input[type=range] {
+    /*removes default webkit styles*/
+    -webkit-appearance: none;
+}
+input[type=range]::-webkit-slider-runnable-track {
+    height: 5px;
+    background: #ddd;
+    border: none;
+    margin-top: 1px;
+    border-radius: 3px;
+}
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    border: 2px solid #fff;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #BF8045;
+    margin-top: -7px;
+    cursor: pointer;
+}
+input[type=range]:focus {
+    outline: none;
+}
+input[type=range]:focus::-webkit-slider-runnable-track {
+    background: #ccc;
+}
+

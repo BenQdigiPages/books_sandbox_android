@@ -148,12 +148,10 @@ function webUIInitialized() {
     document.getElementById('previous').addEventListener('click',
         function() {
             onPrevPage();
-            $('.owl-carousel').trigger('prev.owl.carousel', [300]);
     });
     document.getElementById('next').addEventListener('click',
         function() {
             onNextPage();
-            $('.owl-carousel').trigger('next.owl.carousel', [300]);
     });
     document.getElementById('paginate').addEventListener('change',
         function() {
@@ -165,16 +163,14 @@ function webUIInitialized() {
         // get the current value of the input field.
         var value = parseInt($(this).val(),10);
         $('#current_page').html(value);
-        var owl = $('.owl-carousel');
-        owl.trigger('to.owl.carousel', [value-1,300]);
+        $('.owl-carousel').trigger('to.owl.carousel', [value-1,300]);
     });
 
     document.getElementById('thumbnailbar').addEventListener('click',
         function() {
             thumbnailBarVisible = !(thumbnailBarVisible);
             if (thumbnailBarVisible) {
-                var owl = $('.owl-carousel');
-                owl.trigger('to.owl.carousel', [currentPageNum-1,300]);
+                $('.owl-carousel').trigger('to.owl.carousel', [currentPageNum-1,300]);
                 $('#thumbnailContainer').show();
             } else {
                 $('#thumbnailContainer').hide();
@@ -472,8 +468,7 @@ function createThumbnailView(url,opfFile) {
         var pageNum = parseInt(this.getAttribute('data-index'));
         currentPageNum = pageNum;
         queueRenderPage(pageNum);
-        var owl = $('.owl-carousel');
-        owl.trigger('to.owl.carousel', [currentPageNum-1,300]);
+        $('.owl-carousel').trigger('to.owl.carousel', [currentPageNum-1,300]);
     });
 }
 
@@ -624,8 +619,7 @@ function load(){
         toolBarVisible = !(toolBarVisible);
         if (toolBarVisible) {
             if (thumbnailBarVisible) {
-                var owl = $('.owl-carousel');
-                owl.trigger('to.owl.carousel', [currentPageNum-1,300]);
+                $('.owl-carousel').trigger('to.owl.carousel', [currentPageNum-1,300]);
                 $('#thumbnailContainer').show();
             } else {
                 $('#thumbnailContainer').hide();
@@ -687,6 +681,7 @@ function onPrevPage() {
     }
     currentPageNum--;
     queueRenderPage(currentPageNum);
+    $('.owl-carousel').trigger('prev.owl.carousel', [300]);
 }
 
 /**
@@ -698,6 +693,7 @@ function onNextPage() {
     }
     currentPageNum++;
     queueRenderPage(currentPageNum);
+    $('.owl-carousel').trigger('next.owl.carousel', [300]);
 }
 
 /**

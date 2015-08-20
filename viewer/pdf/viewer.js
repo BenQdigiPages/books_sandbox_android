@@ -148,22 +148,32 @@ function webUIInitialized() {
     document.getElementById('previous').addEventListener('click',
         function() {
             onPrevPage();
+            $('.owl-carousel').trigger('prev.owl.carousel', [300]);
     });
     document.getElementById('next').addEventListener('click',
         function() {
             onNextPage();
+            $('.owl-carousel').trigger('next.owl.carousel', [300]);
     });
     document.getElementById('paginate').addEventListener('change',
         function() {
             var page = parseInt(document.getElementById('paginate').value,10);
             queueRenderPage(page);
     });
+
+    $('#paginate').on('input', function() {
+        // get the current value of the input field.
+        var value = parseInt($(this).val(),10);
+        $('#current_page').html(value);
+        var owl = $('.owl-carousel');
+        owl.trigger('to.owl.carousel', [value-1,300]);
+    });
+
     document.getElementById('thumbnailbar').addEventListener('click',
         function() {
             thumbnailBarVisible = !(thumbnailBarVisible);
             if (thumbnailBarVisible) {
                 var owl = $('.owl-carousel');
-                owl.owlCarousel();
                 owl.trigger('to.owl.carousel', [currentPageNum-1,300]);
                 $('#thumbnailContainer').show();
             } else {
@@ -462,6 +472,8 @@ function createThumbnailView(url,opfFile) {
         var pageNum = parseInt(this.getAttribute('data-index'));
         currentPageNum = pageNum;
         queueRenderPage(pageNum);
+        var owl = $('.owl-carousel');
+        owl.trigger('to.owl.carousel', [currentPageNum-1,300]);
     });
 }
 
@@ -609,12 +621,10 @@ function load(){
 
     //Handle pdf view canvas click event.
     $('#the-canvas').click(function() {
-        console.log("canvas click");
         toolBarVisible = !(toolBarVisible);
         if (toolBarVisible) {
             if (thumbnailBarVisible) {
                 var owl = $('.owl-carousel');
-                owl.owlCarousel();
                 owl.trigger('to.owl.carousel', [currentPageNum-1,300]);
                 $('#thumbnailContainer').show();
             } else {

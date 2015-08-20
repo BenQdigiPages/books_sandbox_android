@@ -12,6 +12,7 @@ package com.books.viewer;
 
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -81,6 +82,12 @@ public class ViewerBridge {
         settings.setAppCacheEnabled(false);
         settings.setJavaScriptEnabled(true);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if (0 != (mScene.getApplicationInfo().flags &= ApplicationInfo.FLAG_DEBUGGABLE)) {
+                mWebView.setWebContentsDebuggingEnabled(true);
+            }
+        }
 
         mWebView.addJavascriptInterface(mJavascriptInterface, "_App");
         mWebView.setWebViewClient(mWebViewClient);

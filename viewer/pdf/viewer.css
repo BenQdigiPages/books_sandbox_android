@@ -1,10 +1,10 @@
 #thumbnailContainer {
     position:fixed;
     left:0px;
-    bottom:40px;
+    bottom:28px;
     height:140px;
     width:100%;
-    background:#5A595B;
+    background:rgba(54, 54, 54, 0.7);
 }
 
 p.index {
@@ -20,6 +20,7 @@ footer.bar {
 	height: 40px;
 	background: #5A595B;
 	margin-top: 2px;
+    z-index: 2;
 }
 footer.bar a {
 	display: inline-block;

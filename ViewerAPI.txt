@@ -84,18 +84,12 @@ Viewer provides the following javascript functions:
 Viewer.loadBook(url, legacy)
 
 ///
-/// Get current text font scale size
+/// Set the text appearance
 ///
-/// @scale: double - 1.0 is original size
+/// @text_size: int - in pt unit
+/// @[r, g, b] - text color
 ///
-Viewer.getFontScale() -> scale
-
-///
-/// Set text font scale size
-///
-/// @scale: double - 1.0 is original size
-///
-Viewer.setFontScale(scale)
+Viewer.setTextAppearance(text_size, [r, g, b])
 
 ///
 /// Set page background color
@@ -170,6 +164,7 @@ Viewer.gotoPosition(cfi)
 ///     tag - the bookmark tag type
 ///     null - to remove current bookmark
 /// @image_url: tag image url or null
+///
 Viewer.toggleBookmark(tag, image_url)
 
 ///

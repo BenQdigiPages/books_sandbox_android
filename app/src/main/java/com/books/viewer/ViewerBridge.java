@@ -207,46 +207,16 @@ public class ViewerBridge {
     }
 
     ///
-    /// Get current text font scale size
+    /// Set the text appearance
     ///
-    /// @scale: double - 1.0 is original size
+    /// @text_size: int - in pt unit
+    /// @[r, g, b] - text color
     ///
-    public void getFontScale(final ValueCallback<Double> callback) {
-        eval("Viewer.getFontScale()", new ValueCallback<Number>() {
-            public void onReceiveValue(Number value) {
-                callback.onReceiveValue(value.doubleValue());
-            }
-        });
-    }
-
-    ///
-    /// Set text font scale size
-    ///
-    /// @scale: double - 1.0 is original size
-    ///
-    public void setFontScale(double scale) {
-        eval("Viewer.setFontScale(" + scale + ")", null);
-    }
-
-    ///
-    /// Get page background color
-    ///
-    /// @[r, g, b] - page background color
-    ///
-    public void getBackgroundColor(final ValueCallback<Integer> callback) {
-        eval("Viewer.getBackgroundColor()", new ValueCallback<JSONArray>() {
-            public void onReceiveValue(JSONArray json) {
-                try {
-                    int r = json.getInt(0);
-                    int g = json.getInt(1);
-                    int b = json.getInt(2);
-                    callback.onReceiveValue(Color.argb(255, r, g, b));
-                } catch (Exception e) {
-                    Log.w(TAG, "fail to parse Viewer.getBackgroundColor", e);
-                    callback.onReceiveValue(0);
-                }
-            }
-        });
+    public void setTextAppearance(int text_size, int text_color) {
+        int r = Color.red(text_color);
+        int g = Color.green(text_color);
+        int b = Color.blue(text_color);
+        eval("Viewer.setTextAppearance(" + text_size + ", [" + r + ", " + g + ", " + b + "])", null);
     }
 
     ///
@@ -254,8 +224,20 @@ public class ViewerBridge {
     ///
     /// @[r, g, b] - page background color
     ///
-    public void setBackgroundColor(int r, int g,  int b) {
+    public void setBackgroundColor(int color) {
+        int r = Color.red(color);
+        int g = Color.green(color);
+        int b = Color.blue(color);
         eval("Viewer.setBackgroundColor([" + r + ", " + g + ", " + b + "])", null);
+    }
+
+    ///
+    /// Set page background image
+    ///
+    /// @image_url - page background image url
+    ///
+    public void setBackgroundImage(String image_url) {
+        eval("Viewer.setBackgroundImage(\"" + image_url + "\")", null);
     }
 
     ///
@@ -347,22 +329,22 @@ public class ViewerBridge {
     ///
     /// Toggle the bookmark in the current page.
     ///
-    /// If a valid [r, g, b] is specified, viewer should call App.onAddBookmark
+    /// If a valid tag is specified, viewer should call App.onAddBookmark
     /// or App.onUpdateBookmark in response.
     ///
     /// If null is specified, viewer should call App.onRemoveBookmark in response,
     /// or do nothing if there is currently no bookmark
     ///
-    /// @color: [r, g, b] or null
-    ///     [r, g, b] - the bookmark indicator color,
+    /// @tag: string or null
+    ///     tag - the bookmark tag type
     ///     null - to remove current bookmark
-    ///
-    public void setBookmark(int r,  int g,  int b) {
-        eval("Viewer.toggleBookmark([" + r + ", " + g + ", " + b + "])", null);
+    /// @image_url: tag image url or null
+    public void setBookmark(String tag, String tag_image_url) {
+        eval("Viewer.toggleBookmark(\"" + tag + "\", \"" + tag_image_url + "\")", null);
     }
 
     public void removeBookmark() {
-        eval("Viewer.toggleBookmark(null)", null);
+        eval("Viewer.toggleBookmark(null, null)", null);
     }
 
     ///

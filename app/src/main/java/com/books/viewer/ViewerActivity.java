@@ -137,41 +137,48 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         popup.showAsDropDown(mBtnTOC);
     }
 
+    private int mTextSize = 18;
+    private int mTextColor = Color.BLACK;
+
     private void onClickOptions() {
         PopupMenu popup = new PopupMenu(this);
         popup.setOnClickPopupListener(this);
 
         popup.add(0, "Font scale +25%", new Runnable() {
             public void run() {
-                mBridge.getFontScale(new ValueCallback<Double>() {
-                    public void onReceiveValue(Double value) {
-                        double scale = Math.min(value + 0.25, 4);
-                        mBridge.setFontScale(scale);
-                    }
-                });
+                mTextSize = mTextSize * 125 / 100;
+                mBridge.setTextAppearance(mTextSize, mTextColor);
             }
         });
 
         popup.add(0, "Font scale -25%", new Runnable() {
             public void run() {
-                mBridge.getFontScale(new ValueCallback<Double>() {
-                    public void onReceiveValue(Double value) {
-                        double scale = Math.max(value - 0.25, 0.25);
-                        mBridge.setFontScale(scale);
-                    }
-                });
+                mTextSize = mTextSize * 75 / 100;
+                mBridge.setTextAppearance(mTextSize, mTextColor);
             }
         });
 
-        popup.add(0, "Background: [128, 128, 128]", new Runnable() {
+        popup.add(0, "Background: normal", new Runnable() {
             public void run() {
-                mBridge.setBackgroundColor(128, 128, 128);
+                mTextColor =  Color.BLACK;
+                mBridge.setTextAppearance(mTextSize, mTextColor);
+                mBridge.setBackgroundColor(Color.WHITE);
             }
         });
 
-        popup.add(0, "Background: [255, 255, 255]", new Runnable() {
+        popup.add(0, "Background: reverse", new Runnable() {
             public void run() {
-                mBridge.setBackgroundColor(255, 255, 255);
+                mTextColor =  Color.WHITE;
+                mBridge.setTextAppearance(mTextSize, mTextColor);
+                mBridge.setBackgroundColor(Color.BLACK);
+            }
+        });
+
+        popup.add(0, "Background: paper", new Runnable() {
+            public void run() {
+                mTextColor =  Color.BLACK;
+                mBridge.setTextAppearance(mTextSize, mTextColor);
+                mBridge.setBackgroundImage("file:///android_res/drawable/paper1.jpg");
             }
         });
 
@@ -200,25 +207,25 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         PopupMenu popup = new PopupMenu(this);
         popup.setOnClickPopupListener(this);
 
-        popup.add(0, "Bookmark: [255, 0, 0]", new Runnable() {
+        popup.add(R.drawable.btn_pinklabel, "Bookmark: pink", new Runnable() {
             public void run() {
-                mBridge.setBookmark(255, 0, 0);
+                mBridge.setBookmark("pink", "file:///android_res/drawable/img_pinklabel.png");
             }
         });
 
-        popup.add(0, "Bookmark: [0, 255, 0]", new Runnable() {
+        popup.add(R.drawable.btn_yellowlabel, "Bookmark: yellow", new Runnable() {
             public void run() {
-                mBridge.setBookmark(0, 255, 0);
+                mBridge.setBookmark("yellow", "file:///android_res/drawable/img_yellowlabel.png");
             }
         });
 
-        popup.add(0, "Bookmark: [0, 0, 255]", new Runnable() {
+        popup.add(R.drawable.btn_bluelabel, "Bookmark: blue", new Runnable() {
             public void run() {
-                mBridge.setBookmark(0, 0, 255);
+                mBridge.setBookmark("blue", "file:///android_res/drawable/img_bluelabel.png");
             }
         });
 
-        popup.add(0, "Remove bookmark", new Runnable() {
+        popup.add(R.drawable.btn_nonelabel, "Remove bookmark", new Runnable() {
             public void run() {
                 mBridge.removeBookmark();
             }
@@ -230,32 +237,6 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
     private void onClickMonkey() {
         PopupMenu popup = new PopupMenu(this);
         popup.setOnClickPopupListener(this);
-
-        popup.add(0, "Viewer.getFontScale", new Runnable() {
-            public void run() {
-                mBridge.getFontScale(new ValueCallback<Double>() {
-                    public void onReceiveValue(Double value) {
-                        alert("Viewer.getFontScale", "scale = " + value);
-                    }
-                });
-            }
-        });
-
-        popup.add(0, "Viewer.getBackgroundColor", new Runnable() {
-            public void run() {
-                mBridge.getBackgroundColor(new ValueCallback<Integer>() {
-                    public void onReceiveValue(Integer value) {
-                        int color = value;
-                        int r = Color.red(color);
-                        int g = Color.green(color);
-                        int b = Color.blue(color);
-
-                        alert("Viewer.getBackgroundColor",
-                                String.format("r = %d\ng = %d\nb = %d", r, g, b));
-                    }
-                });
-            }
-        });
 
         popup.add(0, "Viewer.getAvailableLayoutModes", new Runnable() {
             public void run() {

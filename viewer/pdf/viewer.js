@@ -179,32 +179,13 @@ function webUIInitialized() {
 }
 
 ///
-/// Get current text font scale size
+/// Set the text appearance
 ///
-/// @scale: double - 1.0 is original size
+/// @text_size: int - in pt unit
+/// @[r, g, b] - text color
 ///
-Viewer.getFontScale = function() {
-    return 1.0;
-}
-
-///
-/// Set text font scale size
-///
-/// @scale: double - 1.0 is original size
-///
-/// EPUB only
-Viewer.setFontScale = function(scale) {
-
-}
-
-///
-/// Get page background color
-///
-/// @[r, g, b] - page background color
-///
-/// EPUB only
-Viewer.getBackgroundColor = function() {
-    return [0, 0, 0];
+Viewer.setTextAppearance = function(text_size, text_color) {
+    // epub only
 }
 
 ///
@@ -212,9 +193,17 @@ Viewer.getBackgroundColor = function() {
 ///
 /// @[r, g, b] - page background color
 ///
-/// EPUB only
 Viewer.setBackgroundColor = function(rgb) {
-    window.alert("Viewer.setBackgroundColor=" + rgb)
+    // epub only
+}
+
+///
+/// Set page background image
+///
+/// @image_url - page background image url
+///
+Viewer.setBackgroundImage = function(image_url) {
+    // epub only
 }
 
 ///
@@ -295,22 +284,23 @@ Viewer.gotoPosition = function(cfi) {
 ///
 /// Toggle the bookmark in the current page.
 ///
-/// If a valid [r, g, b] is specified, viewer should call App.onAddBookmark
+/// If a valid tag is specified, viewer should call App.onAddBookmark
 /// or App.onUpdateBookmark in response.
 ///
 /// If null is specified, viewer should call App.onRemoveBookmark in response,
 /// or do nothing if there is currently no bookmark
 ///
-/// @color: [r, g, b] or null
-///     [r, g, b] - the bookmark indicator color,
+/// @tag: string or null
+///     tag - the bookmark tag type
 ///     null - to remove current bookmark
+/// @image_url: tag image url or null
 ///
-Viewer.toggleBookmark = function(color) {
-    console.log("Viewer.toggleBookmark=" + color);
-    if (color !== null) {
+Viewer.toggleBookmark = function(tag, image_url) {
+    console.log("Viewer.toggleBookmark=" + tag);
+    if (tag !== null) {
         var bookmark = null;
         if ((bookmark = isBookmarkExist()) !== null) {
-            bookmark.color = color;
+            bookmark.tag = tag;
             App.onUpdateBookmark(bookmark);
         } else {
             //send tmp bookmark to app for getting uuid.
@@ -318,7 +308,7 @@ Viewer.toggleBookmark = function(color) {
                "uuid": "",
                "title": "",
                "cfi": currentPageNum,
-               "color": color
+               "tag": tag
             };
             App.onAddBookmark("bookmarks",tmpBookmark,"AddBookmarkCallBack");
         }

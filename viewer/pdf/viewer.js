@@ -1044,6 +1044,75 @@ function getVisibleElements(scrollEl, views, sortByVisibility) {
   return {first: first, last: last, views: visible};
 }
 
+//[Bruce]
+/**
+ * Generic helper to find out what elements are visible within a scroll pane.
+ */
+function getVisibleElements_with_X_axis(scrollEl, views, sortByVisibility) {
+  var top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
+  var left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
+
+  function isElementRightSideExceedViewLeftSide(view) {
+    //[Bruce] to compatible with owl/Carousel
+    //var element = view.div;
+    var element = view.div.offsetParent;
+    var elementRightSide =
+      element.offsetLeft + element.clientLeft + element.clientWidth;
+    return elementRightSide > left;
+  }
+
+  var visible = [], view, element;
+  var currentHeight, viewHeight;
+  var currentWidth, viewWidth, hiddenWidth, percentWidth;
+  var firstVisibleElementInd = (views.length === 0) ? 0 :
+    binarySearchFirstItem(views, isElementRightSideExceedViewLeftSide);
+
+  for (var i = firstVisibleElementInd, ii = views.length; i < ii; i++) {
+    view = views[i];
+    //[Bruce] to compatible with owl/Carousel
+    //element = view.div;
+    element = view.div.offsetParent;
+    currentWidth = element.offsetLeft + element.clientLeft;
+    viewWidth = element.clientWidth;
+
+    if (currentWidth > right) {
+      break;
+    }
+
+    currentHeight = element.offsetTop + element.clientTop;
+    viewHeight = element.clientHeight;
+    if (currentHeight + viewHeight < top || currentHeight > bottom) {
+      continue;
+    }
+    hiddenWidth = Math.max(0, left - currentWidth) +
+      Math.max(0, currentWidth + viewWidth - right);
+    percentWidth = ((viewWidth - hiddenWidth) * 100 / viewWidth) | 0;
+
+    visible.push({
+      id: view.id,
+      x: currentWidth,
+      y: currentHeight,
+      view: view,
+      percent: percentWidth
+    });
+  }
+
+  var first = visible[0];
+  var last = visible[visible.length - 1];
+
+  if (sortByVisibility) {
+    visible.sort(function(a, b) {
+      var pc = a.percent - b.percent;
+      if (Math.abs(pc) > 0.001) {
+        return -pc;
+      }
+      return a.id - b.id; // ensure stability
+    });
+  }
+  return {first: first, last: last, views: visible};
+}
+//End : [Bruce]
+
 /**
  * Event handler to suppress context menu.
  */
@@ -4044,6 +4113,8 @@ var PresentationModeState = {
   NORMAL: 1,
   CHANGING: 2,
   FULLSCREEN: 3,
+  //[Bruce]
+  CAROUSEL: 4,
 };
 
 var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
@@ -4271,8 +4342,11 @@ var PDFPageView = (function PDFPageViewClosure() {
     var div = document.createElement('div');
     div.id = 'pageContainer' + this.id;
     //[Bruce]
-    //div.className = 'page';
-    div.className = 'item';
+    if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
+        div.className = 'item';
+    } else {
+        div.className = 'page';
+    }
     //End : [Bruce]
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';
@@ -4280,10 +4354,13 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.div = div;
 
     //[Bruce]
-    //container.appendChild(div);
-    var owl = $('.owl-carousel');
-    owl.owlCarousel();
-    owl.trigger('add.owl.carousel',[this.div]);
+    if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
+        var owl = $('.owl-carousel');
+        owl.owlCarousel();
+        owl.trigger('add.owl.carousel',[this.div]);
+    } else {
+        container.appendChild(div);
+    }
     //End : [Bruce]
   }
 
@@ -5386,7 +5463,10 @@ var PDFViewer = (function pdfViewer() {
 
     this.scroll = watchScroll(this.container, this._scrollUpdate.bind(this));
     this.updateInProgress = false;
-    this.presentationModeState = PresentationModeState.UNKNOWN;
+    //[Bruce]
+    //this.presentationModeState = PresentationModeState.UNKNOWN;
+    this.presentationModeState = PresentationModeState.CAROUSEL;
+    //End : [Bruce]
     this._resetView();
 
     if (this.removePageBorders) {
@@ -5433,7 +5513,13 @@ var PDFViewer = (function pdfViewer() {
       if (this.updateInProgress) {
         return;
       }
-      this.scrollPageIntoView(val);
+      //[Bruce] owl has do this for us
+      if(this.isInCarouselMode) {
+          PDFViewerApplication.pdfViewer.forceRendering();
+      } else {
+          this.scrollPageIntoView(val);
+      }
+      //End : [Bruce] owl has do this for us
     },
 
     /**
@@ -5746,9 +5832,13 @@ var PDFViewer = (function pdfViewer() {
       var pageView = this._pages[pageNumber - 1];
 
       //[Bruce]
-      var owl = $('.owl-carousel');
-      owl.owlCarousel();
-      owl.trigger('to.owl.carousel',[pageNumber - 1, 200, true]);
+      if(this.isInCarouselMode) {
+          var owl = $('.owl-carousel');
+          owl.owlCarousel();
+          owl.trigger('to.owl.carousel',[pageNumber - 1, 200, true]);
+          this.currentPageNumber = pageView.id;
+          return;
+      }
       //End : [Bruce]
 
       if (this.isInPresentationMode) {
@@ -5939,6 +6029,12 @@ var PDFViewer = (function pdfViewer() {
       this.container.focus();
     },
 
+    //[Bruce]
+    get isInCarouselMode() {
+      return this.presentationModeState === PresentationModeState.CAROUSEL;
+    },
+    //End : [Bruce]
+
     get isInPresentationMode() {
       return this.presentationModeState === PresentationModeState.FULLSCREEN;
     },
@@ -5953,8 +6049,27 @@ var PDFViewer = (function pdfViewer() {
     },
 
     _getVisiblePages: function () {
-      if (!this.isInPresentationMode) {
-        return getVisibleElements(this.container, this._pages, true);
+      if (!this.isInPresentationMode 
+        //[Bruce]
+             && !this.isInCarouselMode) {
+        //return getVisibleElements(this.container, this._pages, true);
+        return getVisibleElements_with_X_axis(this.container, this._pages, true);
+        //End : [Bruce]
+      //[Bruce]
+      } else if(this.isInCarouselMode){
+        var visible = [];
+        var currentPage = this._pages[this._currentPageNumber - 1];
+        var nextPage = currentPage;
+        visible.push({ id: currentPage.id, view: currentPage });
+
+        // Try to load the next page
+        if((currentPage.id - 1) < this._pages.length) {
+            var nextPage = this._pages[this._currentPageNumber + 1];
+            visible.push({ id: nextPage.id, view: nextPage });
+        }
+
+        return { first: currentPage, last: nextPage, views: visible };
+      //End : [Bruce]
       } else {
         // The algorithm in getVisibleElements doesn't work in all browsers and
         // configurations when presentation mode is active.
@@ -6452,7 +6567,10 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
      * @private
      */
     _getVisibleThumbs: function PDFThumbnailViewer_getVisibleThumbs() {
-      return getVisibleElements(this.container, this.thumbnails);
+      //[Bruce]
+      //return getVisibleElements(this.container, this.thumbnails);
+      return getVisibleElements_with_X_axis(this.container, this.thumbnails);
+      //End : [Bruce]
     },
 
     scrollThumbnailIntoView:
@@ -6834,6 +6952,8 @@ var PDFViewerApplication = {
       linkService: pdfLinkService
     });
     pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
+
+    Preferences.initialize();
     */
     //End : [Bruce][TempDisable]
 

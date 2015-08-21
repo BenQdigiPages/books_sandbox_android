@@ -59,7 +59,8 @@ function onURL_and_AppReady(resultOutput) {
     owl.on('dragged.owl.carousel',
         function callback(event) {
             // Update current page number
-            currentPageNum  = event.item.index;
+            currentPageNum  = event.item.index + 1;
+            PDFViewerApplication.page = currentPageNum - 1;
     });
 
     var url =  resultOutput[0];
@@ -278,7 +279,7 @@ Viewer.getCurrentPosition = function() {
 Viewer.gotoLink = function(link) {
    var index = parseInt(link);
    var dest = pdfOutlineArray[index].outline.dest;
-   pdfLinkService.navigateTo(dest);
+   PDFViewerApplication.pdfLinkService.navigateTo(dest);
 }
 
 ///
@@ -294,8 +295,14 @@ Viewer.gotoPosition = function(cfi) {
         if (pageNum < 0 || pageNum > pdfDoc.numPages) {
             return;
         }
+        // Update PDFApplication
         currentPageNum = pageNum;
-        queueRenderPage(pageNum);
+        PDFViewerApplication.page = currentPageNum;
+
+        // Update screen pageview
+        var owl = $('.owl-carousel');
+        owl.owlCarousel();
+        owl.trigger('to.owl.carousel',[currentPageNum, 200, true]);
     }
 }
 

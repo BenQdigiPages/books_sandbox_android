@@ -15,8 +15,7 @@ var pdfDoc = null,
     currentTouchs = [],
     tmpBookmark = null,
     savedBookmarks = [],
-    pdfOutlineArray = null,
-    pdfLinkService = null;
+    pdfOutlineArray = null;
 
 var ua = navigator.userAgent;
 var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
@@ -6964,21 +6963,19 @@ var PDFViewerApplication = {
     */
     //End : [Bruce][TempDisable]
 
-    Preferences.initialize();
-
     this.pdfHistory = new PDFHistory({
       linkService: pdfLinkService
     });
     pdfLinkService.setHistory(this.pdfHistory);
 
+    //[Bruce][TempDisable]
+    /*
     this.findController = new PDFFindController({
       pdfViewer: this.pdfViewer,
       integratedFind: this.supportsIntegratedFind
     });
     this.pdfViewer.setFindController(this.findController);
 
-    //[Bruce][TempDisable]
-    /*
     this.findBar = new PDFFindBar({
       bar: document.getElementById('findbar'),
       toggleButton: document.getElementById('viewFind'),
@@ -6994,13 +6991,10 @@ var PDFViewerApplication = {
 
     this.findController.setFindBar(this.findBar);
 
-    */
     HandTool.initialize({
       container: container,
-      //[Bruce]
-      //toggleHandTool: document.getElementById('toggleHandTool')
+      toggleHandTool: document.getElementById('toggleHandTool')
     });
-    //End : [Bruce][TempDisable]
 
     this.pdfDocumentProperties = new PDFDocumentProperties({
       overlayName: 'documentPropertiesOverlay',
@@ -7021,8 +7015,6 @@ var PDFViewerApplication = {
       }
     });
 
-    //[Bruce][TempDisable]
-    /*
     SecondaryToolbar.initialize({
       toolbar: document.getElementById('secondaryToolbar'),
       toggleButton: document.getElementById('secondaryToolbarToggle'),
@@ -7066,8 +7058,6 @@ var PDFViewerApplication = {
       passwordSubmit: document.getElementById('passwordSubmit'),
       passwordCancel: document.getElementById('passwordCancel')
     });
-    */
-    //End : [Bruce][TempDisable]
 
     var self = this;
     var initializedPromise = Promise.all([
@@ -7112,6 +7102,18 @@ var PDFViewerApplication = {
       })
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
+    */
+
+    var initializedPromise = new Promise(function (resolve) {
+        PDFJS.disableWebGL = !DEFAULT_PREFERENCES.enableWebGL;
+        PDFJS.disableTextLayer = DEFAULT_PREFERENCES.disableTextLayer;
+        PDFJS.disableRange = DEFAULT_PREFERENCES.disableRange;
+        PDFJS.disableAutoFetch = DEFAULT_PREFERENCES.disableAutoFetch;
+        PDFJS.disableFontFace = DEFAULT_PREFERENCES.disableFontFace;
+        PDFJS.useOnlyCssZoom = DEFAULT_PREFERENCES.useOnlyCssZoom;
+        resolve();
+    });
+    //End : [Bruce][TempDisable]
 
     //[Bruce]
     customEventsManager["onAppInitialized"].confirmThisIsReady();
@@ -7252,10 +7254,14 @@ var PDFViewerApplication = {
   // TODO(mack): This function signature should really be pdfViewOpen(url, args)
   open: function pdfViewOpen(file, scale, password,
                              pdfDataRangeTransport, args) {
+    //[Bruce]
+    /*
     if (this.pdfDocument) {
       // Reload the preferences if a document was previously opened.
       Preferences.reload();
     }
+    */
+    //End : [Bruce]
     this.close();
 
     var parameters = {password: password};
@@ -7277,6 +7283,8 @@ var PDFViewerApplication = {
     var self = this;
     self.downloadComplete = false;
 
+    //[Bruce]
+    /*
     var passwordNeeded = function passwordNeeded(updatePassword, reason) {
       PasswordPrompt.updatePassword = updatePassword;
       PasswordPrompt.reason = reason;
@@ -7286,9 +7294,17 @@ var PDFViewerApplication = {
     function getDocumentProgress(progressData) {
       self.progress(progressData.loaded / progressData.total);
     }
+    */
+    //End : [Bruce]
 
+    //[Bruce]
+    /*
     PDFJS.getDocument(parameters, pdfDataRangeTransport, passwordNeeded,
                       getDocumentProgress).then(
+    */
+    PDFJS.getDocument(parameters, pdfDataRangeTransport, null,
+                      null).then(
+    //End : [Bruce]
       function getDocumentCallback(pdfDocument) {
         //[Bruce]
         customEventsManager['onDocumentReady'].confirmThisIsReady(pdfDocument);
@@ -7319,9 +7335,13 @@ var PDFViewerApplication = {
       }
     );
 
+    //[Bruce]
+    /*
     if (args && args.length) {
       PDFViewerApplication.pdfDocumentProperties.setFileSize(args.length);
     }
+    */
+    //End : [Bruce]
   },
 
   download: function pdfViewDownload() {
@@ -7459,11 +7479,19 @@ var PDFViewerApplication = {
     var self = this;
     scale = scale || UNKNOWN_SCALE;
 
+    //[Bruce]
+    /*
     this.findController.reset();
+    */
+    //End : [Bruce]
 
     this.pdfDocument = pdfDocument;
 
+    //[Bruce]
+    /*
     this.pdfDocumentProperties.setDocumentAndUrl(pdfDocument, this.url);
+    */
+    //End : [Bruce]
 
     var downloadedPromise = pdfDocument.getDownloadInfo().then(function() {
       self.downloadComplete = true;
@@ -7529,6 +7557,8 @@ var PDFViewerApplication = {
         }
       }
 
+      //[Bruce]
+      /*
       store.initializedPromise.then(function resolved() {
         var storedHash = null;
         if (self.preferenceShowPreviousViewOnLoad &&
@@ -7555,6 +7585,12 @@ var PDFViewerApplication = {
         console.error(reason);
         self.setInitialView(null, scale);
       });
+      */
+      self.setInitialView(null, scale);
+      if (!self.isViewerEmbedded) {
+        self.pdfViewer.focus();
+      }
+      //End : [Bruce]
     });
 
     pagesPromise.then(function() {
@@ -7585,6 +7621,7 @@ var PDFViewerApplication = {
       pdfDocument.getOutline().then(function(outline) {
         //[Bruce]
         customEventsManager['onOutlineReady'].confirmThisIsReady(outline);
+        /*
         var container = document.getElementById('outlineView');
         self.outline = new PDFOutlineView({
           container: container,
@@ -7601,8 +7638,12 @@ var PDFViewerApplication = {
             self.preferenceSidebarViewOnLoad === SidebarView.OUTLINE) {
           self.switchSidebarView('outline', true);
         }
+        */
+        //End : [Bruce]
       });
       pdfDocument.getAttachments().then(function(attachments) {
+        //[Bruce]
+        /*
         var container = document.getElementById('attachmentsView');
         self.attachments = new PDFAttachmentView({
           container: container,
@@ -7619,6 +7660,8 @@ var PDFViewerApplication = {
             self.preferenceSidebarViewOnLoad === SidebarView.ATTACHMENTS) {
           self.switchSidebarView('attachments', true);
         }
+        */
+        //End : [Bruce]
       });
     });
 
@@ -7927,11 +7970,11 @@ function webViewerLoad(evt) {
 }
 
 function webViewerInitialized() {
+  //[Bruce]
+  /*
   var queryString = document.location.search.substring(1);
   var params = parseQueryString(queryString);
-  //[Bruce]
-  //var file = 'file' in params ? params.file : DEFAULT_URL;
-  //End : [Bruce]
+  var file = 'file' in params ? params.file : DEFAULT_URL;
 
   var fileInput = document.createElement('input');
   fileInput.id = 'fileInput';
@@ -8026,11 +8069,15 @@ function webViewerInitialized() {
   if (PDFViewerApplication.supportsIntegratedFind) {
     document.getElementById('viewFind').classList.add('hidden');
   }
+  */
+  //End : [Bruce]
 
   // Listen for unsupported features to trigger the fallback UI.
   PDFJS.UnsupportedManager.listen(
     PDFViewerApplication.fallback.bind(PDFViewerApplication));
 
+  //[Bruce]
+  /*
   // Suppress context menus for some controls
   document.getElementById('scaleSelect').oncontextmenu = noContextMenuHandler;
 
@@ -8058,8 +8105,6 @@ function webViewerInitialized() {
       PDFViewerApplication.forceRendering();
     });
 
-  //[Bruce]
-  /*
   document.getElementById('viewThumbnail').addEventListener('click',
     function() {
       PDFViewerApplication.switchSidebarView('thumbs');

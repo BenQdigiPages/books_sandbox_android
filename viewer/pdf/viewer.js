@@ -27,6 +27,7 @@ var customEventsManager =  {
         "onDocumentReady"     : new ViewerObserver(),
         "onMetadataReady"     : new ViewerObserver(),
         "onOutlineReady"      : new ViewerObserver(),
+        "onOwlLayoutReady"      : new ViewerObserver(),
 
         doAfterMultiReady     : function customEventsManager_setMultiReady(mulityReadyArray,readyToDo){
             var mulityReadyPromises = [],
@@ -59,7 +60,7 @@ function onURL_and_AppReady(resultOutput) {
         function callback(event) {
             // Update current page number
             currentPageNum  = event.item.index + 1;
-            PDFViewerApplication.page = currentPageNum - 1;
+            PDFViewerApplication.page = currentPageNum;
     });
 
     var url =  resultOutput[0];

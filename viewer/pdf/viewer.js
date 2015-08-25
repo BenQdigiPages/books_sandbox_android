@@ -22,12 +22,13 @@ var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
 var isAndroidDevice = /Android/g.test(ua);
 
 var customEventsManager =  {
-        "onURLReady"          : new ViewerObserver(),
-        "onAppInitialized"    : new ViewerObserver(),
-        "onDocumentReady"     : new ViewerObserver(),
-        "onMetadataReady"     : new ViewerObserver(),
-        "onOutlineReady"      : new ViewerObserver(),
-        "onOwlLayoutReady"      : new ViewerObserver(),
+        "onURLReady"                       : new ViewerObserver(),
+        "onAppInitialized"                 : new ViewerObserver(),
+        "onDocumentReady"                  : new ViewerObserver(),
+        "onMetadataReady"                  : new ViewerObserver(),
+        "onOutlineReady"                   : new ViewerObserver(),
+        "onOwlLayoutReady"                 : new ViewerObserver(),
+        "onThumbnailExternalLinkReady"     : new ViewerObserver(),
 
         doAfterMultiReady     : function customEventsManager_setMultiReady(mulityReadyArray,readyToDo){
             var mulityReadyPromises = [],
@@ -53,15 +54,19 @@ function ViewerObserver() {
 function onURL_and_AppReady(resultOutput) {
 
     //initOwl
-    var owl = $('.owl-carousel');
+    var owl = $('#viewer');
     owl.owlCarousel();
     // Listen to owl events:
-    owl.on('dragged.owl.carousel',
+    owl.on('changed.owl.carousel',
         function callback(event) {
             // Update current page number
             currentPageNum  = event.item.index + 1;
             PDFViewerApplication.page = currentPageNum;
+            PDFViewerApplication.pdfViewer.update();
     });
+
+    var owl = $('#thumbnailView');
+    owl.owlCarousel();
 
     var url =  resultOutput[0];
 
@@ -78,6 +83,10 @@ function onURL_and_AppReady(resultOutput) {
 
     //Request bookmarks from app when book is loaded.
     App.onRequestBookmarks("bookmarks", "RequestBookmarksCallback")
+
+    // Open Thumbnail
+    PDFViewerApplication.refreshThumbnailViewer();
+    //PDFViewerApplication.forceRendering();
 }
 
 function onDocumentReady(pdfDocument) {
@@ -174,6 +183,20 @@ Viewer.loadBook = function(url, legacy) {
     xhttp.open('GET', url + opfFile, false);
     xhttp.send();
     opfDoc = xhttp.responseXML;
+
+    //[Bruce]
+    var thumbnailNames = [];
+    var items = opfDoc.getElementsByTagName("item");
+    var link;
+
+    for (i = 0 ; i < items.length ; i++) {
+        if (items[i].attributes.getNamedItem("media-type").value !== "image/png") 
+            continue;
+        link = url + items[i].attributes.getNamedItem("href").value;
+        thumbnailNames.push(link);
+    }
+    customEventsManager["onThumbnailExternalLinkReady"].confirmThisIsReady(thumbnailNames);
+    //End : [Bruce]
 
     var attr = opfDoc.getElementById("pdf").attributes;
     var pdfFile = attr.getNamedItem("href").value;
@@ -298,11 +321,6 @@ Viewer.gotoPosition = function(cfi) {
         // Update PDFApplication
         currentPageNum = pageNum;
         PDFViewerApplication.page = currentPageNum;
-
-        // Update screen pageview
-        var owl = $('.owl-carousel');
-        owl.owlCarousel();
-        owl.trigger('to.owl.carousel',[currentPageNum, 200, true]);
     }
 }
 
@@ -4362,7 +4380,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     //[Bruce]
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-        var owl = $('.owl-carousel');
+        var owl = $('#viewer');
         owl.owlCarousel();
         owl.trigger('add.owl.carousel',[this.div]);
     } else {
@@ -5520,13 +5538,7 @@ var PDFViewer = (function pdfViewer() {
       if (this.updateInProgress) {
         return;
       }
-      //[Bruce] owl has do this for us
-      if(this.isInCarouselMode) {
-          PDFViewerApplication.pdfViewer.forceRendering();
-      } else {
-          this.scrollPageIntoView(val);
-      }
-      //End : [Bruce] owl has do this for us
+      this.scrollPageIntoView(val);
     },
 
     /**
@@ -5840,9 +5852,11 @@ var PDFViewer = (function pdfViewer() {
 
       //[Bruce]
       if(this.isInCarouselMode) {
-          var owl = $('.owl-carousel');
+          var owl = $('#viewer');
           owl.owlCarousel();
           owl.trigger('to.owl.carousel',[pageNumber - 1, 200, true]);
+          if(this.currentPageNumber === pageView.id) 
+              return;
           this.currentPageNumber = pageView.id;
           return;
       }
@@ -6229,6 +6243,8 @@ var THUMBNAIL_SCROLL_MARGIN = -19;
 
 
 var THUMBNAIL_WIDTH = 98; // px
+//[Bruce]
+var THUMBNAIL_HEIGHT = 98; // px
 var THUMBNAIL_CANVAS_BORDER_WIDTH = 1; // px
 
 /**
@@ -6275,6 +6291,10 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     var linkService = options.linkService;
     var renderingQueue = options.renderingQueue;
 
+    //[Bruce]
+    var linkItems = options.linkItems;
+    //End : [Bruce]
+
     this.id = id;
     this.renderingId = 'thumbnail' + id;
 
@@ -6294,17 +6314,28 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     this.pageHeight = this.viewport.height;
     this.pageRatio = this.pageWidth / this.pageHeight;
 
-    this.canvasWidth = THUMBNAIL_WIDTH;
-    this.canvasHeight = (this.canvasWidth / this.pageRatio) | 0;
+    //[Bruce] For horizantal view
+    //this.canvasWidth = THUMBNAIL_WIDTH;
+    //this.canvasHeight = (this.canvasWidth / this.pageRatio) | 0;
+    this.canvasHeight = THUMBNAIL_HEIGHT;
+    this.canvasWidth = (this.canvasHeight * this.pageRatio) | 0;
+    //End : [Bruce] For horizantal view
     this.scale = this.canvasWidth / this.pageWidth;
 
     var anchor = document.createElement('a');
     anchor.href = linkService.getAnchorUrl('#page=' + id);
+    //[Bruce]
+    /*
     anchor.title = mozL10n.get('thumb_page_title', {page: id}, 'Page {{page}}');
     anchor.onclick = function stopNavigation() {
       linkService.page = id;
       return false;
     };
+    */
+    if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
+        anchor.className = 'item';
+    }
+    //End : [Bruce]
 
     var div = document.createElement('div');
     div.id = 'thumbnailContainer' + id;
@@ -6324,9 +6355,24 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     ring.style.height = this.canvasHeight + borderAdjustment + 'px';
     this.ring = ring;
 
+    //[Bruce]
+    var img = document.createElement('img');
+    img.src = linkItems[this.id - 1];
+    ring.appendChild(img);
+    //End : [Bruce]
+
     div.appendChild(ring);
     anchor.appendChild(div);
-    container.appendChild(anchor);
+
+    //[Bruce]
+    if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
+        var owl = $('#thumbnailView');
+        owl.owlCarousel();
+        owl.trigger('add.owl.carousel',[anchor]);
+    } else {
+        container.appendChild(anchor);
+    }
+    //End : [Bruce]
   }
 
   PDFThumbnailView.prototype = {
@@ -6582,6 +6628,14 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
 
     scrollThumbnailIntoView:
         function PDFThumbnailViewer_scrollThumbnailIntoView(page) {
+      //[Bruce]
+      if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
+          var owl = $('#thumbnailView');
+          owl.owlCarousel();
+          owl.trigger('to.owl.carousel',[page - 1, 200, true]);
+          return;
+      }
+      //End : [Bruce]
       var selected = document.querySelector('.thumbnail.selected');
       if (selected) {
         selected.classList.remove('selected');
@@ -6603,6 +6657,12 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
         }
       }
     },
+
+    //[Bruce]
+    get isUsingExternalImage() {
+      return this._isUsingExternalImage;
+    },
+    //End : [Bruce]
 
     get pagesRotation() {
       return this._pagesRotation;
@@ -6634,6 +6694,8 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
       this.thumbnails = [];
       this._pagesRotation = 0;
       this._pagesRequests = [];
+      //[Bruce]
+      this._isUsingExternalImage = true;
     },
 
     setDocument: function PDFThumbnailViewer_setDocument(pdfDocument) {
@@ -6651,6 +6713,29 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
         return Promise.resolve();
       }
 
+      //[Bruce]
+      var firstPagePromise = pdfDocument.getPage(1);
+      Promise.all([firstPagePromise,customEventsManager["onThumbnailExternalLinkReady"].promise]).then(function (resultOutPut) {
+        var firstPage = resultOutPut[0];
+        var pagesCount = pdfDocument.numPages;
+        var viewport = firstPage.getViewport(1.0);
+        for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+          var thumbnail = new PDFThumbnailView({
+            container: this.container,
+            id: pageNum,
+            defaultViewport: viewport.clone(),
+            linkService: this.linkService,
+            renderingQueue: this.renderingQueue,
+            linkItems: resultOutPut[1],
+          });
+          this.thumbnails.push(thumbnail);
+        }
+        $('#thumbnailView').on('click', '.owl-item', function(e) {
+            PDFViewerApplication.page = $(this).index() + 1;
+        });
+      }.bind(this));
+      return firstPagePromise;
+      /*
       return pdfDocument.getPage(1).then(function (firstPage) {
         var pagesCount = pdfDocument.numPages;
         var viewport = firstPage.getViewport(1.0);
@@ -6665,6 +6750,8 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
           this.thumbnails.push(thumbnail);
         }
       }.bind(this));
+      */
+      //End : [Bruce]
     },
 
     /**
@@ -6950,8 +7037,7 @@ var PDFViewerApplication = {
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
 
-    //[Bruce][TempDisable]
-    /*
+    
     var thumbnailContainer = document.getElementById('thumbnailView');
     this.pdfThumbnailViewer = new PDFThumbnailViewer({
       container: thumbnailContainer,
@@ -6960,6 +7046,8 @@ var PDFViewerApplication = {
     });
     pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
 
+    //[Bruce][TempDisable]
+    /*
     Preferences.initialize();
     */
     //End : [Bruce][TempDisable]
@@ -7239,11 +7327,7 @@ var PDFViewerApplication = {
     this.pdfDocument.destroy();
     this.pdfDocument = null;
 
-    //[Bruce]
-    /*
     this.pdfThumbnailViewer.setDocument(null);
-    */
-    //End : [Bruce]
     this.pdfViewer.setDocument(null);
     this.pdfLinkService.setDocument(null, null);
 
@@ -7524,11 +7608,7 @@ var PDFViewerApplication = {
     this.pageRotation = 0;
     this.isInitialViewSet = false;
 
-    //[Bruce][TempDisable]
-    /*
     this.pdfThumbnailViewer.setDocument(pdfDocument);
-    */
-    //End : [Bruce][TempDisable]
 
     firstPagePromise.then(function(pdfPage) {
       downloadedPromise.then(function () {
@@ -7747,11 +7827,7 @@ var PDFViewerApplication = {
 
   cleanup: function pdfViewCleanup() {
     this.pdfViewer.cleanup();
-    //[Bruce]
-    /*
     this.pdfThumbnailViewer.cleanup();
-    */
-    //End : [Bruce]
     this.pdfDocument.cleanup();
   },
 
@@ -7762,6 +7838,24 @@ var PDFViewerApplication = {
   },
 
   refreshThumbnailViewer: function pdfViewRefreshThumbnailViewer() {
+    //[Bruce]
+    if(PDFViewerApplication.pdfThumbnailViewer.isUsingExternalImage) {
+        var pdfViewer = this.pdfViewer;
+        var thumbnailViewer = this.pdfThumbnailViewer;
+
+        // set thumbnail images of rendered pages
+        var pagesCount = pdfViewer.pagesCount;
+        for (var pageIndex = 0; pageIndex < pagesCount; pageIndex++) {
+            var thumbnailView = thumbnailViewer.getThumbnail(pageIndex);
+            thumbnailView.setImage(pageView);
+        }
+
+        thumbnailViewer.scrollThumbnailIntoView(this.page);
+
+        return;
+    }
+    //End : [Bruce]
+
     var pdfViewer = this.pdfViewer;
     var thumbnailViewer = this.pdfThumbnailViewer;
 
@@ -8460,14 +8554,19 @@ window.addEventListener('pagechange', function pagechange(evt) {
     document.getElementById('pageNumber').value = page;
     */
     //End : [Bruce]
+    //[Bruce]
+    /*
     if (PDFViewerApplication.sidebarOpen) {
       PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);
     }
+    */
+    PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);
+    //End : [Bruce]
   }
-  var numPages = PDFViewerApplication.pagesCount;
-
   //[Bruce]
   /*
+  var numPages = PDFViewerApplication.pagesCount;
+
   document.getElementById('previous').disabled = (page <= 1);
   document.getElementById('next').disabled = (page >= numPages);
 

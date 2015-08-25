@@ -1,115 +1,77 @@
-<!DOCTYPE html>
-<html class="no-js">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-
-        <title></title>
-
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width, user-scalable=no">
-        <meta name="apple-mobile-web-app-capable" content="yes">
-
-        <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="css/main.css">
-        <link rel="stylesheet" href="css/popup.css">
-
-        <script src="js/libs/jquery-2.1.0.min.js"></script>
-        <script src="js/libs/zip.min.js"></script>
-
-        <!-- Render -->
-        <script src="js/epub.min.js"></script>
-
-        <!-- Hooks -->
-        <script src="js/hooks.min.js"></script>
-
-        <!-- Reader -->
-        <script src="js/reader.min.js"></script>
-
-        <!-- Plugins -->
-        <script src="js/plugins/search.js"></script>
-
-        <!-- Highlights -->
-        <script src="js/libs/jquery.highlight.js"></script>
-        <script src="js/hooks/extensions/highlight.js"></script>
-
-        <!-- File Storage -->
-        <!-- <script src="js/libs/fileStorage.min.js"></script> -->
-
-        <!-- Full Screen -->
-        <script src="js/libs/screenfull.min.js"></script>
-
-        <!-- load the viewer API -->
-        <script src="viewer.js"></script>
-
-        <script>
-            EPUBJS.filePath = "js/libs/";
-            EPUBJS.cssPath = "css/";
-        </script>
-    </head>
-    <body>
-      <div id="sidebar">
-        <div id="panels">
-          <input id="searchBox" placeholder="search" type="search">
-
-          <a id="show-Search" class="show_view icon-search" data-view="Search">Search</a>
-          <a id="show-Toc" class="show_view icon-list-1 active" data-view="Toc">TOC</a>
-          <a id="show-Bookmarks" class="show_view icon-bookmark" data-view="Bookmarks">Bookmarks</a>
-          <a id="show-Notes" class="show_view icon-edit" data-view="Notes">Notes</a>
-
+<!doctype html>
+<html id="player">
+<head>
+    <meta charset="UTF-8">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="libs/assets/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="libs/fancybox/source/jquery.fancybox.css" />
+    <link rel="stylesheet" type="text/css" href="libs/assets/css/style.css">
+    <link rel="stylesheet" type="text/css" href="libs/assets/css/mobile.css">
+    <script src="libs/hammer.min.js"></script>
+    <script src="libs/epub_cfi_test/build/libs/jquery/jquery-2.1.0.min.js"></script>
+    <script src="libs/assets/js/jquery.blockui.js"></script>
+    <script src="libs/assets/js/moment.js"></script>
+    <script src="libs/highlight.js"></script>
+    <script src="libs/fancybox/source/jquery.fancybox.js"></script>
+    <!--<script src="libs/base64.js"></script>-->
+    <script type="text/javascript">
+    	var decode = false;
+    	var scollmode = false;
+    	var layout = "single";
+    	var BookData = {};
+        var startTime = Date.now();
+        var processFlag = 0 ;
+        var storedSelections = [];
+        var baseCfi ='';
+        var bConsoleVis = true;
+        var bShowConsoleLog = true;
+        var bShowTouchEvent = true;
+        var bOnlyShowStartAndEnd = false;
+        var cfis = [];
+        var navbar_toggle = false;
+        var current_font = { size:16, line:20 };
+        var Book;
+        var idoc;
+        var current_scroll;
+        var iframe;
+        var last_page = 0;
+    </script>
+    <script src="libs/epub_cfi_test/build/libs/zip.js"></script>
+    <script src="libs/epub_cfi_test/build/epub.js"></script>
+</head>
+<body id="book_container">
+    <div id="window-light"></div>
+    <!--<div id="book_loading"></div>-->
+    <div id="book_area" class="reader_main"></div>
+    <a href="#" class="arrow_icon1 prev_page"></a>
+    <a href="#" class="arrow_icon2 next_page"></a>
+    <!-- 劃線工具 -->
+    <div id="bookline">
+        <div>
+            <label class="green">
+                <input type="radio" name="bookcolor" value="green">
+                <i class="fa fa-check"></i>
+            </label>
+            <label class="blue">
+                <input type="radio" name="bookcolor" value="blue">
+                <i class="fa fa-check"></i>
+            </label>
+            <label class="red">
+                <input type="radio" name="bookcolor" value="red">
+                <i class="fa fa-check"></i>
+            </label>
+            <a href="javascript:" class="note"><i class="fa fa-pencil-square-o"></i></a>
+            <a href="javascript:" class="share"><i class="fa fa-share-alt"></i></a>
+            <i class="fa fa-times fa-2x" onclick="document.querySelector('#bookline').style.display='none';"></i>
         </div>
-        <div id="tocView" class="view">
-        </div>
-        <div id="searchView" class="view">
-          <ul id="searchResults"></ul>
-        </div>
-        <div id="bookmarksView" class="view">
-          <ul id="bookmarks"></ul>
-        </div>
-        <div id="notesView" class="view">
-          <div id="new-note">
-            <textarea id="note-text"></textarea>
-            <button id="note-anchor">Anchor</button>
-          </div>
-          <ol id="notes"></ol>
-        </div>
-      </div>
-      <div id="main">
-
-        <div id="titlebar">
-          <div id="opener">
-            <a id="slider" class="icon-menu">Menu</a>
-          </div>
-          <div id="metainfo">
-            <span id="book-title"></span>
-            <span id="title-seperator">&nbsp;&nbsp;–&nbsp;&nbsp;</span>
-            <span id="chapter-title"></span>
-          </div>
-          <div id="title-controls">
-            <a id="bookmark" class="icon-bookmark-empty">Bookmark</a>
-            <a id="setting" class="icon-cog">Settings</a>
-            <a id="fullscreen" class="icon-resize-full">Fullscreen</a>
-          </div>
-        </div>
-
-        <div id="divider"></div>
-        <div id="prev" class="arrow">‹</div>
-        <div id="viewer"></div>
-        <div id="next" class="arrow">›</div>
-
-        <div id="loader"><img src="img/loader.gif"></div>
-      </div>
-      <div class="modal md-effect-1" id="settings-modal">
-          <div class="md-content">
-              <h3>Settings</h3>
-              <div>
-                  <p>
-                    <input type="checkbox" id="sidebarReflow" name="sidebarReflow">Reflow text when sidebars are open.</input>
-                  </p>
-              </div>
-              <div class="closer icon-cancel-circled"></div>
-          </div>
-      </div>
-      <div class="overlay"></div>
-    </body>
+    </div>
+    <!--<h1>Viewer Sandbox</h1>-->
+    <!--<button id="showToolbar" class="hidden" onclick="App.onToggleToolbar(true)">Show toolbar</button><br>-->
+    <!--<button id="hideToolbar" class="hidden" onclick="App.onToggleToolbar(false)">Hide toolbar</button><br>-->
+    <!--<button id="changeTitle" class="hidden" onclick="App.onChangeTitle(BookData.title)">Change title「測試標題」</button><br>-->
+    <!--<button id="changeTOC" class="hidden" onclick="App.onChangeTOC(BookData.toc)">Change TOC</button><br>-->
+    <script src="viewer.js"></script>
+</body>
 </html>

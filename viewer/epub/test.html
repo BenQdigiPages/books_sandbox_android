@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style type="text/css">
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+        button, button.btn, a.btn {
+            broder: 0;
+            background: #CCC;
+            color: #666;
+            padding: 10px 15px;
+        }
+        button:hover, button.btn:hover, a.btn:hover,
+        button:focus, button.btn:focus, a.btn:focus {
+            background: #EEE;
+        }
+    </style>
+
+    <script src="viewer.js"></script>
+</head>
+
+<body>
+    <script>
+        var TOC = [
+            { title: "Chapter 1 - Test", url: "./c1", level: 0 },
+            { title: "#1 %Apple", url: "./c1#1", level: 1 },
+            { title: "#1.1 %iOS", url: "./c1#1.1", level: 2 },
+            { title: "#2 %Google", url: "./c1#2", level: 1 },
+            { title: "Chapter 2 - Test", url: "./c2", level: 0 },
+            { title: "Chapter 3 - Test", url: "./c3", level: 0 },
+            { title: "Chapter 4 - Test", url: "./c4", level: 0 },
+            { title: "Chapter 5 - Test", url: "./c5", level: 0 },
+        ];
+
+        Viewer.loadBook();
+    </script>
+
+    <h1>Viewer Sandbox</h1>
+    <button onclick="App.onToggleToolbar(true)">Show toolbar</button><br>
+    <button onclick="App.onToggleToolbar(false)">Hide toolbar</button><br>
+    <button onclick="App.onChangeTitle('測試標題')">Change title「測試標題」</button><br>
+    <button onclick="App.onChangeTOC(TOC)">Change TOC</button><br>
+    <button onclick="Viewer.loadBook()">Load Book</button><br>
+    
+    <b><a href="http://fake.benqguru.com/book/OPS/cover.xhtml">Show Cover</a></b>
+</body>
+
+</html>

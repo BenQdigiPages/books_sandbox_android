@@ -20,9 +20,17 @@
 
 <body>
     <div>
-        <canvas id="the-canvas" style="border:0px solid black"></canvas>
+        <canvas id="main-canvas" style="position:absolute; top:0; left:0; width:354; height:482px; z-index:1" > </canvas>
     </div>
-        <div class="owl-carousel" id="thumbnailContainer" stlye="display:none">
+    <div>
+        <canvas id="the-canvas" style="border:0px solid black; z-index:10"  stlye="display:none"></canvas>
+    </div>
+    <div>
+        <canvas id="two-canvas1" style="border:0px solid black; z-index:10"></canvas>
+        <canvas id="two-canvas2" style="border:0px solid black; z-index:10"></canvas>
+    </div>
+
+	<div class="owl-carousel" id="thumbnailContainer" stlye="display:none">
     </div>
     <footer id="footer" class="bar">
         <a href="#" id="previous" class="arrow_1"></a>

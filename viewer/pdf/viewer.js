@@ -13,6 +13,7 @@ var pdfDoc = null,
     touchStartX = 0.0,
     touchStartY = 0.0,
     currentLayoutMode = "single",
+    twoPageModeEnabled = false,
     currentTouchs = [],
     tmpBookmark = null,
     savedBookmarks = [],
@@ -91,7 +92,14 @@ Viewer.loadBook = function(url, legacy) {
         pdfDoc = pdfDoc_;
 
         // Initial/first page rendering
-        renderPage(currentPageNum);
+        if (!twoPageModeEnabled)
+        {	
+            renderPage(currentPageNum);
+        }	
+        else
+        {	
+            renderTwoPage(currentPageNum);
+        }	
 
         //callback title
         pdfDoc.getMetadata().then(function(data) {
@@ -224,6 +232,11 @@ Viewer.getAvailableLayoutModes = function() {
 /// @mode: string - either "single", "side_by_side" or "continuous"
 ///
 Viewer.getLayoutMode = function() {
+    if (twoPageModeEnabled){
+        currentLayoutMode="side_by_side";
+    } else {
+        currentLayoutMode="single";
+    }
     return currentLayoutMode;
 }
 
@@ -236,7 +249,16 @@ Viewer.setLayoutMode = function(mode) {
     console.log("Viewer.setLayoutMode=" + mode);
     if (mode !== currentLayoutMode) {
         currentLayoutMode = mode;
-        //TODO:Change layout mode
+        if (currentLayoutMode === "single") {
+            twoPageModeEnabled = false;
+        }else if (currentLayoutMode === "side_by_side"){
+            twoPageModeEnabled = true;
+        }
+        else {
+            twoPageModeEnabled = false;
+            console.log("Viewer.setLayoutMode: others");
+        }
+        queueRenderPage(currentPageNum);
     }
 }
 
@@ -605,7 +627,7 @@ function TouchPoint(x,y) {
 function load(){
 
     //Handle pdf view canvas click event.
-    $('#the-canvas').click(function() {
+    $('#main-canvas').click(function() {
         toolBarVisible = !(toolBarVisible);
         if (toolBarVisible) {
             if (thumbnailBarVisible) {
@@ -624,9 +646,9 @@ function load(){
         App.onToggleToolbar(toolBarVisible);
     });
 
-    document.getElementById('the-canvas').addEventListener('touchstart',touch, false);
-    document.getElementById("the-canvas").addEventListener('touchmove',touch, false);
-    document.getElementById("the-canvas").addEventListener('touchend',touch, false);
+    document.getElementById('main-canvas').addEventListener('touchstart',touch, false);
+    document.getElementById("main-canvas").addEventListener('touchmove',touch, false);
+    document.getElementById("main-canvas").addEventListener('touchend',touch, false);
 
     function touch(event) {
 
@@ -670,6 +692,11 @@ function onPrevPage() {
         return;
     }
     currentPageNum--;
+	if (twoPageModeEnabled){
+		if (currentPageNum > 1){
+			currentPageNum--;
+		}	
+	}		
     queueRenderPage(currentPageNum);
     $('.owl-carousel').trigger('prev.owl.carousel', [300]);
 }
@@ -682,6 +709,11 @@ function onNextPage() {
         return;
     }
     currentPageNum++;
+    if (twoPageModeEnabled){
+		if (currentPageNum < pdfDoc.numPages){
+			currentPageNum++;
+		}
+	}	
     queueRenderPage(currentPageNum);
     $('.owl-carousel').trigger('next.owl.carousel', [300]);
 }
@@ -691,6 +723,9 @@ function onNextPage() {
  * @param num Page number.
  */
 function renderPage(num) {
+    document.getElementById('two-canvas1').style.display='none';
+    document.getElementById('two-canvas2').style.display='none';
+    document.getElementById('the-canvas').style.display='inherit';
     document.getElementById('current_page').textContent = num;
     document.getElementById('paginate').value = num;
     currentPageNum = num;
@@ -703,9 +738,13 @@ function renderPage(num) {
     pageRendering = true;
     // Using promise to fetch the page
     pdfDoc.getPage(num).then(function(page) {
+        console.log('OnePage_scale: ' + scale);
         var viewport = page.getViewport(scale);
         canvas = document.getElementById('the-canvas');
         ctx = canvas.getContext('2d');
+        console.log('ctx: ' + ctx);
+        console.log('viewport.height: ' + viewport.height);
+        console.log('viewport.width: ' + viewport.width);
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
@@ -728,6 +767,80 @@ function renderPage(num) {
     });
 }
 
+function renderTwoPage(num) {
+    console.log('renderTowPage_num:' + num);
+    document.getElementById('the-canvas').style.display='none';
+    document.getElementById('two-canvas1').style.display='inline-block';
+    document.getElementById('two-canvas2').style.display='inline-block';
+    document.getElementById('current_page').textContent = num;
+    document.getElementById('paginate').value = num;
+    if ((num % 2) != 1)
+        num = num -1;
+    currentPageNum = num;
+    //console.log('renderTowPage()currentPageNum ' + currentPageNum);
+    //Notify App current page is changed to different page
+    if (prePageNum != num) {
+        prePageNum = num;
+        //chapter not implement
+        App.onChangePage("", num, num, pdfDoc.numPages);
+    }
+    pageRendering = true;
+    // Using promise to fetch the page
+    pdfDoc.getPage(num).then(function(page) {
+		var viewport = page.getViewport((scale/2-0.05).toFixed(2));
+        canvas = document.getElementById('two-canvas1');
+        ctx = canvas.getContext('2d');
+        console.log('viewport.height: ' + viewport.height);
+        console.log('viewport.width: ' + viewport.width);
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        // Render PDF page into canvas context
+        var renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+        };
+        var renderTask = page.render(renderContext);
+
+        // Wait for rendering to finish
+        renderTask.promise.then(function () {
+            pageRendering = false;
+            if (pageNumPending !== null) {
+                // New page rendering is pending
+                renderPage(pageNumPending);
+                pageNumPending = null;
+            }
+        });
+    });
+	
+    pdfDoc.getPage(num+1).then(function(page) {
+        var viewport = page.getViewport((scale/2-0.05).toFixed(2));
+        canvas = document.getElementById('two-canvas2');
+        ctx = canvas.getContext('2d');
+        console.log('ctx: ' + ctx);
+        console.log('viewport.height: ' + viewport.height);
+        console.log('viewport.width: ' + viewport.width);
+        canvas.height = viewport.height;
+		canvas.width = viewport.width;
+
+        // Render PDF page into canvas context
+        var renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+        };
+        var renderTask = page.render(renderContext);
+
+        // Wait for rendering to finish
+        renderTask.promise.then(function () {
+            pageRendering = false;
+            if (pageNumPending !== null) {
+                // New page rendering is pending
+                renderPage(pageNumPending);
+                pageNumPending = null;
+            }
+        });
+    });
+}
 /**
  * If another page rendering in progress, waits until the rendering is
  * finished. Otherwise, executes rendering immediately.
@@ -736,7 +849,12 @@ function queueRenderPage(num) {
     if (pageRendering) {
         pageNumPending = num;
     } else {
-        renderPage(num);
+        //renderPage(num);
+        if (!twoPageModeEnabled) {
+            renderPage(num);
+        } else {	
+            renderTwoPage(num);
+        }	
     }
 }
 

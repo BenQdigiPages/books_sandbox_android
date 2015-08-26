@@ -12,6 +12,25 @@ p.index {
     margin-top:2px;
 }
 
+.two-canvas1{
+  display: inline-block;
+  vertical-align: top;
+}
+.two-canvas2{
+  display: inline-block;
+  vertical-align: top;
+}
+
+html[dir='ltr'] .two-canvas1,
+html[dir='rtl'] .two-canvas2 {
+  margin-right: -7px;
+}
+html[dir='ltr'] .two-canvas2,
+html[dir='rtl'] .two-canvas1 {
+  margin-left: -7px;
+}
+
+
 footer.bar {
     position: fixed;
     left:0px;

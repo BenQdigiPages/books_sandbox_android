@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="viewer.css"/>
     <link rel="stylesheet" href="owlcarousel/owl.carousel.css">
     <link rel="stylesheet" href="owlcarousel/owl.theme.default.min.css">
     <!-- Use latest PDF.js package build from Github -->
@@ -24,7 +25,7 @@
             });
             $('#thumbnailView').owlCarousel({
                 items: 5,
-                margin: 0,
+                center:true,
             });
         });
     </script>
@@ -33,19 +34,22 @@
 <body>
     <div id="outerContainer">
         <div id="mainContainer">
-            <div id="loadingBar">
-                <div class="progress">
-                    <div class="glimmer">
-                    </div>
-                </div>
-            </div>
             <div id="viewerContainer">
                 <div id="viewer" class="owl-carousel"></div>
             </div>
         </div> <!-- mainContainer -->
-        <div id="thumbnailView" class="owl-carousel">
-        </div>
     </div> <!-- outerContainer -->
+    <div id="thumbnailView" class="owl-carousel" stlye="display:none">
+    </div>
+    <footer id="footer" class="bar">
+        <a href="#" id="previous" class="arrow_1"></a>
+            <input id="paginate" type="range" value="1" min="1" step="1" autofocus="true">
+        <a href="#" id="next" class="arrow_2"></a>
+        <a class="number">
+            <span id="current_page">000</span>/<span id="total_pages">000</span>
+        </a>
+        <label id="thumbnailbar" class="thumbnail">
+        </label>
+    </footer>
 </body>
-
 </html>

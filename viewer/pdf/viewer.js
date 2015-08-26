@@ -9,6 +9,7 @@ var pdfDoc = null,
     canvas,
     ctx,
     toolBarVisible = true,
+    thumbnailBarVisible = false,
     touchStartX = 0.0,
     touchStartY = 0.0,
     currentLayoutMode = "single",
@@ -29,6 +30,7 @@ var customEventsManager =  {
         "onOutlineReady"                   : new ViewerObserver(),
         "onOwlLayoutReady"                 : new ViewerObserver(),
         "onThumbnailExternalLinkReady"     : new ViewerObserver(),
+        "onFirstPageRendered"              : new ViewerObserver(),
 
         doAfterMultiReady     : function customEventsManager_setMultiReady(mulityReadyArray,readyToDo){
             var mulityReadyPromises = [],
@@ -52,6 +54,7 @@ function ViewerObserver() {
 }
 
 function onURL_and_AppReady(resultOutput) {
+    var url =  resultOutput[0];
 
     //initOwl
     var owl = $('#viewer');
@@ -59,21 +62,39 @@ function onURL_and_AppReady(resultOutput) {
     // Listen to owl events:
     owl.on('changed.owl.carousel',
         function callback(event) {
-            // Update current page number
             currentPageNum  = event.item.index + 1;
+
+            // Update current page number
             PDFViewerApplication.page = currentPageNum;
-            PDFViewerApplication.pdfViewer.update();
     });
 
     var owl = $('#thumbnailView');
     owl.owlCarousel();
 
-    var url =  resultOutput[0];
+    //Handle pdf view canvas click event.
+    $('#viewerContainer').click(function() {
+        toolBarVisible = !(toolBarVisible);
+        if (toolBarVisible) {
+            if (thumbnailBarVisible) {
+                $('#thumbnailView').show();
+            } else {
+                $('#thumbnailView').hide();
+            }
+            $('#footer').show();
+        } else {
+            if (thumbnailBarVisible) {
+                $('#thumbnailView').hide();
+            }
+            $('#footer').hide();
+        }
+        App.onToggleToolbar(toolBarVisible);
+    });
 
     //Set listener before open file
     customEventsManager["onMetadataReady"].doTask(onMetadataReady);
     customEventsManager['onOutlineReady'].doTask(onOutlineReady);
     customEventsManager['onDocumentReady'].doTask(onDocumentReady);
+    customEventsManager['onFirstPageRendered'].doTask(onFirstPageRendered);
 
     /**
      * Asynchronously downloads PDF.
@@ -83,14 +104,35 @@ function onURL_and_AppReady(resultOutput) {
 
     //Request bookmarks from app when book is loaded.
     App.onRequestBookmarks("bookmarks", "RequestBookmarksCallback")
+}
 
-    // Open Thumbnail
-    PDFViewerApplication.refreshThumbnailViewer();
-    //PDFViewerApplication.forceRendering();
+function onFirstPageRendered() {
+    // NOTE : Init screen widgets after firstpage rendered
+    //Set tool bar
+    if (toolBarVisible) {
+        if (thumbnailBarVisible) {
+            $('#thumbnailView').show();
+        } else {
+            $('#thumbnailView').hide();
+        }
+        $('#footer').show();
+    } else {
+        if (thumbnailBarVisible) {
+            $('#thumbnailView').hide();
+        }
+        $('#footer').hide();
+    }
+    App.onToggleToolbar(toolBarVisible);
+
+    // Set thie page forcefully to let Carousel to start run
+    var owl = $('#viewer');
+    owl.owlCarousel();
+    owl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
 }
 
 function onDocumentReady(pdfDocument) {
     pdfDoc = pdfDocument;
+    webUIInitialized();
 }
 
 //callback title
@@ -176,7 +218,7 @@ Viewer.loadBook = function(url, legacy) {
     xhttp.send();
     containerDoc = xhttp.responseXML;
     var rootFileAttr = containerDoc.getElementsByTagName("rootfile")[0].attributes;
-    var opfFile = rootFileAttr.getNamedItem("full-path").value
+    var opfFile = rootFileAttr.getNamedItem("full-path").value;
     console.log("OPF file:" + opfFile);
 
     //Parsing .pdf from .opf
@@ -209,33 +251,53 @@ Viewer.loadBook = function(url, legacy) {
     customEventsManager.doAfterMultiReady(["onURLReady","onAppInitialized"],onURL_and_AppReady);
 }
 
-///
-/// Get current text font scale size
-///
-/// @scale: double - 1.0 is original size
-///
-Viewer.getFontScale = function() {
-    return 1.0;
+function webUIInitialized() {
+    document.getElementById('current_page').textContent = currentPageNum;
+    document.getElementById('paginate').value = currentPageNum;
+    document.getElementById('paginate').max = pdfDoc.numPages;
+    document.getElementById('total_pages').textContent = pdfDoc.numPages;
+
+    document.getElementById('previous').addEventListener('click',
+        function() {
+            onPrevPage();
+    });
+    document.getElementById('next').addEventListener('click',
+        function() {
+            onNextPage();
+    });
+    document.getElementById('paginate').addEventListener('change',
+        function() {
+            var page = parseInt(document.getElementById('paginate').value,10);
+            PDFViewerApplication.page = page;
+    });
+
+    $('#paginate').on('input', function() {
+        // get the current value of the input field.
+        var value = parseInt($(this).val(),10);
+        $('#current_page').html(value);
+        PDFViewerApplication.page = value;
+    });
+
+    document.getElementById('thumbnailbar').addEventListener('click',
+        function() {
+            thumbnailBarVisible = !(thumbnailBarVisible);
+            if (thumbnailBarVisible) {
+                $('#thumbnailView').show();
+                PDFViewerApplication.refreshThumbnailViewer();
+            } else {
+                $('#thumbnailView').hide();
+            }
+    });
 }
 
 ///
-/// Set text font scale size
+/// Set the text appearance
 ///
-/// @scale: double - 1.0 is original size
+/// @text_size: int - in pt unit
+/// @[r, g, b] - text color
 ///
-/// EPUB only
-Viewer.setFontScale = function(scale) {
-
-}
-
-///
-/// Get page background color
-///
-/// @[r, g, b] - page background color
-///
-/// EPUB only
-Viewer.getBackgroundColor = function() {
-    return [0, 0, 0];
+Viewer.setTextAppearance = function(text_size, text_color) {
+    // epub only
 }
 
 ///
@@ -243,9 +305,17 @@ Viewer.getBackgroundColor = function() {
 ///
 /// @[r, g, b] - page background color
 ///
-/// EPUB only
 Viewer.setBackgroundColor = function(rgb) {
-    window.alert("Viewer.setBackgroundColor=" + rgb)
+    // epub only
+}
+
+///
+/// Set page background image
+///
+/// @image_url - page background image url
+///
+Viewer.setBackgroundImage = function(image_url) {
+    // epub only
 }
 
 ///
@@ -327,22 +397,23 @@ Viewer.gotoPosition = function(cfi) {
 ///
 /// Toggle the bookmark in the current page.
 ///
-/// If a valid [r, g, b] is specified, viewer should call App.onAddBookmark
+/// If a valid tag is specified, viewer should call App.onAddBookmark
 /// or App.onUpdateBookmark in response.
 ///
 /// If null is specified, viewer should call App.onRemoveBookmark in response,
 /// or do nothing if there is currently no bookmark
 ///
-/// @color: [r, g, b] or null
-///     [r, g, b] - the bookmark indicator color,
+/// @tag: string or null
+///     tag - the bookmark tag type
 ///     null - to remove current bookmark
+/// @image_url: tag image url or null
 ///
-Viewer.toggleBookmark = function(color) {
-    console.log("Viewer.toggleBookmark=" + color);
-    if (color !== null) {
+Viewer.toggleBookmark = function(tag, image_url) {
+    console.log("Viewer.toggleBookmark=" + tag);
+    if (tag !== null) {
         var bookmark = null;
         if ((bookmark = isBookmarkExist()) !== null) {
-            bookmark.color = color;
+            bookmark.tag = tag;
             App.onUpdateBookmark(bookmark);
         } else {
             //send tmp bookmark to app for getting uuid.
@@ -350,7 +421,7 @@ Viewer.toggleBookmark = function(color) {
                "uuid": "",
                "title": "",
                "cfi": currentPageNum,
-               "color": color
+               "tag": tag
             };
             App.onAddBookmark("bookmarks",tmpBookmark,"AddBookmarkCallBack");
         }
@@ -460,10 +531,10 @@ Viewer.handleZoomOutInEvent = function(event) {
 
 function TouchPoint(x,y) {
     var shiftDir = {
-                        "noMove"   :  0,
-                        "negative" : -1,
-                        "positive" : +1
-                   };
+        "noMove"   :  0,
+        "negative" : -1,
+        "positive" : +1
+    };
 
     this.xMoveDir = shiftDir["noMove"];
     this.yMoveDir = shiftDir["noMove"];
@@ -585,41 +656,8 @@ function load(){
     document.addEventListener('touchmove',touch, false);
     document.addEventListener('touchend',touch, false);
     */
-
     function touch(event) {
-
         Viewer.handleZoomOutInEvent(event);
-        var event = event || window.event;
-
-        switch(event.type) {
-            case "touchstart":
-                console.log("Touch started (" + event.touches[0].clientX + "," + event.touches[0].clientY + ")");
-                touchStartX = event.touches[0].clientX;
-                touchStartY = event.touches[0].clientY;
-                break;
-            case "touchend":
-                console.log("<br/>Touch end (" + event.changedTouches[0].clientX + "," + event.changedTouches[0].clientY + ")");
-                var shiftX = event.changedTouches[0].clientX - touchStartX;
-                var shiftY = event.changedTouches[0].clientY - touchStartY;
-                console.log("<br/>Touch moved (" + shiftX + "," + shiftY + ")");
-                if (Math.abs(shiftX) < 10 && Math.abs(shiftY) < 10) { //treat as click event
-                    toolBarVisible = !(toolBarVisible);
-                    App.onToggleToolbar(toolBarVisible);
-                }
-                if (shiftX > 50) {
-                    onPrevPage();
-                } else if (shiftX < -50) {
-                    onNextPage();
-                }
-                break;
-            case "touchmove":
-                event.preventDefault();
-                //console.log("<br/>Touch moved (" + event.touches[0].clientX + "," + event.touches[0].clientY + ")");
-                break;
-            default:
-                break;
-        }
-
     }
 }
 
@@ -634,7 +672,6 @@ function onPrevPage() {
     }
     currentPageNum--;
     PDFViewerApplication.page--;
-    //queueRenderPage(currentPageNum);
 }
 
 /**
@@ -646,7 +683,6 @@ function onNextPage() {
     }
     currentPageNum++;
     PDFViewerApplication.page++;
-    //queueRenderPage(currentPageNum);
 }
 
 /**
@@ -654,6 +690,9 @@ function onNextPage() {
  * @param num Page number.
  */
 function renderPage(num) {
+    document.getElementById('current_page').textContent = num;
+    document.getElementById('paginate').value = num;
+    currentPageNum = num;
     //Notify App current page is changed to different page
     if (prePageNum != num) {
         prePageNum = num;
@@ -1264,7 +1303,7 @@ var DEFAULT_PREFERENCES = {
   defaultZoomValue: '',
   sidebarViewOnLoad: 0,
   enableHandToolOnLoad: false,
-  enableWebGL: false,
+  enableWebGL: true,
   pdfBugEnabled: false,
   disableRange: false,
   disableStream: false,
@@ -5529,6 +5568,16 @@ var PDFViewer = (function pdfViewer() {
         return;
       }
 
+      //[Bruce] NOTE : We must do this before set this._currentPageNumber 
+      if(this.isInCarouselMode) {
+          if(this.currentPageNumber === val) 
+              return;
+          var owl = $('#viewer');
+          owl.owlCarousel();
+          owl.trigger('to.owl.carousel',[val - 1, 200, true]);
+      }
+      //End : [Bruce]
+
       event.previousPageNumber = this._currentPageNumber;
       this._currentPageNumber = val;
       event.pageNumber = val;
@@ -5652,6 +5701,8 @@ var PDFViewer = (function pdfViewer() {
           if (!isOnePageRenderedResolved) {
             isOnePageRenderedResolved = true;
             resolveOnePageRendered();
+            //[Bruce]
+            customEventsManager['onFirstPageRendered'].confirmThisIsReady();
           }
         };
       };
@@ -5719,6 +5770,8 @@ var PDFViewer = (function pdfViewer() {
         if (this.findController) {
           this.findController.resolveFirstPage();
         }
+        //[Bruce]
+        customEventsManager["onOwlLayoutReady"].confirmThisIsReady();
       }.bind(this));
     },
 
@@ -5850,14 +5903,14 @@ var PDFViewer = (function pdfViewer() {
                                                               dest) {
       var pageView = this._pages[pageNumber - 1];
 
-      //[Bruce]
+      //[Bruce] Carousel mode no need to update page view by ourself
       if(this.isInCarouselMode) {
-          var owl = $('#viewer');
-          owl.owlCarousel();
-          owl.trigger('to.owl.carousel',[pageNumber - 1, 200, true]);
-          if(this.currentPageNumber === pageView.id) 
+          // Do this because navigateTo() will not set pagenumber and call this function directly
+          if (this._currentPageNumber !== pageView.id) {
+              // Avoid breaking getVisiblePages in presentation mode.
+              this.currentPageNumber = pageView.id;
               return;
-          this.currentPageNumber = pageView.id;
+          }
           return;
       }
       //End : [Bruce]
@@ -6085,8 +6138,12 @@ var PDFViewer = (function pdfViewer() {
 
         // Try to load the next page
         if((currentPage.id - 1) < this._pages.length) {
-            var nextPage = this._pages[this._currentPageNumber + 1];
-            visible.push({ id: nextPage.id, view: nextPage });
+            var nextPage = this._pages[this._currentPageNumber];
+            if(nextPage) {
+                visible.push({ id: nextPage.id, view: nextPage });
+            } else {
+                nextPage = currentPage;
+            }
         }
 
         return { first: currentPage, last: nextPage, views: visible };
@@ -6359,9 +6416,15 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     var img = document.createElement('img');
     img.src = linkItems[this.id - 1];
     ring.appendChild(img);
+    var p = document.createElement('p');
+    p.className='index';
+    p.style.color = 'white';
+    p.innerHTML=this.id;
     //End : [Bruce]
 
     div.appendChild(ring);
+    //[Bruce] Append after image
+    div.appendChild(p);
     anchor.appendChild(div);
 
     //[Bruce]
@@ -7260,7 +7323,7 @@ var PDFViewerApplication = {
         document.webkitFullscreenEnabled === false ||
         document.msFullscreenEnabled === false) {
       support = false;
-    }
+   }
     if (support && PDFJS.disableFullscreen === true) {
       support = false;
     }
@@ -7610,7 +7673,9 @@ var PDFViewerApplication = {
 
     this.pdfThumbnailViewer.setDocument(pdfDocument);
 
-    firstPagePromise.then(function(pdfPage) {
+    //[Bruce]
+    //firstPagePromise.then(function(pdfPage) {
+    Promise.all([firstPagePromise, customEventsManager['onOwlLayoutReady'].promise]).then(function(pdfPage) {
       downloadedPromise.then(function () {
         var event = document.createEvent('CustomEvent');
         event.initCustomEvent('documentload', true, true, {});
@@ -7840,6 +7905,7 @@ var PDFViewerApplication = {
   refreshThumbnailViewer: function pdfViewRefreshThumbnailViewer() {
     //[Bruce]
     if(PDFViewerApplication.pdfThumbnailViewer.isUsingExternalImage) {
+        /*
         var pdfViewer = this.pdfViewer;
         var thumbnailViewer = this.pdfThumbnailViewer;
 
@@ -7850,6 +7916,9 @@ var PDFViewerApplication = {
             thumbnailView.setImage(pageView);
         }
 
+        thumbnailViewer.scrollThumbnailIntoView(this.page);
+        */
+        var thumbnailViewer = this.pdfThumbnailViewer;
         thumbnailViewer.scrollThumbnailIntoView(this.page);
 
         return;
@@ -8490,6 +8559,8 @@ function selectScaleOption(value) {
 window.addEventListener('localized', function localized(evt) {
   document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
 
+  //[Bruce]
+  /*
   PDFViewerApplication.animationStartedPromise.then(function() {
     // Adjust the width of the zoom box to fit the content.
     // Note: If the window is narrow enough that the zoom box is not visible,
@@ -8511,6 +8582,8 @@ window.addEventListener('localized', function localized(evt) {
     // Set the 'max-height' CSS property of the secondary toolbar.
     SecondaryToolbar.setMaxHeight(document.getElementById('viewerContainer'));
   });
+  */
+  //End : [Bruce]
 }, true);
 
 window.addEventListener('scalechange', function scalechange(evt) {
@@ -8560,7 +8633,18 @@ window.addEventListener('pagechange', function pagechange(evt) {
       PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);
     }
     */
-    PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);
+    // Update footbar page info
+    if(toolBarVisible) {
+        document.getElementById('current_page').textContent = currentPageNum;
+        document.getElementById('paginate').value = currentPageNum;
+        // Info App
+        App.onChangePage("", currentPageNum, currentPageNum, pdfDoc.numPages);
+    }
+
+    // Update thumbnail
+    if(thumbnailBarVisible) {
+        PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(currentPageNum);
+    }
     //End : [Bruce]
   }
   //[Bruce]
@@ -8573,6 +8657,7 @@ window.addEventListener('pagechange', function pagechange(evt) {
   document.getElementById('firstPage').disabled = (page <= 1);
   document.getElementById('lastPage').disabled = (page >= numPages);
   */
+  PDFViewerApplication.pdfViewer.update();
   //End : [Bruce]
 
   // we need to update stats

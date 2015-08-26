@@ -17,30 +17,13 @@ Viewer.loadBook = function(url, legacy) {
 }
 
 ///
-/// Get current text font scale size
+/// Set the text appearance
 ///
-/// @scale: double - 1.0 is original size
+/// @text_size: int - in pt unit
+/// @[r, g, b] - text color
 ///
-Viewer.getFontScale = function() {
-    return 1.0;
-}
+Viewer.setTextAppearance = function(text_size, text_color) {
 
-///
-/// Set text font scale size
-///
-/// @scale: double - 1.0 is original size
-///
-Viewer.setFontScale = function(scale) {
-
-}
-
-///
-/// Get page background color
-///
-/// @[r, g, b] - page background color
-///
-Viewer.getBackgroundColor = function() {
-    return [0, 0, 0];
 }
 
 ///
@@ -50,6 +33,15 @@ Viewer.getBackgroundColor = function() {
 ///
 Viewer.setBackgroundColor = function(rgb) {
     window.alert("Viewer.setBackgroundColor=" + rgb)
+}
+
+///
+/// Set page background image
+///
+/// @image_url - page background image url
+///
+Viewer.setBackgroundImage = function(image_url) {
+    window.alert("Viewer.setBackgroundImage=" + image_url)
 }
 
 ///
@@ -92,9 +84,10 @@ Viewer.getCurrentPosition = function() {
 }
 
 ///
-/// Goto the given link in this ebook
+/// Goto the given link in this ebook, the link is from table of content
+/// that Viewer sent back to App with App.onChangeTOC
 ///
-/// @link: string - target file link (relative to base url)
+/// @link: string - target link (opaque, defined by Viewer)
 ///
 Viewer.gotoLink = function(link) {
     window.alert("Viewer.gotoLink=" + link)
@@ -112,18 +105,19 @@ Viewer.gotoPosition = function(cfi) {
 ///
 /// Toggle the bookmark in the current page.
 ///
-/// If a valid [r, g, b] is specified, viewer should call App.onAddBookmark
+/// If a valid tag is specified, viewer should call App.onAddBookmark
 /// or App.onUpdateBookmark in response.
 ///
 /// If null is specified, viewer should call App.onRemoveBookmark in response,
 /// or do nothing if there is currently no bookmark
 ///
-/// @color: [r, g, b] or null
-///     [r, g, b] - the bookmark indicator color,
+/// @tag: string or null
+///     tag - the bookmark tag type
 ///     null - to remove current bookmark
+/// @image_url: tag image url or null
 ///
-Viewer.toggleBookmark = function(color) {
-    window.alert("Viewer.toggleBookmark=" + color)
+Viewer.toggleBookmark = function(tag, image_url) {
+    window.alert("Viewer.toggleBookmark=" + tag + ", image_url=" + image_url)
 }
 
 ///

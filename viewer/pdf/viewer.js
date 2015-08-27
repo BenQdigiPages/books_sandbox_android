@@ -54,7 +54,9 @@ function ViewerObserver() {
 }
 
 function onURL_and_AppReady(resultOutput) {
-    var url =  resultOutput[0];
+    var args =  resultOutput[0];
+    var url =  args[0];
+    var legacy =  args[1];
 
     //initOwl
     var owl = $('#viewer');
@@ -100,7 +102,7 @@ function onURL_and_AppReady(resultOutput) {
      * Asynchronously downloads PDF.
      */
     // Open
-    PDFViewerApplication.open(url, 0);
+    PDFViewerApplication.open(url, 0 , null , null , null , legacy);
 
     //Request bookmarks from app when book is loaded.
     App.onRequestBookmarks("bookmarks", "RequestBookmarksCallback")
@@ -247,7 +249,7 @@ Viewer.loadBook = function(url, legacy) {
     //combine url and pdf file path
     url = url + pdfFile;
 
-    customEventsManager["onURLReady"].confirmThisIsReady(url);
+    customEventsManager["onURLReady"].confirmThisIsReady([url,legacy]);
     customEventsManager.doAfterMultiReady(["onURLReady","onAppInitialized"],onURL_and_AppReady);
 }
 
@@ -7403,7 +7405,9 @@ var PDFViewerApplication = {
 
   // TODO(mack): This function signature should really be pdfViewOpen(url, args)
   open: function pdfViewOpen(file, scale, password,
-                             pdfDataRangeTransport, args) {
+                             //[Bruce]
+                             //pdfDataRangeTransport, args) {
+                             pdfDataRangeTransport, args , legacy) {
     //[Bruce]
     /*
     if (this.pdfDocument) {
@@ -7453,7 +7457,7 @@ var PDFViewerApplication = {
                       getDocumentProgress).then(
     */
     PDFJS.getDocument(parameters, pdfDataRangeTransport, null,
-                      null).then(
+                      null , legacy).then(
     //End : [Bruce]
       function getDocumentCallback(pdfDocument) {
         //[Bruce]

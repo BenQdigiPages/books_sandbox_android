@@ -1,0 +1,209 @@
+@charset "UTF-8";
+@media only screen and (max-width: 1024px) {
+	body {
+		min-width: 0px;
+	}
+	header {
+		margin-bottom: 42px;
+	}
+	header .logo {
+		float: none;
+		margin: 0px auto;
+		display: block;
+	}
+	header .logout {
+		position: absolute;
+		left: 12px;
+		top: 12px;
+	}
+	header .search {
+		margin-right: 0;
+		position: absolute;
+		bottom: -37px;
+		left: 0px;
+		width: 100%;
+		text-align: center;
+	}
+	header .search input {
+		width: 98%;
+	}
+	header .search button {
+		right: 12px;
+	}
+	header.reader .left,
+	header.reader .right {
+		float: none;
+		display: inline-block;
+		vertical-align: middle;
+	}
+	header.reader br {
+		display: none;
+	}
+	header.reader .logout {
+		background: url(../img/reader-icon0.png) no-repeat;
+		height: 32px;
+		width: 26px;
+		text-indent: -9999px;
+		position: relative;
+		left: 0;
+		top: 0;
+	}
+	header.reader .search,
+	header.reader .big {
+		display: none;
+	}
+	header.reader title {
+		position: absolute;
+		top: 56px;
+		left: 0;
+		width: 100%;
+		color: #fff;
+		background-color: rgba(0,0,0,0.7);
+		padding: 5px;
+	}
+	nav label {
+		color: #fff;
+		font-size: 17px;
+		text-align: center;
+		width: 100%;
+		line-height: 40px;
+		display: block;
+		cursor: pointer;
+		background: url(../img/mobile_navbar.png) #4E4E4E no-repeat left 5% center;
+	}
+	nav input[type=checkbox]:checked ~ ul,
+	nav input[type=checkbox]:checked + ul {
+		display: block;
+	}
+	nav ul {
+		float: none;
+		display: none;
+	}
+	nav ul,
+	nav ul.active {
+		width: 100%;
+	}
+	nav ul:after {
+		content: none;
+	}
+	nav ul title {
+		text-align: left;
+		font-size: 15px;
+		padding: 0 5%;
+		background: url(../img/menu_arrow.png) no-repeat right 5% center;
+	}
+	nav ul title:hover {
+		background: url(../img/menu_arrow_.png) no-repeat right 5% center;
+	}
+	.no_book {
+		width: 100%;
+		height: calc(100% - 191px);
+	}
+	#main {
+		top: 138px;
+		min-width: 0px;
+		padding: 12px 0 22px 0;
+	}
+	#main .top label.icon1 {
+		border: 0;
+		border-radius: 0;
+		-moz-border-radius: 0;
+		-webkit-border-radius: 0;
+		width: 28px;
+		height: 30px;
+		padding: 0px;
+		background: url(../img/top_icon4.png) no-repeat;
+	}
+	#main .top label.icon1 .tab {
+		width: 160px;
+		right: -10px;
+	}
+	#main .top label.icon1 b {
+		display: none;
+	}
+	#main .top label.icon1:hover {
+		background-color: transparent;
+	}
+	#main #list li .check {
+		top: 6px;
+		right: 6px;
+	}
+	#add_password,
+	#password {
+		height: calc(100% - 191px);
+	}
+	.reader_main {
+		margin-top: 0px;
+		margin-bottom: 0px;
+		/*margin: 98px 20px 56px 20px;*/
+	}
+	footer.reader .number {
+		position: absolute;
+		top: 25px;
+		left: 0px;
+		display: block;
+		width: 100%;
+		text-align: center;
+		margin: 0px;
+		padding-right: 30px;
+		z-index: -1;
+	}
+	.bookmark {
+		top: 98px;
+	}
+	.big_popup .main {
+		width: 90%;
+	}
+	.big_popup .main strong {
+		float: left;
+	}
+	.big_popup i.close {
+		right: calc(5% + 5px);
+		border-left: 1px solid #ccc;
+		border-right: 0;
+		border-radius: 5px 0 0 5px;
+		-moz-border-radius: 5px 0 0 5px;
+		-webkit-border-radius: 5px 0 0 5px;
+	}
+	#menu_list ul form {
+		display: block;
+	}
+}
+@media only screen and (max-width: 400px) {
+	header .logo {
+		background-size: 90%;
+		height: 32px;
+		width: 180px;
+	}
+	.no_book h2 {
+		font-size: 15px;
+	}
+	#main .top label.left {
+		margin-bottom: 12px;
+	}
+	#main .top br {
+		display: block;
+		clear: both;
+	}
+	.no_book {
+		background: url(../img/no_book_icon.png) #fff no-repeat center 20%;
+	}
+	#forget {
+		background: url(../img/password_mail_icon.png) #fff no-repeat center 20%;
+	}
+	#main #list li label {
+		top: 15px;
+	}
+	#menu_operate div {
+		width: 250px;
+	}
+	#menu_operate i.fa-times {
+		right: 250px;
+	}
+	.big_popup .main {
+		padding: 10px;
+	}
+	.reader_main .end {
+		width: 100%;
+	}
+}

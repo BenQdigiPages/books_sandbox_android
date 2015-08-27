@@ -1,0 +1,72 @@
+html, body {
+	margin: 0;
+	padding: 0;
+	width: 100% !important;
+	height: 101% !important;
+}
+.frontmatter-rw, 
+.body-rw, 
+.Poem-rw, 
+.pc-rw img {
+	width: 100% !important; 
+	height: auto !important; 
+	padding: 20px !important;
+	display: inline !important; 
+}
+.pc-rw img, 
+.cover-rw {
+	padding: 0 !important;
+}
+img {
+	width: 100% !important;
+}
+div.align-left-rw {
+	width: 100%;
+	display: inline-block;
+}
+body.default {
+	color: #000 !important;
+	background: #FFF !important;
+}
+body.default * {
+	color: #000 !important;
+	background: #FFF !important;
+}
+body.classic {
+	color: rgb(91, 66, 42) !important;
+	background: rgb(230, 218, 190) !important;
+}
+body.classic *{
+	color: rgb(91, 66, 42) !important;
+}
+body.night {
+	color: #FFF !important;
+	background: rgb(128, 128, 128) !important;
+}
+body.night * {
+	color: #FFF !important;
+	background: rgb(128, 128, 128) !important;
+}
+span.highlight { background: yellow; }
+span.highlight.red { 
+	background: #e1605a !important;
+	color: #FFF;
+}
+span.highlight.green { 
+	background: #9abb64 !important;
+	color: #FFF;
+}
+span.highlight.blue { 
+	background: #7ccce7 !important;
+	color: #FFF;
+}
+img, svg { display: inline-block; }
+div {
+	margin: 0 auto;
+	width: 100%;
+	-webkit-column-break-inside: avoid;
+	-moz-column-break-inside: avoid;
+}
+
+::-moz-selection { background: yellow; }
+::selection { background: yellow; }

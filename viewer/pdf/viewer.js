@@ -690,9 +690,6 @@ function onNextPage() {
  * @param num Page number.
  */
 function renderPage(num) {
-    document.getElementById('current_page').textContent = num;
-    document.getElementById('paginate').value = num;
-    currentPageNum = num;
     //Notify App current page is changed to different page
     if (prePageNum != num) {
         prePageNum = num;

@@ -68,6 +68,8 @@ function onURL_and_AppReady(resultOutput) {
 
             // Update current page number
             PDFViewerApplication.page = currentPageNum;
+
+            zoomInOutFix.getCarouselInfo(event.item.index);
     });
 
     var owl = $('#thumbnailView');
@@ -130,6 +132,8 @@ function onFirstPageRendered() {
     var owl = $('#viewer');
     owl.owlCarousel();
     owl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
+
+    zoomInOutFix.getCarouselInfo(currentPageNum-1);
 }
 
 function onDocumentReady(pdfDocument) {
@@ -483,18 +487,22 @@ Viewer.handleZoomOutInEvent = function(event) {
             }
 
             var eventTouchPoint = event.touches[id];
+            var id = eventTouchPoint.identifier;
 
             // Check whether is new TouchPoint
-            if(currentTouchs[eventTouchPoint.identifier] !== undefined ) {
-                continue;
+            if(currentTouchs[id] !== undefined && currentTouchs[id] !== null) {
+                currentTouchs.splice(id,1);
             }
 
-            currentTouchs[eventTouchPoint.identifier] = new TouchPoint(eventTouchPoint.clientX,eventTouchPoint.clientY);
+            currentTouchs[id] = new TouchPoint(eventTouchPoint.clientX,eventTouchPoint.clientY);
         }
     } else if(event.type === "touchmove") {
 
         var checkedTouchPoints = [],
-            isZoomFound = false;
+            result = {
+                         targetPoint: null,
+                         zoomPolicy: 0
+                     };
 
         for (var id in event.changedTouches) {
             if(event.changedTouches[id].identifier === undefined) {
@@ -502,33 +510,180 @@ Viewer.handleZoomOutInEvent = function(event) {
             }
             var eventTouchPoint = event.changedTouches[id];
             var innerTP = currentTouchs[eventTouchPoint.identifier];
+            // If touchstart is not fired
+            if(innerTP === undefined || innerTP === null) {
+                currentTouchs[eventTouchPoint.identifier] = new TouchPoint(eventTouchPoint.clientX,eventTouchPoint.clientY);
+                innerTP = currentTouchs[eventTouchPoint.identifier];
+            }
             innerTP.updateCoordinate(eventTouchPoint.clientX,eventTouchPoint.clientY);
 
             // Start scan
-            if(isZoomFound === false) {
+            if(result.targetPoint === null) {
+                var result;
                 if(checkedTouchPoints.length >= 1) {
-                    isZoomFound = innerTP.handleZoomPolicy(checkedTouchPoints);
+                    result = innerTP.handleZoomPolicy(checkedTouchPoints);
                 }
-                if(isZoomFound === false) {
+                
+                if(result.targetPoint === null) {
                     checkedTouchPoints.push(innerTP);
+                } else {
+                    // Do before the zoom in/out action is done
+                    zoomInOutFix.onBeforeZoom([innerTP,result.targetPoint],PDFViewerApplication.pdfViewer.currentScale);
+                    if(result.zoomPolicy > 0) {
+                        PDFViewerApplication.zoomIn();
+                    } else if(result.zoomPolicy < 0) {
+                        PDFViewerApplication.zoomOut();
+                    }
                 }
             }
+        }
+        if(currentTouchs.length >= 2) {
+            event.stopPropagation();
         }
     } else if(event.type === "touchend") {
         var pendingDeleteId = [];
-        for (var id in event.changedTouches) {
-            if(event.changedTouches[id].identifier === undefined) {
-                continue;
-            }
-            var eventTouchPoint = event.changedTouches[id];
 
-            pendingDeleteId.push(eventTouchPoint.identifier);
+        if(event.touches.length === 0) {
+            for (var id in currentTouchs) {
+                pendingDeleteId.push(id);
+            }
+        } else {
+            for (var id in event.changedTouches) {
+                if(event.changedTouches[id].identifier === undefined) {
+                    continue;
+                }
+                var eventTouchPoint = event.changedTouches[id];
+
+                pendingDeleteId.push(eventTouchPoint.identifier);
+            }
         }
+
         // Delete touch element from local buffer
         pendingDeleteId.forEach(function (id) {
-            delete currentTouchs[id];
+            currentTouchs.splice(id,1);
         });
+        if(currentTouchs.length < 2) {
+            zoomInOutFix.reset();
+        }
     }
+}
+
+var zoomInOutFix = new ZoomInOutOffSetFix();
+function ZoomInOutOffSetFix() {
+    this.arrayIndex = 0;
+    this.touchMiddle = null;
+
+    this.carouselLeft = 0;
+    this.carouselTop = 0;
+    this.carouselZAxis = 0;
+
+    this.touchLeft = 0;
+    this.touchTop = 0;
+
+    this.elsementParent = null;
+    this.scale = 1;
+    this.styleArray = null;
+
+    this.width = 0;
+
+    this.originalScale = 0;
+
+    this.getCarouselInfo = function ZoomInOutOffSetFix_getCarouselInfo(index) {
+        this.arrayIndex = index;
+
+        var element = document.querySelector('.owl-item');
+        this.elsementParent = element.offsetParent;
+
+        var widthString = element.style.width;
+        this.width = parseFloat(widthString.substring(0,widthString.indexOf('p')),10);
+
+        this.styleArray = this.elsementParent.style.cssText.split(';');
+        // PATTERN : transform:'translate3d(100px, 100px, 15px)'
+        var transformString = this.elsementParent.style.transform;
+        var argList = (transformString.substring(transformString.indexOf('(') + 1,transformString.indexOf(')'))).split(',');
+
+        // Find left
+        this.carouselLeft = parseFloat(argList[0].substring(0,argList[0].indexOf('p')),10) - this.arrayIndex * this.width * (-1);
+
+        // Find Top
+        this.carouselTop = parseFloat(argList[1].substring(0,argList[1].indexOf('p')),10);
+
+        // Store the original value
+        this.carouselZAxis = parseFloat(argList[2].substring(0,argList[2].indexOf('p')),10);
+    };
+
+    this.onBeforeZoom = function ZoomInOutOffSetFix_onBeforeZoom(touchPoints,scale) {
+        this.scale = scale;
+
+        // Store the fit page scale
+        if(this.originalScale === 0) {
+            this.originalScale = scale;
+        }
+
+        // We assume only two element in array
+        var touch1 = touchPoints[0];
+        var touch2 = touchPoints[1];
+        this.touchMiddle = new TouchPoint((touch1.oriX + touch2.oriX)/2,(touch1.oriY + touch2.oriY)/2);
+
+        this.touchLeft = Math.abs(this.touchMiddle.oriX - this.carouselLeft);
+        this.touchTop = Math.abs(this.touchMiddle.oriY - this.carouselTop);
+
+        var element = document.querySelector('.owl-item.active');
+        element.style.visibility = "hidden";
+        this.hideTimeout = setTimeout(this.onFixOffsetDone, 300);
+    };
+
+    this.onFixOffsetDone = function  ZoomInOutOffSetFix_onFixOffsetDone() {
+        var element = document.querySelector('.owl-item.active');
+        element.style.visibility = "visible";
+        this.getCarouselInfo(currentPageNum-1);
+    }
+
+    this.onAfterZoom = function ZoomInOutOffSetFix_onAfterZoom(scale) {
+        if(this.touchMiddle === null)
+            return;
+        if(this.elsementParent === null)
+            return;
+
+        var oriScale = this.scale;
+        var afterScale = scale;
+
+        // Change by scale
+        this.touchLeft = this.touchLeft / oriScale * afterScale; 
+        this.touchTop = this.touchTop / oriScale * afterScale;
+        //this.width = this.width / oriScale * afterScale;
+        this.scale = afterScale;
+        
+        // carouselLeft/carouselTop is only related to this page , not all scroll view
+        this.carouselLeft = this.touchMiddle.oriX - this.touchLeft;
+        this.carouselTop = this.touchMiddle.oriY - this.touchTop;
+
+        var setLeft = this.carouselLeft + this.arrayIndex * this.width * (-1);
+        var setTop = this.carouselTop;
+
+        // Set style 
+        var styleBuffer = "";
+        for (var id in this.styleArray) {
+            if(this.styleArray[id].indexOf("transform") !== -1) {
+                styleBuffer += 'transform: translate3d(' + setLeft + 'px,' + setTop + 'px,' +  this.carouselZAxis + 'px);';
+                continue;
+            }
+            /*
+            if(this.styleArray[id].indexOf("width") !== -1) {
+                styleBuffer += 'width: ' + this.width * pdfDoc.numPages + 'px;';
+                continue;
+            }
+            */
+            // We must recover the reset of style.cssText
+            styleBuffer += this.styleArray[id] + ';';
+        }
+        this.elsementParent.setAttribute('style', styleBuffer);
+    };
+
+    this.reset = function ZoomInOutOffSetFix_reset() {
+        this.touchMiddle = null;
+        this.getCarouselInfo(currentPageNum-1);
+    };
 }
 
 function TouchPoint(x,y) {
@@ -591,25 +746,24 @@ function TouchPoint(x,y) {
     };
 
     this.handleZoomPolicy = function(zoomScanArray) {
-        var isZoomTrigger = false;
-        var self = this;
-        // Delete touch element from local buffer
+        var self = this,
+            findedTouchPoint = null,
+            zoomInt = 0;
+
         zoomScanArray.forEach(function (targetTouchPoint) {
 
             // If there is at least one finger holding , we always trigger zoom Out/In
             if(self.xMoveDir === 0 && self.yMoveDir === 0) {
-                var previous = Math.pow(targetTouchPoint.oriX - self.targetTouchPoint.cutX,2) + Math.pow(targetTouchPoint.oriY - self.cutY,2);
-                var cur = Math.pow(targetTouchPoint.cutX - self.targetTouchPoint.cutX,2) + Math.pow(targetTouchPoint.cutY - self.cutY,2);
+                var previous = Math.pow(targetTouchPoint.oriX - self.cutX,2) + Math.pow(targetTouchPoint.oriY - self.cutY,2);
+                var cur = Math.pow(targetTouchPoint.cutX - self.cutX,2) + Math.pow(targetTouchPoint.cutY - self.cutY,2);
                 if(cur > previous) {
                     console.log("type1 : zoom in");
-                    // Zoom out
-                    PDFViewerApplication.zoomIn();
+                    zoomInt = 1;
                 } else if(cur < previous) {
                     console.log("type1 : zoom out");
-                    // Zoom In
-                    PDFViewerApplication.zoomOut();
+                    zoomInt = -1;
                 }
-                isZoomTrigger = true;
+                findedTouchPoint = targetTouchPoint;
                 return;
             }
 
@@ -619,14 +773,12 @@ function TouchPoint(x,y) {
                 var cur = Math.pow(self.cutX - targetTouchPoint.cutX,2) + Math.pow(self.cutY - targetTouchPoint.cutY,2);
                 if(cur > previous) {
     	            console.log("type2 : zoom in");
-                    // Zoom out
-                    PDFViewerApplication.zoomIn();
+                    zoomInt = 1;
                 } else if(cur < previous) {
                     console.log("type2 : zoom out");
-                    // Zoom In
-                    PDFViewerApplication.zoomOut();
+                    zoomInt = -1;
                 }
-                isZoomTrigger = true;
+                findedTouchPoint = targetTouchPoint;
                 return;
             }
 
@@ -636,34 +788,21 @@ function TouchPoint(x,y) {
                 var cur = Math.pow(self.cutX - targetTouchPoint.cutX,2) + Math.pow(self.cutY - targetTouchPoint.cutY,2);
                 if(cur > previous) {
                     console.log("type3 : zoom in");
-                    // Zoom out
-                    PDFViewerApplication.zoomIn();
+                    zoomInt = 1;
                 } else if(cur < previous) {
                     console.log("type3 : zoom out");
-                    // Zoom In
-                    PDFViewerApplication.zoomOut();
+                    zoomInt = -1;
                 }
-                isZoomTrigger = true;
+                findedTouchPoint = targetTouchPoint;
                 return;
             }
         });
 
-        return isZoomTrigger;
+        return {targetPoint: findedTouchPoint,zoomPolicy:zoomInt};
     };
 }
 
-function load(){
-    /*
-    document.addEventListener('touchstart',touch, false);
-    document.addEventListener('touchmove',touch, false);
-    document.addEventListener('touchend',touch, false);
-    */
-    function touch(event) {
-        Viewer.handleZoomOutInEvent(event);
-    }
-}
 
-document.addEventListener('DOMContentLoaded', load, true);
 
 /**
  * Displays previous page.
@@ -775,7 +914,7 @@ function queueRenderPage(num) {
 'use strict';
 
 var DEFAULT_URL = 'test.pdf';
-var DEFAULT_SCALE_DELTA = 1.1;
+var DEFAULT_SCALE_DELTA = 1.01;
 var MIN_SCALE = 0.25;
 var MAX_SCALE = 10.0;
 var VIEW_HISTORY_MEMORY = 20;
@@ -4424,6 +4563,9 @@ var PDFPageView = (function PDFPageViewClosure() {
     } else {
         container.appendChild(div);
     }
+    this.div.addEventListener('touchstart',Viewer.handleZoomOutInEvent, false);
+    this.div.addEventListener('touchmove',Viewer.handleZoomOutInEvent, false);
+    this.div.addEventListener('touchend',Viewer.handleZoomOutInEvent, false);
     //End : [Bruce]
   }
 
@@ -7293,7 +7435,9 @@ var PDFViewerApplication = {
     do {
       newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
       newScale = Math.floor(newScale * 10) / 10;
-      newScale = Math.max(MIN_SCALE, newScale);
+      //[Bruce]
+      //newScale = Math.max(MIN_SCALE, newScale);
+      newScale = Math.max(zoomInOutFix.originalScale, newScale);
     } while (--ticks > 0 && newScale > MIN_SCALE);
     this.setScale(newScale, true);
   },
@@ -8598,6 +8742,7 @@ window.addEventListener('scalechange', function scalechange(evt) {
   document.getElementById('zoomOut').disabled = (evt.scale === MIN_SCALE);
   document.getElementById('zoomIn').disabled = (evt.scale === MAX_SCALE);
   */
+  zoomInOutFix.onAfterZoom(evt.scale);
   //End : [Bruce]
 
   if (evt.presetValue) {

@@ -15,6 +15,8 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -100,8 +102,25 @@ public class MainActivity extends Activity {
     }
 
     private void findBooks() {
-        AssetManager assets = getAssets();
         mItems = new ArrayList<>();
+
+        if(ViewerBridge.ROOT_DIR != null && ViewerBridge.ROOT_DIR.isDirectory()) {
+            File sdPath = ViewerBridge.ROOT_DIR;
+            if(sdPath != null && sdPath.isDirectory()) {
+                File file[] = sdPath.listFiles();
+                Log.d("Files", "Size: "+ file.length);
+                for (int i=0; i < file.length; i++)
+                {
+                    Log.d("Files", "FileName:" + file[i].getName());
+                    String strfile = file[i].getName();
+                    if (strfile.endsWith(".epub")) {
+                        mItems.add(strfile+"_fromSD");
+                    }
+                }
+            }
+        }
+
+        AssetManager assets = getAssets();
 
         try {
             String[] files = assets.list("");
@@ -119,6 +138,16 @@ public class MainActivity extends Activity {
         String url = ViewerBridge.ROOT_URI.toString() + name + "/";
         File dir = new File(ViewerBridge.ROOT_DIR, name);
         dir.mkdirs();
+        if (dir.exists()) {
+            Log.d(TAG, dir.getPath() + "exist");
+        }
+        else {
+            new AlertDialog.Builder(this)
+                    .setTitle("Extract book failed")
+                    .setMessage("Fail due to dir.mkdirs() = " + dir.getPath())
+                    .show();
+            return;
+        }
 
         File meta = new File(dir, "META-INF");
         if (!meta.exists()) {

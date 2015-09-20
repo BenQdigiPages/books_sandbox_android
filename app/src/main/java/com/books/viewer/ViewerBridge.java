@@ -79,10 +79,10 @@ public class ViewerBridge {
     private String mBookUri;
     private boolean mIsPdf;
     private boolean mIsLibraryLoaded;
-    private HashMap<String, Runnable> mLoadUrlCallbacks = new HashMap<String, Runnable>();
+    private final HashMap<String, Runnable> mLoadUrlCallbacks = new HashMap<String, Runnable>();
 
     private int mEvalToken = 1;
-    private HashMap<Integer, ValueCallback<String>> mEvalCallbacks = new HashMap<Integer, ValueCallback<String>>();
+    private final HashMap<Integer, ValueCallback<String>> mEvalCallbacks = new HashMap<Integer, ValueCallback<String>>();
 
     public ViewerBridge(ViewerActivity scene, WebView webView) {
         JavascriptCallback mJavascriptInterface = new JavascriptCallback();
@@ -487,7 +487,7 @@ public class ViewerBridge {
         }
 
         // dummy database
-        private HashMap<String, Object[]> mHighlights = new HashMap<String, Object[]>();
+        private final HashMap<String, Object[]> mHighlights = new HashMap<String, Object[]>();
 
         ///
         /// Request App to load highlights for the chapter, App will call callback in response
@@ -627,7 +627,7 @@ public class ViewerBridge {
         }
 
         // dummy database
-        private HashMap<String, Object[]> mBookmarks = new HashMap<String, Object[]>();
+        private final HashMap<String, Object[]> mBookmarks = new HashMap<String, Object[]>();
 
         ///
         /// Request App to load bookmark for the chapter, App will call callback in response

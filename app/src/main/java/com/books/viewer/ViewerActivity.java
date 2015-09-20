@@ -32,7 +32,6 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
     private static final String TAG = "ViewerActivity";
 
     private ViewerBridge mBridge;
-    private WebView mWebView;
     private RelativeLayout mTitleBar;
     private TextView mTitle;
     private ImageButton mBtnTOC;
@@ -46,6 +45,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         setContentView(R.layout.viewer);
         getActionBar().hide();
 
+        WebView mWebView;
         String url = getIntent().getStringExtra("url");
         boolean is_pdf = getIntent().getBooleanExtra("is_pdf", false);
 

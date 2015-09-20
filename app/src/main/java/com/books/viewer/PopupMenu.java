@@ -33,13 +33,13 @@ public class PopupMenu {
 
 	public interface OnClickPopupListener {
 		void onClickPopup(PopupMenu menu, Object key);
-	};
+	}
 
 	private static class Item {
 		public Object key;
 		public int icon;
 		public CharSequence title;
-	};
+	}
 
 	private Activity mContext;
 	private PopupWindow mPopup;

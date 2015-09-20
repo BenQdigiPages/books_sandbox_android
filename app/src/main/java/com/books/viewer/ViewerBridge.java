@@ -74,7 +74,6 @@ public class ViewerBridge {
 
     private ViewerActivity mScene;
     private WebView mWebView;
-    private JavascriptCallback mJavascriptInterface = new JavascriptCallback();
     private Handler mHandler = new Handler();
 
     private String mBookUri;
@@ -86,6 +85,8 @@ public class ViewerBridge {
     private HashMap<Integer, ValueCallback<String>> mEvalCallbacks = new HashMap<Integer, ValueCallback<String>>();
 
     public ViewerBridge(ViewerActivity scene, WebView webView) {
+        JavascriptCallback mJavascriptInterface = new JavascriptCallback();
+        WebChromeClient mWebChromeClient = new WebChromeClient();
         mScene = scene;
         mWebView = webView;
 
@@ -752,9 +753,9 @@ public class ViewerBridge {
                 }
             });
         }
-    };
+    }
 
-    private WebViewClient mWebViewClient = new WebViewClient() {
+    WebViewClient mWebViewClient = new WebViewClient() {
         @Override
         public void onPageFinished(WebView view, String uri) {
             super.onPageFinished(view, uri);
@@ -946,5 +947,4 @@ public class ViewerBridge {
         }
     };
 
-    private WebChromeClient mWebChromeClient = new WebChromeClient();
 }

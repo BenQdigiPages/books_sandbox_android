@@ -40,8 +40,6 @@ import java.util.zip.ZipInputStream;
 public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
 
-    private ListAdapter mListAdapter;
-    private ListView mListView;
     private ArrayList<String> mItems;
     private ImageButton mBtnOptions;
     private ImageButton mBtnBookmark;
@@ -84,8 +82,8 @@ public class MainActivity extends Activity {
 
         findBooks();
 
-        mListAdapter = new ListAdapter();
-        mListView = (ListView) findViewById(R.id.list);
+        ListAdapter mListAdapter = new ListAdapter();
+        ListView mListView = (ListView) findViewById(R.id.list);
         mListView.setAdapter(mListAdapter);
 
         mListView.setOnItemClickListener(new ListView.OnItemClickListener() {
@@ -130,7 +128,7 @@ public class MainActivity extends Activity {
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "unable to list boooks", e);
+            Log.w(TAG, "unable to list books", e);
         }
     }
 

@@ -88,7 +88,7 @@ public class BrokenInputStream extends InputStream {
 
         ensureReadingSafety();
 
-        long limit = Math.min(len, mEnd - mPos);
+        long limit = Math.min((long)len, mEnd - mPos);
         int n = mInput.read(buffer, offset, (int) limit);
 
         if (n > 0) {

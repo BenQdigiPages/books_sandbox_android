@@ -354,7 +354,17 @@ Viewer.setLayoutMode = function(mode) {
     console.log("Viewer.setLayoutMode=" + mode);
     if (mode !== currentLayoutMode) {
         currentLayoutMode = mode;
-        //TODO:Change layout mode
+        if (currentLayoutMode === "single") {
+			console.log("setLayoutMode:single");
+            TwoPageViewMode.disable();
+        }else if (currentLayoutMode === "side_by_side"){
+			console.log("setLayoutMode:side_by_side");
+            TwoPageViewMode.enable();
+        }
+        else {
+            TwoPageViewMode.disable();
+            console.log("Viewer.setLayoutMode: others");
+        }
     }
 }
 
@@ -811,8 +821,13 @@ function onPrevPage() {
     if (currentPageNum <= 1) {
         return;
     }
-    currentPageNum--;
-    PDFViewerApplication.page--;
+    if (TwoPageViewMode.active)
+    {
+        TwoPageViewMode.previousPage();
+    } else {
+        currentPageNum--;
+        PDFViewerApplication.page--;
+    }	
 }
 
 /**
@@ -822,8 +837,13 @@ function onNextPage() {
     if (currentPageNum >= pdfDoc.numPages) {
         return;
     }
-    currentPageNum++;
-    PDFViewerApplication.page++;
+    if (TwoPageViewMode.active)
+    {
+        TwoPageViewMode.nextPage();
+    } else {
+        currentPageNum++;
+        PDFViewerApplication.page++;
+    }	
 }
 
 /**
@@ -903,7 +923,7 @@ function queueRenderPage(num) {
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, ProgressBar,
            DownloadManager, getFileName, getPDFFileNameFromURL,
            PDFHistory, Preferences, SidebarView, ViewHistory, Stats,
-           PDFThumbnailViewer, URL, noContextMenuHandler, SecondaryToolbar,
+           PDFThumbnailViewer, TwoPageViewMode, URL, noContextMenuHandler, SecondaryToolbar,
            PasswordPrompt, PDFPresentationMode, PDFDocumentProperties, HandTool,
            Promise, PDFLinkService, PDFOutlineView, PDFAttachmentView,
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
@@ -1222,6 +1242,14 @@ function getVisibleElements(scrollEl, views, sortByVisibility) {
       Math.max(0, currentHeight + viewHeight - bottom);
     percentHeight = ((viewHeight - hiddenHeight) * 100 / viewHeight) | 0;
 
+    if (sortByVisibility && TwoPageViewMode.active) {  //Phoebe
+        hiddenWidth = Math.max(0, left - currentWidth) +
+                      Math.max(0, currentWidth + viewWidth - right);
+        percentWidth = ((viewWidth - hiddenWidth) * 100 / viewWidth) | 0;
+
+        percentHeight = Math.sqrt(percentHeight * percentWidth) | 0;
+    }
+	
     visible.push({
       id: view.id,
       x: currentWidth,
@@ -1441,6 +1469,7 @@ var DEFAULT_PREFERENCES = {
   defaultZoomValue: '',
   sidebarViewOnLoad: 0,
   enableHandToolOnLoad: false,
+  twoPageViewModeOnLoad: -1,
   enableWebGL: true,
   pdfBugEnabled: false,
   disableRange: false,
@@ -2601,6 +2630,10 @@ var PDFLinkService = (function () {
       if (hash.indexOf('=') >= 0) {
         var params = parseQueryString(hash);
         // borrowing syntax from "Parameters for Opening PDF Files"
+        if ('twopageview' in params) {
+            TwoPageViewMode.hashParams = params.twopageview;
+        }
+
         if ('nameddest' in params) {
           if (this.pdfHistory) {
             this.pdfHistory.updateNextHashParam(params.nameddest);
@@ -2690,15 +2723,18 @@ var PDFLinkService = (function () {
           break;
 
         case 'NextPage':
-          this.page++;
+          //this.page++;
+            PDFViewerApplication.nextPage();
           break;
 
         case 'PrevPage':
-          this.page--;
+          //this.page--;
+            PDFViewerApplication.previousPage()();
           break;
 
         case 'LastPage':
-          this.page = this.pagesCount;
+          //this.page = this.pagesCount;
+            this.page = PDFViewerApplication.lastPageNumber;
           break;
 
         case 'FirstPage':
@@ -3105,7 +3141,9 @@ var SecondaryToolbar = {
 
   initialize: function secondaryToolbarInitialize(options) {
     this.toolbar = options.toolbar;
-    this.buttonContainer = this.toolbar.firstElementChild;
+    this.presentationMode = options.presentationMode;
+    this.twoPageViewMode = options.twoPageViewMode;
+    //this.buttonContainer = this.toolbar.firstElementChild;
 
     // Define the toolbar buttons.
     this.toggleButton = options.toggleButton;
@@ -3118,6 +3156,8 @@ var SecondaryToolbar = {
     this.lastPage = options.lastPage;
     this.pageRotateCw = options.pageRotateCw;
     this.pageRotateCcw = options.pageRotateCcw;
+    this.onePageView = options.onePageView;
+    this.twoPageView = options.twoPageView;
     this.documentPropertiesButton = options.documentPropertiesButton;
 
     // Attach the event listeners.
@@ -3136,6 +3176,10 @@ var SecondaryToolbar = {
       { element: this.lastPage, handler: this.lastPageClick },
       { element: this.pageRotateCw, handler: this.pageRotateCwClick },
       { element: this.pageRotateCcw, handler: this.pageRotateCcwClick },
+      { element: this.onePageView, handler: this.twoPageViewMode.disable,
+        scope: this.twoPageViewMode },
+      { element: this.twoPageView, handler: this.twoPageViewMode.enable,
+        scope: this.twoPageViewMode },
       { element: this.documentPropertiesButton,
         handler: this.documentPropertiesClick }
     ];
@@ -3363,11 +3407,17 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
 
         // If we're at the first/last page, we don't need to do anything.
         if ((page === 1 && pageSwitchDirection === PageSwitchDirection.UP) ||
-            (page === this.pdfViewer.pagesCount &&
+            (page === PDFViewerApplication.lastPageNumber &&//phoebe
              pageSwitchDirection === PageSwitchDirection.DOWN)) {
           return;
         }
-        this.pdfViewer.currentPageNumber = (page + pageSwitchDirection);
+        //this.pdfViewer.currentPageNumber = (page + pageSwitchDirection);
+        if (pageFlipDirection > 0) {//phoebe
+            PDFViewerApplication.nextPage();
+        } else {
+            PDFViewerApplication.previousPage();
+        }
+
         this.mouseScrollTimeStamp = currentTime;
       }
     },
@@ -3495,7 +3545,13 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
         if (!isInternalLink) {
           // Unless an internal link was clicked, advance one page.
           evt.preventDefault();
-          this.pdfViewer.currentPageNumber += (evt.shiftKey ? -1 : 1);
+          //this.pdfViewer.currentPageNumber += (evt.shiftKey ? -1 : 1);
+        if (evt.shiftKey) {
+            PDFViewerApplication.previousPage();
+        } else {
+            PDFViewerApplication.nextPage();
+        }
+
         }
       }
     },
@@ -4411,6 +4467,11 @@ var PDFRenderingQueue = (function PDFRenderingQueueClosure() {
       // 1 visible pages
       // 2 if last scrolled down page after the visible pages
       // 2 if last scrolled up page before the visible pages
+        //
+        // When two page view mode is active:
+        // 3 if last scrolled down, right-hand page after the visible pages.
+        // 3 if last scrolled up, left-hand page after the visible pages.
+
       var visibleViews = visible.views;
 
       var numVisible = visibleViews.length;
@@ -4424,21 +4485,32 @@ var PDFRenderingQueue = (function PDFRenderingQueueClosure() {
         }
       }
 
+	  var pageIndex;
       // All the visible views have rendered, try to render next/previous pages.
       if (scrolledDown) {
-        var nextPageIndex = visible.last.id;
+        pageIndex = visible.last.id;
         // ID's start at 1 so no need to add 1.
-        if (views[nextPageIndex] &&
-            !this.isViewFinished(views[nextPageIndex])) {
-          return views[nextPageIndex];
-        }
+        // if (views[nextPageIndex] &&
+            // !this.isViewFinished(views[nextPageIndex])) {
+          // return views[nextPageIndex];
+        // }
       } else {
-        var previousPageIndex = visible.first.id - 2;
-        if (views[previousPageIndex] &&
-          !this.isViewFinished(views[previousPageIndex])) {
-          return views[previousPageIndex];
-        }
+        pageIndex = visible.first.id - 2;
+        // if (views[previousPageIndex] &&
+          // !this.isViewFinished(views[previousPageIndex])) {
+          // return views[previousPageIndex];
+        // }
       }
+        var hiddenView = views[pageIndex];
+        var viewNeedsRendering = this.checkIfViewNeedsRendering(hiddenView);
+
+        if (viewNeedsRendering) {
+            return viewNeedsRendering;
+        } else if (TwoPageViewMode.active) {
+            hiddenView = views[pageIndex + (scrolledDown ? 1 : -1)];
+            return this.checkIfViewNeedsRendering(hiddenView);
+        }
+
       // Everything that needs to be rendered has been.
       return null;
     },
@@ -4450,6 +4522,14 @@ var PDFRenderingQueue = (function PDFRenderingQueueClosure() {
     isViewFinished: function PDFRenderingQueue_isViewFinished(view) {
       return view.renderingState === RenderingStates.FINISHED;
     },
+    //phoebe, add for twopage view
+    checkIfViewNeedsRendering: function pdfViewCheckIfViewNeedsRendering(view) {
+        if (view && !this.isViewFinished(view)) {
+            return view;
+        }
+        return false;
+    },
+
 
     /**
      * Render a page or thumbnail view. This calls the appropriate function
@@ -6004,6 +6084,12 @@ var PDFViewer = (function pdfViewer() {
                              currentPage.width * currentPage.scale;
         var pageHeightScale = (this.container.clientHeight - vPadding) /
                               currentPage.height * currentPage.scale;
+							  
+        if (TwoPageViewMode.active) {
+            pageWidthScale /= 2;
+			pageWidthScale = pageWidthScale - 0.01;
+        }
+		
         switch (value) {
           case 'page-actual':
             scale = 1;
@@ -6177,12 +6263,18 @@ var PDFViewer = (function pdfViewer() {
       var intLeft = Math.round(topLeft[0]);
       var intTop = Math.round(topLeft[1]);
       pdfOpenParams += ',' + intLeft + ',' + intTop;
-
+      //phoebe
+        var twoPageView = TwoPageViewMode.hashParams;
+        if (twoPageView) {
+            pdfOpenParams += '&twoPageView=' + twoPageView;
+        }
+	  
       this._location = {
         pageNumber: pageNumber,
         scale: normalizedScaleValue,
         top: intTop,
         left: intLeft,
+        twoPageView: twoPageView,
         pdfOpenParams: pdfOpenParams
       };
     },
@@ -6272,22 +6364,25 @@ var PDFViewer = (function pdfViewer() {
         //End : [Bruce]
       //[Bruce]
       } else if(this.isInCarouselMode){
-        var visible = [];
-        var currentPage = this._pages[this._currentPageNumber - 1];
-        var nextPage = currentPage;
-        visible.push({ id: currentPage.id, view: currentPage });
+        if (!TwoPageViewMode.active) {		  
+            var visible = [];
+            var currentPage = this._pages[this._currentPageNumber - 1];
+            var nextPage = currentPage;
+            visible.push({ id: currentPage.id, view: currentPage });
 
-        // Try to load the next page
-        if((currentPage.id - 1) < this._pages.length) {
-            var nextPage = this._pages[this._currentPageNumber];
-            if(nextPage) {
-                visible.push({ id: nextPage.id, view: nextPage });
-            } else {
-                nextPage = currentPage;
+            // Try to load the next page
+            if((currentPage.id - 1) < this._pages.length) {
+                var nextPage = this._pages[this._currentPageNumber];
+                if(nextPage) {
+                    visible.push({ id: nextPage.id, view: nextPage });
+                } else {
+                    nextPage = currentPage;
+                }
             }
-        }
-
-        return { first: currentPage, last: nextPage, views: visible };
+            return { first: currentPage, last: nextPage, views: visible };
+        } else {
+            return getVisibleElements(this.container, this._pages, true);  //Phoebe
+        }        
       //End : [Bruce]
       } else {
         // The algorithm in getVisibleElements doesn't work in all browsers and
@@ -7013,6 +7108,225 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
 })();
 
 
+var TWO_PAGE_CONTAINER = 'twoPageContainer';
+
+var TwoPageViewMode = {
+  active: false,
+  numPages: 0,
+  numTwoPageContainers: 0,
+  containers: {},
+  isPagePlacedOnRightSideInContainer: {},
+  previousPageNumber: null,
+
+  initialize: function twoPageViewModeInitialize(options) {
+    this.container = options.container;
+    this.viewer = this.container.firstElementChild;
+
+    this.onePageView = options.onePageView;
+    this.twoPageView = options.twoPageView;
+  },
+
+  _createTwoPageView: function twoPageViewMode_createTwoPageView() {
+    this.previousPageNumber = PDFViewerApplication.pdfViewer.currentPageNumber;
+
+    this.numPages = PDFViewerApplication.pdfViewer.pagesCount;
+    if ((this.numPages & 1) === 0) { // Even number of pages.
+      this.numTwoPageContainers = (this.numPages / 2);
+    } else { // Odd number of pages.
+      this.numTwoPageContainers = Math.ceil(this.numPages / 2);
+    }
+    var uid, div;
+    for (var i = 1; i <= this.numTwoPageContainers; i++) {
+      uid = (2 * i - 1);
+      div = this.containers[uid] = document.createElement('div');
+      div.id = TWO_PAGE_CONTAINER + uid;
+      if (PDFViewerApplication.pdfViewer.isInCarouselMode) {
+		div.className = 'owl-item';
+      } else {
+        div.className = TWO_PAGE_CONTAINER;		  
+	  }
+	  this.div=div;
+      if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
+        var owl = $('#viewer');
+        owl.owlCarousel();
+        owl.trigger('add.owl.carousel',[this.div]);
+      } else {
+        this.viewer.appendChild(div);
+      }
+    }
+    var pageDiv, index;
+    for (var i = 1; i <= this.numPages; i++) {
+      pageDiv = PDFViewerApplication.pdfViewer.getPageView(i - 1).div;
+      index = i + (this.containers[i] ? 0 : -1);
+	  pageDiv.style.display = "inline-block";
+      this.containers[index].appendChild(pageDiv);
+      if ((i & 1) === 0) { // Even page number.
+        this.isPagePlacedOnRightSideInContainer[i] = true;
+      } else { // Odd page number.
+        this.isPagePlacedOnRightSideInContainer[i] = false;
+      }
+    }
+    if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
+        var owl = $('#viewer');
+        owl.owlCarousel();	
+        owl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
+        for (var i = 1; i <= this.numPages; i++) {
+            owl.trigger('remove.owl.carousel',0);
+        }
+    }	
+    this.active = true;
+  },
+
+  _destroyTwoPageView: function twoPageViewMode_destroyTwoPageView() {
+    this.previousPageNumber = PDFViewerApplication.pdfViewer.currentPageNumber;
+
+    var pageDiv;
+    for (var i = 1, ii = this.numPages; i <= ii; i++) {
+        pageDiv = PDFViewerApplication.pdfViewer.getPageView(i - 1).div;
+        if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
+            var owl = $('#viewer');
+            owl.owlCarousel();
+            owl.trigger('add.owl.carousel',[pageDiv]);
+        } else {
+			this.viewer.appendChild(pageDiv);
+        }
+        
+    }
+    if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
+        var owl = $('#viewer');
+        owl.owlCarousel();	
+        owl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
+    }		
+    for (var uid in this.containers) {
+        if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
+            var owl = $('#viewer');
+            owl.owlCarousel();
+            owl.trigger('remove.owl.carousel',0);
+        } else {
+            this.viewer.removeChild(this.containers[uid]);
+        }
+    }
+
+    this._resetParameters();
+  },
+
+  _resetParameters: function twoPageViewMode_resetParameters() {
+    this.active = false;
+    this.numPages = 0;
+    this.numTwoPageContainers = 0;
+    this.containers = {};
+    this.isPagePlacedOnRightSideInContainer = {};
+  },
+
+  _updateViewarea: function twoPageViewMode_updateViewarea(noResize) {
+    if (PDFViewerApplication.pdfViewer.currentScaleValue) {
+      if (!noResize) {
+        PDFViewerApplication.pdfViewer._setScale(PDFViewerApplication.pdfViewer.currentScaleValue, true);
+      }
+      PDFViewerApplication.pdfViewer.currentPageNumber = this.previousPageNumber;
+      PDFViewerApplication.pdfRenderingQueue.renderHighestPriority();
+    }
+    this.previousPageNumber = null;
+  },
+
+  disable: function twoPageViewModeDisable() {
+    if (!this.active) {
+      return;
+    }
+    //this.twoPageView.classList.remove('toggled');
+    //this.onePageView.classList.add('toggled');
+
+    if (this.viewer.hasChildNodes()) {
+      this._destroyTwoPageView();
+      this._updateViewarea();
+    } else {
+      this._resetParameters();
+    }
+  },
+
+  enable: function twoPageViewModeEnable() {
+    //if (this.active || !this.viewer.hasChildNodes()) {
+    //  return;
+    //}
+    //this.onePageView.classList.remove('toggled');
+    //this.twoPageView.classList.add('toggled');
+
+    this._createTwoPageView();
+    this._updateViewarea();
+  },
+
+  scrollIntoViewPageNumber: function twoPageViewScrollIntoViewPageNumber(id) {
+    var dest;
+
+    if (PDFViewerApplication.pdfViewer.isHorizontalScrollbarEnabled) {
+      dest = [null, { name: 'XYZ' }, 0, null, null];
+    }
+    PDFViewerApplication.pdfViewer.getPageView(id - 1).scrollIntoView(dest);
+  },
+
+  previousPage: function twoPageViewModePreviousPage() {
+    var newPageNumber = PDFViewerApplication.pdfViewer.currentPageNumber - 1, firstPage = 1;
+
+    if (!PDFViewerApplication.pdfViewer.isHorizontalScrollbarEnabled) {
+      newPageNumber--;
+      if (this.isPagePlacedOnRightSideInContainer[newPageNumber]) {
+        newPageNumber--;
+      }
+    }
+    PDFViewerApplication.pdfViewer.currentPageNumber = (newPageNumber < firstPage) ? firstPage : newPageNumber;
+  },
+
+  nextPage: function twoPageViewModeNextPage() {
+    var newPageNumber = PDFViewerApplication.pdfViewer.currentPageNumber + 1, lastPage = this.getLastPageNumber();
+
+    if (!PDFViewerApplication.pdfViewer.isHorizontalScrollbarEnabled) {
+      if (this.isPagePlacedOnRightSideInContainer[newPageNumber]) {
+        newPageNumber++;
+      }
+    }
+    PDFViewerApplication.pdfViewer.currentPageNumber = (newPageNumber > lastPage) ? lastPage : newPageNumber;
+  },
+
+  getLastPageNumber: function twoPageViewGetLastPageNumber() {
+    var lastPage = this.numPages;
+
+    if (!PDFViewerApplication.pdfViewer.isHorizontalScrollbarEnabled &&
+        this.isPagePlacedOnRightSideInContainer[lastPage]) {
+      lastPage--;
+    }
+    return lastPage;
+  },
+
+  /**
+   * Enables the user to set the state of Two Page View Mode through
+   * the hash parameter '#twoPageView=value'.
+   *
+   * @param {Integer} value The current state of Two Page View Mode:
+   *  - 0 - One Page View.
+   *  - 1 - Two Page View.
+   */
+  set hashParams(value) {
+    value |= 0;
+
+    if (value === 1) {
+      this.enable();
+    } else {
+      this.disable();
+    }
+  },
+
+  /**
+   * Returns the hash parameter corresponding to the current state
+   * of Two Page View Mode.
+   *
+   * @return {Integer} (See above for explanation of the return values.)
+   */
+  get hashParams() {
+    return (this.active | 0);
+  }
+};
+
+
 /**
  * @typedef {Object} PDFOutlineViewOptions
  * @property {HTMLDivElement} container - The viewer element.
@@ -7223,6 +7537,7 @@ var PDFViewerApplication = {
   preferencePdfBugEnabled: false,
   preferenceShowPreviousViewOnLoad: true,
   preferenceDefaultZoomValue: '',
+  preferencetwoPageViewModeOnLoad: -1,
   isViewerEmbedded: (window.parent !== window),
   url: '',
 
@@ -7318,6 +7633,7 @@ var PDFViewerApplication = {
       toggleButton: document.getElementById('secondaryToolbarToggle'),
       presentationModeButton:
         document.getElementById('secondaryPresentationMode'),
+      twoPageViewMode: TwoPageViewMode,
       openFile: document.getElementById('secondaryOpenFile'),
       print: document.getElementById('secondaryPrint'),
       download: document.getElementById('secondaryDownload'),
@@ -7326,6 +7642,8 @@ var PDFViewerApplication = {
       lastPage: document.getElementById('lastPage'),
       pageRotateCw: document.getElementById('pageRotateCw'),
       pageRotateCcw: document.getElementById('pageRotateCcw'),
+      onePageView: document.getElementById('onePageView'),
+      twoPageView: document.getElementById('twoPageView'),
       documentPropertiesButton: document.getElementById('documentProperties')
     });
 
@@ -7397,10 +7715,27 @@ var PDFViewerApplication = {
       }),
       Preferences.get('useOnlyCssZoom').then(function resolved(value) {
         PDFJS.useOnlyCssZoom = value;
+      }),
+        Preferences.get('twoPageViewModeOnLoad').then(function resolved(value) {
+        self.preferencetwoPageViewModeOnLoad = value;   		  
       })
+	  
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
     */
+
+    SecondaryToolbar.initialize({
+      twoPageViewMode: TwoPageViewMode,
+      onePageView: document.getElementById('onePageView'),
+      twoPageView: document.getElementById('twoPageView'),
+    });
+	
+	
+    TwoPageViewMode.initialize({
+      container: container,
+      onePageView: document.getElementById('onePageView'),
+      twoPageView: document.getElementById('twoPageView')
+    });
 
     var initializedPromise = new Promise(function (resolve) {
         PDFJS.disableWebGL = !DEFAULT_PREFERENCES.enableWebGL;
@@ -7409,6 +7744,7 @@ var PDFViewerApplication = {
         PDFJS.disableAutoFetch = DEFAULT_PREFERENCES.disableAutoFetch;
         PDFJS.disableFontFace = DEFAULT_PREFERENCES.disableFontFace;
         PDFJS.useOnlyCssZoom = DEFAULT_PREFERENCES.useOnlyCssZoom;
+        PDFJS.twoPageViewModeOnLoad = DEFAULT_PREFERENCES.twoPageViewModeOnLoad;
         resolve();
     });
     //End : [Bruce][TempDisable]
@@ -7441,6 +7777,28 @@ var PDFViewerApplication = {
     } while (--ticks > 0 && newScale > MIN_SCALE);
     this.setScale(newScale, true);
   },
+  
+  previousPage: function pdfViewNextPage() {
+    if (TwoPageViewMode.active) {
+      TwoPageViewMode.previousPage();
+    } else {
+      this.page--;
+    }
+  },
+
+  nextPage: function pdfViewNextPage() {
+    if (TwoPageViewMode.active) {
+      TwoPageViewMode.nextPage();
+    } else {
+      this.page++;
+    }
+  },
+
+  get lastPageNumber() {
+    return (TwoPageViewMode.active ?
+            TwoPageViewMode.getLastPageNumber() : this.pdfViewer.pagesCount);
+  },
+
 
   get pagesCount() {
     return this.pdfDocument.numPages;
@@ -7856,7 +8214,10 @@ var PDFViewerApplication = {
       //[Bruce]
       /*
       store.initializedPromise.then(function resolved() {
-        var storedHash = null;
+        var storedHash = '';
+        var twoPageViewModeOnLoad = self.preferencetwoPageViewModeOnLoad;
+        var twoPageViewPrefSet = (twoPageViewModeOnLoad >= 0);
+		
         if (self.preferenceShowPreviousViewOnLoad &&
             store.get('exists', false)) {
           var pageNum = store.get('page', '1');
@@ -7864,12 +8225,27 @@ var PDFViewerApplication = {
                      store.get('zoom', self.pdfViewer.currentScale);
           var left = store.get('scrollLeft', '0');
           var top = store.get('scrollTop', '0');
+            var twoPageView = (twoPageViewPrefSet ? twoPageViewModeOnLoad :
+            store.get('twoPageView', '0'));
 
-          storedHash = 'page=' + pageNum + '&zoom=' + zoom + ',' +
-                       left + ',' + top;
-        } else if (self.preferenceDefaultZoomValue) {
-          storedHash = 'page=1&zoom=' + self.preferenceDefaultZoomValue;
-        }
+
+            // storedHash = 'page=' + pageNum + '&zoom=' + zoom + ',' +
+            // left + ',' + top;
+            storedHash = ('page=' + pageNum) +
+                ('&zoom=' + zoom + ',' + left + ',' + top) +
+                ('&twoPageView=' + twoPageView);
+
+            } else {
+                if (self.preferenceDefaultZoomValue) {
+                  storedHash = 'page=1&zoom=' + self.preferenceDefaultZoomValue;
+                }
+               // if (twoPageViewPrefSet) {
+                  storedHash += '&twoPageView=1';// + twoPageViewModeOnLoad;
+                //}
+				if(PDFViewerApplication.initialBookmark)
+					PDFViewerApplication.initialBookmark +='&twoPageView=1';
+
+            }
         self.setInitialView(storedHash, scale);
 
         // Make all navigation keys work on document load,
@@ -8436,12 +8812,14 @@ function webViewerInitialized() {
 
   document.getElementById('previous').addEventListener('click',
     function() {
-      PDFViewerApplication.page--;
+      //PDFViewerApplication.page--;
+      PDFViewerApplication.previousPage();//phoebe
     });
 
   document.getElementById('next').addEventListener('click',
     function() {
-      PDFViewerApplication.page++;
+      //PDFViewerApplication.page++;
+      PDFViewerApplication.nextPage();//phoebe
     });
 
   document.getElementById('zoomIn').addEventListener('click',
@@ -8600,6 +8978,7 @@ window.addEventListener('updateviewarea', function (evt) {
       'zoom': location.scale,
       'scrollLeft': location.left,
       'scrollTop': location.top
+      'twoPageView': location.twoPageView,
     }).catch(function() {
       // unable to write to storage
     });
@@ -8989,7 +9368,7 @@ window.addEventListener('keydown', function keydown(evt) {
         /* falls through */
       case 75: // 'k'
       case 80: // 'p'
-        PDFViewerApplication.page--;
+        PDFViewerApplication.previousPage();//phoebe
         handled = true;
         break;
       case 27: // esc key
@@ -9019,7 +9398,7 @@ window.addEventListener('keydown', function keydown(evt) {
         /* falls through */
       case 74: // 'j'
       case 78: // 'n'
-        PDFViewerApplication.page++;
+        PDFViewerApplication.nextPage();//phoebe
         handled = true;
         break;
 
@@ -9030,9 +9409,10 @@ window.addEventListener('keydown', function keydown(evt) {
         }
         break;
       case 35: // end
+        var lastPage = PDFViewerApplication.lastPageNumber;
         if (isViewerInPresentationMode || (PDFViewerApplication.pdfDocument &&
-            PDFViewerApplication.page < PDFViewerApplication.pagesCount)) {
-          PDFViewerApplication.page = PDFViewerApplication.pagesCount;
+          PDFViewerApplication.page < PDFViewerApplication.pagesCount) || PDFViewerApplication.page < lastPage) {
+          PDFViewerApplication.page = lastPage;//phoebe
           handled = true;
         }
         break;
@@ -9055,7 +9435,7 @@ window.addEventListener('keydown', function keydown(evt) {
             pdfViewer.currentScaleValue !== 'page-fit') {
           break;
         }
-        PDFViewerApplication.page--;
+        PDFViewerApplication.previousPage();//phoebe
         handled = true;
         break;
 

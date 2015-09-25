@@ -28,12 +28,12 @@ App.onToggleToolbar = function(visible) {
     _App.onToggleToolbar(visible);
 };
 
-App.onRequestHighlights = function(chapter, callback) {
-    _App.onRequestHighlights(chapter, callback);
+App.onRequestHighlights = function(callback) {
+    _App.onRequestHighlights(callback);
 };
 
-App.onAddHighlight = function(chapter, highlight, callback) {
-    _App.onAddHighlight(chapter, JSON.stringify(highlight), callback);
+App.onAddHighlight = function(highlight, callback) {
+    _App.onAddHighlight(JSON.stringify(highlight), callback);
 };
 
 App.onUpdateHighlight = function(highlight) {
@@ -52,12 +52,12 @@ App.onAnnotateHighlight = function(uuid) {
     _App.onAnnotateHighlight(uuid);
 };
 
-App.onRequestBookmarks = function(chapter, callback) {
-    _App.onRequestBookmarks(chapter, callback);
+App.onRequestBookmarks = function(callback) {
+    _App.onRequestBookmarks(callback);
 };
 
-App.onAddBookmark = function(chapter, bookmark, callback) {
-    _App.onAddBookmark(chapter, JSON.stringify(bookmark), callback);
+App.onAddBookmark = function(bookmark, callback) {
+    _App.onAddBookmark(JSON.stringify(bookmark), callback);
 };
 
 App.onUpdateBookmark = function(bookmark) {

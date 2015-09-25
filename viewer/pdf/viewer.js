@@ -107,7 +107,7 @@ function onURL_and_AppReady(resultOutput) {
     PDFViewerApplication.open(url, 0 , null , null , null , legacy);
 
     //Request bookmarks from app when book is loaded.
-    App.onRequestBookmarks("bookmarks", "RequestBookmarksCallback")
+    App.onRequestBookmarks("RequestBookmarksCallback")
 }
 
 function onFirstPageRendered() {
@@ -238,7 +238,7 @@ Viewer.loadBook = function(url, legacy) {
     var link;
 
     for (i = 0 ; i < items.length ; i++) {
-        if (items[i].attributes.getNamedItem("media-type").value !== "image/png") 
+        if (items[i].attributes.getNamedItem("media-type").value !== "image/png")
             continue;
         link = url + items[i].attributes.getNamedItem("href").value;
         thumbnailNames.push(link);
@@ -419,17 +419,17 @@ Viewer.gotoPosition = function(cfi) {
 /// If null is specified, viewer should call App.onRemoveBookmark in response,
 /// or do nothing if there is currently no bookmark
 ///
-/// @tag: string or null
-///     tag - the bookmark tag type
+/// @color: string or null
+///     color - the bookmark color, either "red", "yellow" or "blue"
 ///     null - to remove current bookmark
-/// @image_url: tag image url or null
+/// @image_url: color image url or null
 ///
-Viewer.toggleBookmark = function(tag, image_url) {
-    console.log("Viewer.toggleBookmark=" + tag);
-    if (tag !== null) {
+Viewer.toggleBookmark = function(color, image_url) {
+    console.log("Viewer.toggleBookmark=" + color);
+    if (color !== null) {
         var bookmark = null;
         if ((bookmark = isBookmarkExist()) !== null) {
-            bookmark.tag = tag;
+            bookmark.color = color;
             App.onUpdateBookmark(bookmark);
         } else {
             //send tmp bookmark to app for getting uuid.
@@ -437,9 +437,9 @@ Viewer.toggleBookmark = function(tag, image_url) {
                "uuid": "",
                "title": "",
                "cfi": currentPageNum,
-               "tag": tag
+               "color": color
             };
-            App.onAddBookmark("bookmarks",tmpBookmark,"AddBookmarkCallBack");
+            App.onAddBookmark(tmpBookmark,"AddBookmarkCallBack");
         }
     } else {
         //Remove bookmark in current page.
@@ -533,7 +533,7 @@ Viewer.handleZoomOutInEvent = function(event) {
                 if(checkedTouchPoints.length >= 1) {
                     result = innerTP.handleZoomPolicy(checkedTouchPoints);
                 }
-                
+
                 if(result.targetPoint === null) {
                     checkedTouchPoints.push(innerTP);
                 } else {
@@ -659,11 +659,11 @@ function ZoomInOutOffSetFix() {
         var afterScale = scale;
 
         // Change by scale
-        this.touchLeft = this.touchLeft / oriScale * afterScale; 
+        this.touchLeft = this.touchLeft / oriScale * afterScale;
         this.touchTop = this.touchTop / oriScale * afterScale;
         //this.width = this.width / oriScale * afterScale;
         this.scale = afterScale;
-        
+
         // carouselLeft/carouselTop is only related to this page , not all scroll view
         this.carouselLeft = this.touchMiddle.oriX - this.touchLeft;
         this.carouselTop = this.touchMiddle.oriY - this.touchTop;
@@ -671,7 +671,7 @@ function ZoomInOutOffSetFix() {
         var setLeft = this.carouselLeft + this.arrayIndex * this.width * (-1);
         var setTop = this.carouselTop;
 
-        // Set style 
+        // Set style
         var styleBuffer = "";
         for (var id in this.styleArray) {
             if(this.styleArray[id].indexOf("transform") !== -1) {
@@ -827,7 +827,7 @@ function onPrevPage() {
     } else {
         currentPageNum--;
         PDFViewerApplication.page--;
-    }	
+    }
 }
 
 /**
@@ -843,7 +843,7 @@ function onNextPage() {
     } else {
         currentPageNum++;
         PDFViewerApplication.page++;
-    }	
+    }
 }
 
 /**
@@ -1249,7 +1249,7 @@ function getVisibleElements(scrollEl, views, sortByVisibility) {
 
         percentHeight = Math.sqrt(percentHeight * percentWidth) | 0;
     }
-	
+
     visible.push({
       id: view.id,
       x: currentWidth,
@@ -5789,9 +5789,9 @@ var PDFViewer = (function pdfViewer() {
         return;
       }
 
-      //[Bruce] NOTE : We must do this before set this._currentPageNumber 
+      //[Bruce] NOTE : We must do this before set this._currentPageNumber
       if(this.isInCarouselMode) {
-          if(this.currentPageNumber === val) 
+          if(this.currentPageNumber === val)
               return;
           var owl = $('#viewer');
           owl.owlCarousel();
@@ -6084,12 +6084,12 @@ var PDFViewer = (function pdfViewer() {
                              currentPage.width * currentPage.scale;
         var pageHeightScale = (this.container.clientHeight - vPadding) /
                               currentPage.height * currentPage.scale;
-							  
+
         if (TwoPageViewMode.active) {
             pageWidthScale /= 2;
 			pageWidthScale = pageWidthScale - 0.01;
         }
-		
+
         switch (value) {
           case 'page-actual':
             scale = 1;
@@ -6268,7 +6268,7 @@ var PDFViewer = (function pdfViewer() {
         if (twoPageView) {
             pdfOpenParams += '&twoPageView=' + twoPageView;
         }
-	  
+
       this._location = {
         pageNumber: pageNumber,
         scale: normalizedScaleValue,
@@ -6356,7 +6356,7 @@ var PDFViewer = (function pdfViewer() {
     },
 
     _getVisiblePages: function () {
-      if (!this.isInPresentationMode 
+      if (!this.isInPresentationMode
         //[Bruce]
              && !this.isInCarouselMode) {
         //return getVisibleElements(this.container, this._pages, true);
@@ -6364,7 +6364,7 @@ var PDFViewer = (function pdfViewer() {
         //End : [Bruce]
       //[Bruce]
       } else if(this.isInCarouselMode){
-        if (!TwoPageViewMode.active) {		  
+        if (!TwoPageViewMode.active) {
             var visible = [];
             var currentPage = this._pages[this._currentPageNumber - 1];
             var nextPage = currentPage;
@@ -6382,7 +6382,7 @@ var PDFViewer = (function pdfViewer() {
             return { first: currentPage, last: nextPage, views: visible };
         } else {
             return getVisibleElements(this.container, this._pages, true);  //Phoebe
-        }        
+        }
       //End : [Bruce]
       } else {
         // The algorithm in getVisibleElements doesn't work in all browsers and
@@ -7143,7 +7143,7 @@ var TwoPageViewMode = {
       if (PDFViewerApplication.pdfViewer.isInCarouselMode) {
 		div.className = 'owl-item';
       } else {
-        div.className = TWO_PAGE_CONTAINER;		  
+        div.className = TWO_PAGE_CONTAINER;
 	  }
 	  this.div=div;
       if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
@@ -7168,12 +7168,12 @@ var TwoPageViewMode = {
     }
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
         var owl = $('#viewer');
-        owl.owlCarousel();	
+        owl.owlCarousel();
         owl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
         for (var i = 1; i <= this.numPages; i++) {
             owl.trigger('remove.owl.carousel',0);
         }
-    }	
+    }
     this.active = true;
   },
 
@@ -7190,13 +7190,13 @@ var TwoPageViewMode = {
         } else {
 			this.viewer.appendChild(pageDiv);
         }
-        
+
     }
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
         var owl = $('#viewer');
-        owl.owlCarousel();	
+        owl.owlCarousel();
         owl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
-    }		
+    }
     for (var uid in this.containers) {
         if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
             var owl = $('#viewer');
@@ -7561,7 +7561,7 @@ var PDFViewerApplication = {
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
 
-    
+
     var thumbnailContainer = document.getElementById('thumbnailView');
     this.pdfThumbnailViewer = new PDFThumbnailViewer({
       container: thumbnailContainer,
@@ -7717,9 +7717,9 @@ var PDFViewerApplication = {
         PDFJS.useOnlyCssZoom = value;
       }),
         Preferences.get('twoPageViewModeOnLoad').then(function resolved(value) {
-        self.preferencetwoPageViewModeOnLoad = value;   		  
+        self.preferencetwoPageViewModeOnLoad = value;
       })
-	  
+
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
     */
@@ -7729,8 +7729,8 @@ var PDFViewerApplication = {
       onePageView: document.getElementById('onePageView'),
       twoPageView: document.getElementById('twoPageView'),
     });
-	
-	
+
+
     TwoPageViewMode.initialize({
       container: container,
       onePageView: document.getElementById('onePageView'),
@@ -7777,7 +7777,7 @@ var PDFViewerApplication = {
     } while (--ticks > 0 && newScale > MIN_SCALE);
     this.setScale(newScale, true);
   },
-  
+
   previousPage: function pdfViewNextPage() {
     if (TwoPageViewMode.active) {
       TwoPageViewMode.previousPage();
@@ -8217,7 +8217,7 @@ var PDFViewerApplication = {
         var storedHash = '';
         var twoPageViewModeOnLoad = self.preferencetwoPageViewModeOnLoad;
         var twoPageViewPrefSet = (twoPageViewModeOnLoad >= 0);
-		
+
         if (self.preferenceShowPreviousViewOnLoad &&
             store.get('exists', false)) {
           var pageNum = store.get('page', '1');

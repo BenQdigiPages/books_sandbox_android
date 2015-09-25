@@ -17,7 +17,6 @@ import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Environment;
 import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
@@ -357,11 +356,11 @@ public class ViewerBridge {
     /// or do nothing if there is currently no bookmark
     ///
     /// @tag: string or null
-    ///     tag - the bookmark tag type
+    ///     color - the bookmark color, either "red", "yellow" or "blue"
     ///     null - to remove current bookmark
     /// @image_url: tag image url or null
-    public void setBookmark(String tag, String tag_image_url) {
-        eval("Viewer.toggleBookmark(\"" + tag + "\", \"" + tag_image_url + "\")", null);
+    public void setBookmark(String color, String tag_image_url) {
+        eval("Viewer.toggleBookmark(\"" + color + "\", \"" + tag_image_url + "\")", null);
     }
 
     public void removeBookmark() {
@@ -487,31 +486,25 @@ public class ViewerBridge {
         }
 
         // dummy database
-        private final HashMap<String, Object[]> mHighlights = new HashMap<String, Object[]>();
+        private final HashMap<String, JSONObject> mHighlights = new HashMap<String, JSONObject>();
 
         ///
-        /// Request App to load highlights for the chapter, App will call callback in response
-        /// The callback will receive an array of json object to represent highlights
+        /// Request App to load highlights for this book, App will call callback in response
+        /// The callback will receive an array of object to represent highlights
         ///
         ///     function callback([highlight, ...])
         ///
-        /// @chapter: string - an opaque to represent current chapter
         /// @callback: string - name of callback function (can be object member function)
         ///     do not pass function itself, only name (as string) is needed;
         ///     and the function must be accessable from global space
         ///
         @JavascriptInterface
-        public void onRequestHighlights(String chapter, final String callback) {
+        public void onRequestHighlights(final String callback) {
             final JSONArray list = new JSONArray();
 
             synchronized (mHighlights) {
-                for (String key : mHighlights.keySet()) {
-                    Object[] item = mHighlights.get(key);
-                    String item_chapter = (String) item[0];
-                    JSONObject item_highlight = (JSONObject) item[1];
-                    if (item_chapter.equals(chapter)) {
-                        list.put(item_highlight);
-                    }
+                for (JSONObject item_highlight : mHighlights.values()) {
+                    list.put(item_highlight);
                 }
             }
 
@@ -529,20 +522,19 @@ public class ViewerBridge {
         ///
         ///     function callback(uuid)
         ///
-        /// @chapter: string - an opaque to represent current chapter
-        /// @highlight - an json object to represent highlight, uuid is absent in this case
+        /// @highlight - an object to represent highlight, uuid is absent in this case
         /// @callback: string - name of callback function (can be object member function);
         ///     do not pass function itself, only name (as string) is needed;
         ///     and the function must be accessable from global space
         ///
         @JavascriptInterface
-        public void onAddHighlight(String chapter, String highlight_json, final String callback) {
+        public void onAddHighlight(String highlight_json, final String callback) {
             try {
                 JSONObject highlight = new JSONObject(highlight_json);
                 final String uuid = UUID.randomUUID().toString();
 
                 synchronized (mHighlights) {
-                    mHighlights.put(uuid, new Object[] { chapter, highlight });
+                    mHighlights.put(uuid, highlight);
                 }
 
                 // should run in async
@@ -568,12 +560,7 @@ public class ViewerBridge {
                 String uuid = highlight.getString("uuid");
 
                 synchronized (mHighlights) {
-                    Object[] item = mHighlights.get(uuid);
-                    if (item != null) {
-                        item[1] = highlight;
-                    } else {
-                        Log.w(TAG, "highlight not found = " + highlight.toString());
-                    }
+                    mHighlights.put(uuid, highlight);
                 }
             } catch (Exception e) {
                 Log.w(TAG, "fail onUpdateHighlight = " + highlight_json, e);
@@ -627,31 +614,25 @@ public class ViewerBridge {
         }
 
         // dummy database
-        private final HashMap<String, Object[]> mBookmarks = new HashMap<String, Object[]>();
+        private final HashMap<String, JSONObject> mBookmarks = new HashMap<String, JSONObject>();
 
         ///
-        /// Request App to load bookmark for the chapter, App will call callback in response
+        /// Request App to load bookmark for this book, App will call callback in response
         /// The callback will receive an array of json object to represent bookmarks
         ///
         ///     function callback([bookmark, ...])
         ///
-        /// @chapter: string - an opaque to represent current chapter
         /// @callback: string - name of callback function (can be object member function);
         ///     do not pass function itself, only name (as string) is needed;
         ///     and the function must be accessable from global space
         ///
         @JavascriptInterface
-        public void onRequestBookmarks(String chapter, final String callback) {
+        public void onRequestBookmarks(final String callback) {
             final JSONArray list = new JSONArray();
 
             synchronized (mBookmarks) {
-                for (String key : mBookmarks.keySet()) {
-                    Object[] item = mBookmarks.get(key);
-                    String item_chapter = (String) item[0];
-                    JSONObject item_bookmark = (JSONObject) item[1];
-                    if (item_chapter.equals(chapter)) {
-                        list.put(item_bookmark);
-                    }
+                for (JSONObject item_bookmark : mBookmarks.values()) {
+                    list.put(item_bookmark);
                 }
             }
 
@@ -669,20 +650,19 @@ public class ViewerBridge {
         ///
         ///     function callback(uuid)
         ///
-        /// @chapter: string - an opaque to represent current chapter
-        /// @bookmark - an json object to represent bookmark, uuid is absent in this case
+        /// @bookmark - an object to represent bookmark, uuid is absent in this case
         /// @callback: string - name of callback function (can be object member function);
         ///     do not pass function itself, only name (as string) is needed;
         ///     and the function must be accessable from global space
         ///
         @JavascriptInterface
-        public void onAddBookmark(String chapter, String bookmark_json, final String callback) {
+        public void onAddBookmark(String bookmark_json, final String callback) {
             try {
                 JSONObject bookmark = new JSONObject(bookmark_json);
                 final String uuid = UUID.randomUUID().toString();
 
                 synchronized (mBookmarks) {
-                    mBookmarks.put(uuid, new Object[] { chapter, bookmark });
+                    mBookmarks.put(uuid, bookmark);
                 }
 
                 // should run in async
@@ -699,7 +679,7 @@ public class ViewerBridge {
         ///
         /// Notify App the given bookmark need to be updated
         ///
-        /// @bookmark - an json object to represent bookmark
+        /// @bookmark - an object to represent bookmark
         ///
         @JavascriptInterface
         public void onUpdateBookmark(String bookmark_json) {
@@ -707,12 +687,7 @@ public class ViewerBridge {
                 JSONObject bookmark = new JSONObject(bookmark_json);
                 synchronized (mBookmarks) {
                     String uuid = bookmark.getString("uuid");
-                    Object[] item = mBookmarks.get(uuid);
-                    if (item != null) {
-                        item[1] = bookmark;
-                    } else {
-                        Log.w(TAG, "bookmark not found = " + bookmark.toString());
-                    }
+                    mBookmarks.put(uuid, bookmark);
                 }
             } catch (Exception e) {
                 Log.w(TAG, "fail onUpdateBookmark = " + bookmark_json, e);

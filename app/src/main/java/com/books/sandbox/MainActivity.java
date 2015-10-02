@@ -25,6 +25,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.books.viewer.ViewerActivity;
 import com.books.viewer.ViewerBridge;
@@ -101,7 +102,9 @@ public class MainActivity extends Activity {
 
     private void findBooks() {
         mItems = new ArrayList<>();
-
+        
+        Toast.makeText(getApplicationContext(), ViewerBridge.ROOT_DIR.getPath(),
+                Toast.LENGTH_LONG).show();
         if(ViewerBridge.ROOT_DIR != null && ViewerBridge.ROOT_DIR.isDirectory()) {
             File sdPath = ViewerBridge.ROOT_DIR;
             if(sdPath != null && sdPath.isDirectory()) {
@@ -120,6 +123,8 @@ public class MainActivity extends Activity {
 
         File internalPath = getFilesDir();
         File internalBooksPath = new File(internalPath + "/books/");
+        Toast.makeText(getApplicationContext(), internalBooksPath.getPath(),
+                Toast.LENGTH_LONG).show();
         if(internalBooksPath != null && internalBooksPath.isDirectory()) {
             File sdPath = internalBooksPath;
             if(sdPath != null && sdPath.isDirectory()) {

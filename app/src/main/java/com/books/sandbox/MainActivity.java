@@ -118,6 +118,24 @@ public class MainActivity extends Activity {
             }
         }
 
+        File internalPath = getFilesDir();
+        File internalBooksPath = new File(internalPath + "/books/");
+        if(internalBooksPath != null && internalBooksPath.isDirectory()) {
+            File sdPath = internalBooksPath;
+            if(sdPath != null && sdPath.isDirectory()) {
+                File file[] = sdPath.listFiles();
+                Log.d("Files", "Size: "+ file.length);
+                for (int i=0; i < file.length; i++)
+                {
+                    Log.d("Files", "FileName:" + file[i].getName());
+                    String strfile = file[i].getName();
+                    if (strfile.endsWith(".epub")) {
+                        mItems.add(strfile+"_fromDATA");
+                    }
+                }
+            }
+        }
+
         AssetManager assets = getAssets();
 
         try {
@@ -133,6 +151,11 @@ public class MainActivity extends Activity {
     }
 
     private void selectBook(String name) {
+        if(name.indexOf("fromDATA") > 0) {
+            File internalPath = getFilesDir();
+            ViewerBridge.ROOT_DIR = new File(internalPath + "/books/");
+            ViewerBridge.ROOTVIEWER_DIR = new File(internalPath + "/viewer/");
+        }
         String url = ViewerBridge.ROOT_URI.toString() + name + "/";
         File dir = new File(ViewerBridge.ROOT_DIR, name);
         dir.mkdirs();

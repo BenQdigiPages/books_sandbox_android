@@ -61,9 +61,9 @@ public class ViewerBridge {
     //adb shell 'echo ${SECONDARY_STORAGE%%:*}'
     //ex: veneno: /storage/sdcard1
     String secondaryStorage = System.getenv("SECONDARY_STORAGE");
-    public static final File ROOT_DIR = new File(System.getenv("SECONDARY_STORAGE"), "books");
+    public static File ROOT_DIR = new File(System.getenv("SECONDARY_STORAGE"), "books");
     public static final Uri ROOT_URI = Uri.parse("http://fake.benqguru.com/books/");
-    public static final File ROOTVIEWER_DIR = new File(System.getenv("SECONDARY_STORAGE"), "viewer");
+    public static File ROOTVIEWER_DIR = new File(System.getenv("SECONDARY_STORAGE"), "viewer");
     private static final Uri ROOTVIEWER_URI = ROOT_URI.buildUpon().path("/(ROOTVIEWER)/").build();
     private static final Uri ASSETS_URI = ROOT_URI.buildUpon().path("/(ASSETS)/").build();
 

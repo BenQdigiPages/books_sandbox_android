@@ -121,7 +121,7 @@ public class MainActivity extends Activity {
             }
         }
 
-        File internalPath = getFilesDir();
+        File internalPath = getApplicationContext().getExternalFilesDir(null);
         File internalBooksPath = new File(internalPath + "/books/");
         Toast.makeText(getApplicationContext(), internalBooksPath.getPath(),
                 Toast.LENGTH_LONG).show();
@@ -157,7 +157,7 @@ public class MainActivity extends Activity {
 
     private void selectBook(String name) {
         if(name.indexOf("fromDATA") > 0) {
-            File internalPath = getFilesDir();
+            File internalPath = getApplicationContext().getExternalFilesDir(null);
             ViewerBridge.ROOT_DIR = new File(internalPath + "/books/");
             ViewerBridge.ROOTVIEWER_DIR = new File(internalPath + "/viewer/");
         }

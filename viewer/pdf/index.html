@@ -24,7 +24,9 @@
                 margin: 0,
             });
             $('#thumbnailView').owlCarousel({
+                stagePadding:50,
                 items: 5,
+                autoWidth:true,
                 center:true,
                 lazyLoad: true,
             });
@@ -49,7 +51,7 @@
         <a class="number">
             <span id="current_page">000</span>/<span id="total_pages">000</span>
         </a>
-        <label id="thumbnailbar" class="thumbnail">
+        <label id="thumbnailbar" class="thumbnailbtn">
         </label>
     </footer>
 </body>

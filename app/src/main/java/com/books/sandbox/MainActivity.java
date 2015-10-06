@@ -163,16 +163,16 @@ public class MainActivity extends Activity {
         }
         String url = ViewerBridge.ROOT_URI.toString() + name + "/";
         File dir = new File(ViewerBridge.ROOT_DIR, name);
-        dir.mkdirs();
-        if (dir.exists()) {
-            Log.d(TAG, dir.getPath() + "exist");
-        }
-        else {
-            new AlertDialog.Builder(this)
-                    .setTitle("Extract book failed")
-                    .setMessage("Fail due to dir.mkdirs() = " + dir.getPath())
-                    .show();
-            return;
+
+        if (!dir.exists()) {
+            boolean success = dir.mkdirs();
+            if (!success) {
+                new AlertDialog.Builder(this)
+                        .setTitle("Extract book failed")
+                        .setMessage("Fail due to dir.mkdirs() = " + dir.getPath())
+                        .show();
+                return;
+            }
         }
 
         File meta = new File(dir, "META-INF");

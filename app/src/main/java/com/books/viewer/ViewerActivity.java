@@ -209,19 +209,19 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
 
         popup.add(R.drawable.btn_pinklabel, "Bookmark: pink", new Runnable() {
             public void run() {
-                mBridge.setBookmark("pink", "file:///android_res/drawable/img_pinklabel.png");
+                mBridge.setBookmark("pink");
             }
         });
 
         popup.add(R.drawable.btn_yellowlabel, "Bookmark: yellow", new Runnable() {
             public void run() {
-                mBridge.setBookmark("yellow", "file:///android_res/drawable/img_yellowlabel.png");
+                mBridge.setBookmark("yellow");
             }
         });
 
         popup.add(R.drawable.btn_bluelabel, "Bookmark: blue", new Runnable() {
             public void run() {
-                mBridge.setBookmark("blue", "file:///android_res/drawable/img_bluelabel.png");
+                mBridge.setBookmark("blue");
             }
         });
 

@@ -358,13 +358,12 @@ public class ViewerBridge {
     /// @tag: string or null
     ///     color - the bookmark color, either "red", "yellow" or "blue"
     ///     null - to remove current bookmark
-    /// @image_url: tag image url or null
-    public void setBookmark(String color, String tag_image_url) {
-        eval("Viewer.toggleBookmark(\"" + color + "\", \"" + tag_image_url + "\")", null);
+    public void setBookmark(String color) {
+        eval("Viewer.toggleBookmark(\"" + color + "\")", null);
     }
 
     public void removeBookmark() {
-        eval("Viewer.toggleBookmark(null, null)", null);
+        eval("Viewer.toggleBookmark(null)", null);
     }
 
     ///

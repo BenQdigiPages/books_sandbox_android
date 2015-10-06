@@ -4,6 +4,12 @@
  */
 App = {};
 
+App.bookmarkIconUrl = {
+    "red": "file:///android_res/drawable/img_pinklabel.png",
+    "yellow": "file:///android_res/drawable/img_yellowlabel.png",
+    "blue": "file:///android_res/drawable/img_bluelabel.png",
+}
+
 App.onChangeView = function(offset_x, offset_y, scale) {
     _App.onChangeView(offset_x, offset_y, scale);
 };

@@ -422,9 +422,8 @@ Viewer.gotoPosition = function(cfi) {
 /// @color: string or null
 ///     color - the bookmark color, either "red", "yellow" or "blue"
 ///     null - to remove current bookmark
-/// @image_url: color image url or null
 ///
-Viewer.toggleBookmark = function(color, image_url) {
+Viewer.toggleBookmark = function(color) {
     console.log("Viewer.toggleBookmark=" + color);
     if (color !== null) {
         var bookmark = null;

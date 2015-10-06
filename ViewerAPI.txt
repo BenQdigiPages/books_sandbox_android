@@ -167,9 +167,8 @@ Viewer.gotoPosition(cfi)
 /// @tag: string or null
 ///     color - the bookmark color type, either "red", "yellow" or "blue"
 ///     null - to remove current bookmark
-/// @image_url: tag image url or null
 ///
-Viewer.toggleBookmark(color, image_url)
+Viewer.toggleBookmark(color)
 
 ///
 /// Search text and mark the found text, the search is case-insensitive
@@ -183,6 +182,12 @@ Viewer.searchText(keyword)
 -----------------------------------------------------------------------------
 
 Application export the following functions to javascript:
+
+///
+/// App provides color to bookmark icon url mapping
+/// @color - either "red", "yellow" or "blue"
+///
+App.bookmarkIconUrl[color]
 
 ///
 /// Notify App current view frame is changed

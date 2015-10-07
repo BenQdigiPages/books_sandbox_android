@@ -121,9 +121,9 @@ header.reader .list {
 }
 .list a { cursor: pointer; }
 .list a.toggle { margin-top: -44px; }
-.list .list { 
+.list .list {
 	padding-left: 15px;
-	display: none; 
+	display: none;
 }
 
 header.reader .size {
@@ -636,8 +636,8 @@ nav ul li a {
 #main #list.box br {
 	display: none;
 }
-.list li.no, 
-.hidden, 
+.list li.no,
+.hidden,
 .hideElement{
 	display: none !important;
 }
@@ -650,7 +650,6 @@ nav ul li a {
 	bottom: 0;
 	display: block;
 	margin: 56px 20px;
-	padding: 20px;
 	box-shadow: 1px 1px 10px #555;
 	-moz-box-shadow: 1px 1px 10px #555;
 	-webkit-box-shadow: 1px 1px 10px #555;
@@ -661,7 +660,9 @@ nav ul li a {
 	min-height: calc(100vh - 112px);
 }
 .reader_main iframe {
+	height: 100% !important;
 	pointer-events: none;
+	padding: 20px;
 }
 .reader_main img.big {
 	display: block;
@@ -672,7 +673,7 @@ nav ul li a {
 	font-size: 20px;
 }
 .reader_main .bookline {
-	border-bottom: 3px solid #9abb64; 
+	border-bottom: 3px solid #9abb64;
 }
 .reader_main .end {
 	margin: 10px auto;
@@ -786,10 +787,10 @@ footer.reade input[type=range] {
 input[type=range] {
     /*removes default webkit styles*/
     -webkit-appearance: none;
-    
+
     /*fix for FF unable to apply focus style bug */
     border: 1px solid white;
-    
+
     /*required for proper track sizing in FF*/
     width: 50%;
 }
@@ -843,10 +844,10 @@ input[type=range]:-moz-focusring{
 input[type=range]::-ms-track {
     width: 300px;
     height: 5px;
-    
+
     /*remove bg colour from the track, we'll use ms-fill-lower and ms-fill-upper instead */
     background: transparent;
-    
+
     /*leave room for the larger thumb to overflow with a transparent border */
     border-color: transparent;
     border-width: 6px 0;
@@ -1011,8 +1012,7 @@ footer.reader .more .page ul li.close {
 #menu_search,
 #menu_like,
 #menu_toolbar,
-#menu_operate,
-#bookline {
+#menu_operate {
 	width: 100%;
 	height: 100%;
 	position: fixed;
@@ -1023,6 +1023,9 @@ footer.reader .more .page ul li.close {
 	overflow-y: scroll;
 	display: none;
 }
+
+#bookline { display: none; }
+
 #menu_list ul {
 	width: 250px;
 	height: auto;

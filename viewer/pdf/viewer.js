@@ -281,7 +281,8 @@ function webUIInitialized() {
         // get the current value of the input field.
         var value = parseInt($(this).val(),10);
         $('#current_page').html(value);
-        PDFViewerApplication.page = value;
+        var owl = $('#thumbnailView');
+        owl.trigger('to.owl.carousel',[value - 1, 200, true]);
     });
 
     document.getElementById('thumbnailbar').addEventListener('click',
@@ -6634,11 +6635,11 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     div.className = 'thumbnail';
     this.div = div;
 
-    if (id === 1) {
+    //if (id === 1) {
       // Highlight the thumbnail of the first page when no page number is
       // specified (or exists in cache) when the document is loaded.
-      div.classList.add('selected');
-    }
+      //div.classList.add('selected');
+    //}
 
     var ring = document.createElement('div');
     ring.className = 'thumbnailSelectionRing';

@@ -1095,6 +1095,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
 }
 
 #thumbnailView {
+  display: none;
   position: fixed;
   height: 140px;
   width: 100%;

@@ -128,10 +128,14 @@ function onFirstPageRendered() {
     }
     App.onToggleToolbar(toolBarVisible);
 
-    // Set thie page forcefully to let Carousel to start run
+    // Set this page forcefully to let Carousel to start run
     var owl = $('#viewer');
     owl.owlCarousel();
     owl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
+    // render thumbnail to current page.
+    var owl2 = $('#thumbnailView');
+    owl2.owlCarousel();
+    owl2.trigger('to.owl.carousel',[currentPageNum - 1, 300, true]);
 
     zoomInOutFix.getCarouselInfo(currentPageNum-1);
 }

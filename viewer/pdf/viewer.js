@@ -6655,8 +6655,14 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     //[Bruce]
     var img = document.createElement('img');
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-        img.className = 'owl-lazy';
-        img.setAttribute('data-src', linkItems[this.id - 1]);
+        if (id < 6) {
+            //Force to load first 5 thumbnails.
+            img.src = linkItems[this.id - 1];
+        } else {
+            // the others using lazy load.
+            img.className = 'owl-lazy';
+            img.setAttribute('data-src', linkItems[this.id - 1]);
+        }
     } else {
         img.src = linkItems[this.id - 1];
     }

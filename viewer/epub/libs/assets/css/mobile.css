@@ -1,4 +1,7 @@
 @charset "UTF-8";
+
+body { padding-top: 50px !important; }
+
 @media only screen and (max-width: 1024px) {
 	body {
 		min-width: 0px;
@@ -133,7 +136,6 @@
 		height: calc(100% - 191px);
 	}
 	.reader_main {
-		height: 100vh;
 		margin-top: 0px;
 		margin-bottom: 0px;
 		/*margin: 98px 20px 56px 20px;*/

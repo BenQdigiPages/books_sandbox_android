@@ -649,20 +649,13 @@ nav ul li a {
 	right: 0;
 	bottom: 0;
 	display: block;
-	margin: 56px 20px;
-	box-shadow: 1px 1px 10px #555;
-	-moz-box-shadow: 1px 1px 10px #555;
-	-webkit-box-shadow: 1px 1px 10px #555;
+	padding: 20px;
+	margin: 0 20px;
 	z-index: 0;
 	width: calc(100% - 40px);
 	overflow: auto;
 	background: #fff;
-	min-height: calc(100vh - 112px);
-}
-.reader_main iframe {
-	height: 100% !important;
-	pointer-events: none;
-	padding: 20px;
+	min-height: calc(100vh - 90px);
 }
 .reader_main img.big {
 	display: block;

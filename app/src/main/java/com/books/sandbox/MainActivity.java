@@ -15,8 +15,6 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,7 +23,6 @@ import android.widget.BaseAdapter;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.books.viewer.ViewerActivity;
 import com.books.viewer.ViewerBridge;
@@ -41,6 +38,8 @@ import java.util.zip.ZipInputStream;
 public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
 
+    private ListAdapter mListAdapter;
+    private ListView mListView;
     private ArrayList<String> mItems;
     private ImageButton mBtnOptions;
     private ImageButton mBtnBookmark;
@@ -83,8 +82,8 @@ public class MainActivity extends Activity {
 
         findBooks();
 
-        ListAdapter mListAdapter = new ListAdapter();
-        ListView mListView = (ListView) findViewById(R.id.list);
+        mListAdapter = new ListAdapter();
+        mListView = (ListView) findViewById(R.id.list);
         mListView.setAdapter(mListAdapter);
 
         mListView.setOnItemClickListener(new ListView.OnItemClickListener() {
@@ -101,47 +100,8 @@ public class MainActivity extends Activity {
     }
 
     private void findBooks() {
-        mItems = new ArrayList<>();
-        
-        Toast.makeText(getApplicationContext(), ViewerBridge.ROOT_DIR.getPath(),
-                Toast.LENGTH_LONG).show();
-        if(ViewerBridge.ROOT_DIR != null && ViewerBridge.ROOT_DIR.isDirectory()) {
-            File sdPath = ViewerBridge.ROOT_DIR;
-            if(sdPath != null && sdPath.isDirectory()) {
-                File file[] = sdPath.listFiles();
-                Log.d("Files", "Size: "+ file.length);
-                for (int i=0; i < file.length; i++)
-                {
-                    Log.d("Files", "FileName:" + file[i].getName());
-                    String strfile = file[i].getName();
-                    if (strfile.endsWith(".epub")) {
-                        mItems.add(strfile+"_fromSD");
-                    }
-                }
-            }
-        }
-
-        File internalPath = getApplicationContext().getExternalFilesDir(null);
-        File internalBooksPath = new File(internalPath + "/books/");
-        Toast.makeText(getApplicationContext(), internalBooksPath.getPath(),
-                Toast.LENGTH_LONG).show();
-        if(internalBooksPath != null && internalBooksPath.isDirectory()) {
-            File sdPath = internalBooksPath;
-            if(sdPath != null && sdPath.isDirectory()) {
-                File file[] = sdPath.listFiles();
-                Log.d("Files", "Size: "+ file.length);
-                for (int i=0; i < file.length; i++)
-                {
-                    Log.d("Files", "FileName:" + file[i].getName());
-                    String strfile = file[i].getName();
-                    if (strfile.endsWith(".epub")) {
-                        mItems.add(strfile+"_fromDATA");
-                    }
-                }
-            }
-        }
-
         AssetManager assets = getAssets();
+        mItems = new ArrayList<>();
 
         try {
             String[] files = assets.list("");
@@ -156,24 +116,9 @@ public class MainActivity extends Activity {
     }
 
     private void selectBook(String name) {
-        if(name.indexOf("fromDATA") > 0) {
-            File internalPath = getApplicationContext().getExternalFilesDir(null);
-            ViewerBridge.ROOT_DIR = new File(internalPath + "/books/");
-            ViewerBridge.ROOTVIEWER_DIR = new File(internalPath + "/viewer/");
-        }
         String url = ViewerBridge.ROOT_URI.toString() + name + "/";
         File dir = new File(ViewerBridge.ROOT_DIR, name);
-
-        if (!dir.exists()) {
-            boolean success = dir.mkdirs();
-            if (!success) {
-                new AlertDialog.Builder(this)
-                        .setTitle("Extract book failed")
-                        .setMessage("Fail due to dir.mkdirs() = " + dir.getPath())
-                        .show();
-                return;
-            }
-        }
+        dir.mkdirs();
 
         File meta = new File(dir, "META-INF");
         if (!meta.exists()) {

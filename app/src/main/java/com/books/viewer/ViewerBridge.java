@@ -54,17 +54,8 @@ public class ViewerBridge {
     private static final boolean IS_LEGACY = !USE_NATIVE_API || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
 
     // This is for sandbox only, sandbox has direct mapping from ROOT_URI to ROOT_DIR
-    //Environment.getExternalStorageState() //fail
-
-    //System.getenv("EXTERNAL_STORAGE")
-
-    //adb shell 'echo ${SECONDARY_STORAGE%%:*}'
-    //ex: veneno: /storage/sdcard1
-    String secondaryStorage = System.getenv("SECONDARY_STORAGE");
-    public static File ROOT_DIR = new File(System.getenv("SECONDARY_STORAGE"), "books");
+    public static final File ROOT_DIR = new File(System.getenv("EXTERNAL_STORAGE"), "books");
     public static final Uri ROOT_URI = Uri.parse("http://fake.benqguru.com/books/");
-    public static File ROOTVIEWER_DIR = new File(System.getenv("SECONDARY_STORAGE"), "viewer");
-    private static final Uri ROOTVIEWER_URI = ROOT_URI.buildUpon().path("/(ROOTVIEWER)/").build();
     private static final Uri ASSETS_URI = ROOT_URI.buildUpon().path("/(ASSETS)/").build();
 
     public static final String LAYOUT_SINGLE = "single";
@@ -84,8 +75,8 @@ public class ViewerBridge {
     private final HashMap<Integer, ValueCallback<String>> mEvalCallbacks = new HashMap<Integer, ValueCallback<String>>();
 
     public ViewerBridge(ViewerActivity scene, WebView webView) {
-        JavascriptCallback mJavascriptInterface = new JavascriptCallback();
-        WebChromeClient mWebChromeClient = new WebChromeClient();
+        JavascriptCallback javascriptInterface = new JavascriptCallback();
+        WebChromeClient webChromeClient = new WebChromeClient();
         mScene = scene;
         mWebView = webView;
 
@@ -101,14 +92,14 @@ public class ViewerBridge {
         //End : [Bruce]
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            if (0 != (mScene.getApplicationInfo().flags &= ApplicationInfo.FLAG_DEBUGGABLE)) {
+            if (0 != (mScene.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE)) {
                 mWebView.setWebContentsDebuggingEnabled(true);
             }
         }
 
-        mWebView.addJavascriptInterface(mJavascriptInterface, "_App");
+        mWebView.addJavascriptInterface(javascriptInterface, "_App");
         mWebView.setWebViewClient(mWebViewClient);
-        mWebView.setWebChromeClient(mWebChromeClient);
+        mWebView.setWebChromeClient(webChromeClient);
     }
 
     private void loadUrl(String url, Runnable callback) {
@@ -201,9 +192,6 @@ public class ViewerBridge {
         loadUrl("about:blank", new Runnable() {
             public void run() {
                 String libraryUrl = ASSETS_URI.toString();
-                if(ROOTVIEWER_DIR != null && ROOTVIEWER_DIR.exists()) {
-                    libraryUrl = ROOTVIEWER_URI.toString();
-                }
                 if (mIsPdf) {
                     libraryUrl += "pdf/index.html";
                 } else {
@@ -777,17 +765,8 @@ public class ViewerBridge {
             String mimeType = getMimeType(uri);
 
             try {
-                String path;
-                InputStream inputStream;
-                if(ROOTVIEWER_DIR != null && ROOTVIEWER_DIR.exists()) {
-                    path = uri.getPath().substring(ROOTVIEWER_URI.getPath().length());
-                    File dir = new File(ViewerBridge.ROOTVIEWER_DIR, path);
-                    inputStream = new FileInputStream(dir);
-                }
-                else {
-                    path = uri.getPath().substring(ASSETS_URI.getPath().length());
-                    inputStream = mScene.getAssets().open(path);
-                }
+                String path = uri.getPath().substring(ASSETS_URI.getPath().length());
+                InputStream inputStream = mScene.getAssets().open(path);
                 headers.put("Cache-Control", "no-cache");
 
                 return createResponse(mimeType, 200, "OK", headers, inputStream);
@@ -880,10 +859,6 @@ public class ViewerBridge {
         }
 
         private WebResourceResponse shouldInterceptRequest(WebView view, Uri uri, String range) {
-            if (isRelativeUri(ROOTVIEWER_URI, uri)) {
-                return loadAssetUri(view, uri, range);
-            }
-
             if (isRelativeUri(ASSETS_URI, uri)) {
                 return loadAssetUri(view, uri, range);
             }

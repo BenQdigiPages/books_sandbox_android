@@ -4,13 +4,17 @@ var loading_index = 0;
 var currentPage = 0;
 var total_pages = 0;
 var iframe;
-var score_list = [];
+var highlights = [];
 var position = 0;
-var current_highlight;
+var current_chapter = null;
+var current_highlight_idx = 0;
+var current_highlight = null;
 var change_page = false;
-var current_page;
+var current_page = 1;
 var loader = [];
 var book_uni_id;
+var host = window.location.origin;
+
 ///
 /// Load ebook from server url
 /// App will act as transparent proxy, and provides offline content
@@ -25,21 +29,14 @@ var book_uni_id;
 ///
 $("input[name='bookcolor']").change(function(argument) {
     setHighlight($("input[name='bookcolor']:checked").val(), false);
-})
+});
 
-$("#book_area").mouseup(function(){
-    if(!navbar_toggle) {
-        App.onToggleToolbar(true);
-        navbar_toggle = true;
-    } else {
-        App.onToggleToolbar(false);
-        navbar_toggle = false;
-    }
+$("#bookline").on("click","a.note",function(){
+    setHighlightWithNote();
 });
 
 Viewer.loadBook = function(url, legacy) {
     RenderBook(url);
-    App.onToggleToolbar(false);
 };
 
 ///
@@ -57,6 +54,7 @@ Viewer.getFontScale = function(scale) {
 /// @scale: double - 1.0 is original size
 ///
 Viewer.setFontScale = function(scale) {
+    // alert(scale);
     current_font.size = (current_font.size*scale).toFixed(1);
     current_font.line = (current_font.line*scale).toFixed(1);
     SetFont();
@@ -119,8 +117,6 @@ Viewer.setLayoutMode = function(mode) {
         layout = mode=="single"?"single":"double";
     }
     SetLayout();
-    App.onToggleToolbar(false);
-    navbar_toggle = false;
 };
 
 ///
@@ -155,8 +151,6 @@ Viewer.gotoLink = function(link) {
 Viewer.gotoPosition = function(cfi) {
     if(!Book==false) {
         Book.displayChapter(cfi);
-        App.onToggleToolbar(false);
-        navbar_toggle = false;
     }
 //    window.alert("Viewer.gotoPosition=" + cfi)
 };
@@ -225,6 +219,7 @@ Viewer.searchText = function(keyword) {
 //        position = scroll;
 //    }
 //});
+
 function DoScroll(){
     if( layout!="scroll" || change_page==true ) return false;
 
@@ -277,10 +272,10 @@ function RenderBook(url) {
     Book.on('renderer:chapterDisplayed', function(location){
         idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
         var link = document.createElement('link');
-
+        
         link.setAttribute("rel","stylesheet");
         link.setAttribute("type","text/css");
-        link.setAttribute("href", "book.css");
+        link.setAttribute("href", host+"/(ROOTVIEWER)/epub/libs/book.css");
 
         idoc.head.appendChild(link);
 
@@ -299,10 +294,15 @@ function RenderBook(url) {
 
     Book.on('renderer:chapterDisplayed', function(){
         // debugger;
-//        FindChapter();
+        for (var i = 0; i<highlights; i++) {
+            HighlightWords(highlights[i].cfi, highlights[i].color, highlights[i].id);
+        };
     });
 
     Book.on('renderer:locationChanged', function(location){
+        current_chapter = Book.renderer.currentChapter;
+        current_page = Book.renderer.currentRenderedPage();
+
         $(idoc).find("img").click(function(){
             $.fancybox({
                 padding: 0, href: this.src,
@@ -335,13 +335,13 @@ function RenderBook(url) {
 
         if((range.endOffset - range.startOffset)>0){
             var tag = $(range.endContainer.parentElement);
-            var top_dis = tag.position().top+tag.height()+80;
+            var top_dis = tag.position().top;
             var top = top_dis>$('body').height()?tag.position().top:top_dis;
-            var left = tag.position().left+$("#book_area").offset().left;
-
+            var left = tag.position().left+$("#book_area").position().left;
+            
             if(!$("#bookline .del").hasClass("hidden"))
                 $("#bookline .del").addClass("hidden");
-            $('#bookline').show().find("div").css({ top:top, left:left });
+            $('#bookline').show().find("div").css({ top:top_dis, left:left });
         }
     });
 
@@ -377,6 +377,7 @@ function RenderToc(toc, ary, lv) {
 }
 
 function SetFont() {
+    // alert(current_font.size);
     Book.setStyle("font-size", current_font.size+"px");
     Book.setStyle("line-height", current_font.line+"px");
 }
@@ -437,20 +438,40 @@ function SetLayout() {
     }
 }
 
-function setHighlight(color, note) {
+function setHighlightWithNote() {
+    if(!current_highlight) {
+        var selection = GetSelection();
+        var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
+        var r_content = selection.range.toString();
 
-    var selection = getSelection();
-    var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
-    var is_same = false;
-
-    for(i in score_list) {
-        if(score_list[i].cfi==selection.str) is_same = true;
+        current_highlight_idx = "";
+        current_highlight = {
+            text: r_content,
+            color: "green",
+            cfi: selection.str,
+            page: current_page,
+            range: selection.range
+        };
     }
 
-    if( !is_same) {
+    $("#popup3").find(".page").text(current_highlight.page).end()
+        .find(".chapter_info").text(current_highlight.text).end()
+        .find("input[name='index']").val(current_highlight_idx).end()
+        .find("input[name='action']").val(current_highlight_idx==""?"add":"edit").end()
+        .fadeIn();
+
+    closeContextMenu();
+}
+
+function setHighlight(color, note) {
+    if( !current_highlight ) {
+        var selection = GetSelection();
+        var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
+        var is_same = false;
         // var r_content = selection.range.cloneContents();
         UpdateBookNote({
             type: "highlight",
+            chapter: current_chapter.spinePos,
             range: selection.range,
             cfi: selection.str,
             href: Book.renderer.currentChapter.href,
@@ -460,20 +481,77 @@ function setHighlight(color, note) {
             action: "add"
         });
     } else {
-         UpdateBookNote({
-            type: "highlight",
-            range: selection.range,
-            cfi: selection.str,
-            href: Book.renderer.currentChapter.href,
-            text: r_content,
-            page: current_page,
-            color: color,
-            action: "edit"
-        });
+        current_highlight.color = color;
+        UpdateBookNote(current_chapter);
     }
 }
 
-function getSelection() {
+function UpdateBookNote(options) {
+    // var data = {};
+    // data.records = [{
+    //     uuid: this.uuid,
+    //     book_uni_id: this.options.book_uni_id,
+    //     version: this.options.cur_version,
+    //     type: options.type,
+    //     href: !options.cfi?'':options.href,
+    //     cfi: !options.cfi?'':options.cfi,
+    //     is_public: !options.is_public?"N":options.is_public,
+    //     action: options.action,
+    //     book_format: this.BookInfo.book_format,
+    //     updated_time: moment().format()
+    // }];
+
+    // if(options.type=="bookmark") {
+    //     data.records[0].chapter = options.chapter;
+    //     data.records[0].color = options.color;
+    //     data.records[0].spine = Book.renderer.currentChapter.spinePos;
+    // }
+    // if(options.type=="highlight") {
+    //     data.records[0].color = options.color;
+    //     data.records[0].chapter = options.chapter;
+    //     data.records[0].highlight_text = options.text;
+    //     data.records[0].text = !options.note?'':options.note;
+    // }
+    // if(options.type=="feedback") {
+    //     data.records[0].note = options.note;
+    //     data.records[0].author_nick = options.author_nick;
+    // }
+
+    // $.ajax({
+    //     url: this.apihost+"/V1.2/CMSAPIApp/MemberEpubBookNote",
+    //     type : "POST",
+    //     contentType : "application/json" ,
+    //     data: JSON.stringify(data),
+    //     dataType : "json",
+    // }).done(function(ref){
+    //     var r = (typeof ref =="string")?JSON.parse(ref):ref;
+    //     if(!r.error_code) {
+    //         switch(options.type) {
+    //             case "feedback":
+    //                 $this.updateFeedBack(options);
+    //                 break;
+    //             case "highlight":
+    //                 $this.updateHighlight(options);
+    //                 break;
+    //             case "bookmark":
+    //                 $this.updateBookmark(options);
+    //                 break;
+    //         }
+    //     } else {
+    //         console.log(r.error_message);
+    //     }
+    // });
+    switch(options.type) {
+        case "feedback":
+            UpdateFeedBack(options);
+            break;
+        case "highlight":
+            UpdateHighlight(options);
+            break;
+    }
+}
+
+function GetSelection() {
 
     var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
     var cfi = new EPUBJS.EpubCFI();
@@ -488,71 +566,64 @@ function getSelection() {
     return { str: cfiStr, range: tr };
 }
 
-
-function UpdateBookNote(options) {
-    
-    switch(options.type) {
-        case "feedback":
-            UpdateFeedBack(options);
-            break;
-        case "highlight":
-            UpdateHighlight(options);
-            break;
-    }
-}
-
 function UpdateHighlight(data) {
-
+    
     var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
 
     switch(data.action) {
         case "add":
-            var id = score_list.length;
-            score_list.push({
+            var id = highlights.length;
+            highlights.push({
                 id: id,
                 range: data.range,
                 text: data.text,
+                chapter: data.chapter,
                 cfi: data.cfi,
-                href: data.href,
                 page: data.page,
                 note: !data.note?"":data.note,
                 href: data.href,
                 color: data.color
             });
-
             HighlightWords(data.cfi, data.color, id);
             break;
         case "edit":
             var idx = data.idx;
 
-            score_list[idx].note = data.note;
+            highlights[idx].note = data.note;
 
             if(data.is_public=="Y") {
-                score_list[idx].is_public = true;
-                score_list[idx].nickname = data.author_nick;
-                score_list[idx].date = moment().format();
+                highlights[idx].is_public = true;
+                highlights[idx].nickname = data.author_nick;
+                highlights[idx].date = moment().format();
                 $("#popup3 .nickname").html(data.author_nick);
             } else {
-                score_list[idx].is_public = false;
+                highlights[idx].is_public = false;
             }
+            
+            var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
+            $(idoc.body).find("span#highlight-"+idx)[0].className = "highlights "+data.color;
+
             break;
         case "del":
             var idx;
             UnHighlightWords(data.id);
 
-            for(var i in score_list) {
-                if(score_list[i].id==data.id) {
-                    score_list.splice(i, 1);
+            for(var i in highlights) {
+                if(highlights[i].id==data.id) {
+                    highlights.splice(i, 1);
                     break;
                 }
             }
             $(idoc.body).unhighlight();
-            for(var i in score_list) {
-                if(score_list[i].href==Book.renderer.currentChapter.href) {
-                    HighlightWords(score_list[i].cfi, score_list[i].color, i);
+            for(var i in highlights) {
+                if(highlights[i].href==Book.renderer.currentChapter.href) {
+                    HighlightWords(highlights[i].cfi, highlights[i].color, i);
                 }
             }
+            break;
     }
+    current_highlight = null;
+    closeContextMenu();
 }
 
 function UnHighlightWords(idx) {
@@ -564,7 +635,6 @@ function UnHighlightWords(idx) {
 }
 
 function HighlightWords(content, color, idx) {
-
     var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
     var cfi = new EPUBJS.EpubCFI();
     var range = cfi.generateRangeFromCfi(content,idoc);
@@ -576,11 +646,21 @@ function HighlightWords(content, color, idx) {
 
     span.onclick = function() {
         var id = this.id.split("-");
-        current_highlight = score_list[id[1]];
+        current_highlight = highlights[id[1]];
 
         $("#bookline").find("input[name='bookcolor']").removeAttr("checked");
         $("#bookline").find("input[value='"+current_highlight.color+"']")[0].checked = true;
         $("#bookline").find(".del").removeClass("hidden");
         $("#bookline").addClass("show");
     }
+}
+function closeContextMenu() {
+    var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
+    var selection = idoc.getSelection();
+    selection.removeAllRanges();
+
+    if($("input[name='bookcolor']:checked").length)
+        $("input[name='bookcolor']:checked")[0].checked = false;
+
+    $("#bookline").removeClass("show");
 }

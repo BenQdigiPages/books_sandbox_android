@@ -28,8 +28,10 @@ html {
 
 body {
   height: 100%;
+  /* Henry remove it, keep background to white
   background-color: #404040;
   background-image: url(images/texture.png);
+  */
 }
 
 body,
@@ -201,7 +203,7 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
 
 #mainContainer {
   position: absolute;
-  top: 0;
+  top: 40px; /* Henry modify, lower to match title bar */
   right: 0;
   left: 0;
   height: 100%

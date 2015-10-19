@@ -54,7 +54,7 @@ public class ViewerBridge {
     private static final boolean IS_LEGACY = !USE_NATIVE_API || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
 
     // This is for sandbox only, sandbox has direct mapping from ROOT_URI to ROOT_DIR
-    public static final File ROOT_DIR = new File(System.getenv("EXTERNAL_STORAGE"), "books");
+    private static File ROOT_DIR;
     public static final Uri ROOT_URI = Uri.parse("http://fake.benqguru.com/books/");
     private static final Uri ASSETS_URI = ROOT_URI.buildUpon().path("/(ASSETS)/").build();
 
@@ -73,6 +73,22 @@ public class ViewerBridge {
 
     private int mEvalToken = 1;
     private final HashMap<Integer, ValueCallback<String>> mEvalCallbacks = new HashMap<Integer, ValueCallback<String>>();
+
+    public static File getRootDir(Context context) {
+        if (ROOT_DIR != null) return ROOT_DIR;
+
+        File dir = context.getExternalFilesDir("books");
+        dir.mkdirs();
+        if (dir.exists()) {
+            ROOT_DIR = dir;
+            return dir;
+        }
+
+        dir = new File(context.getFilesDir(), "books");
+        dir.mkdirs();
+        ROOT_DIR = dir;
+        return dir;
+    }
 
     public ViewerBridge(ViewerActivity scene, WebView webView) {
         JavascriptCallback javascriptInterface = new JavascriptCallback();
@@ -782,7 +798,7 @@ public class ViewerBridge {
 
             try {
                 String path = uri.getPath().substring(ROOT_URI.getPath().length());
-                File file = new File(ROOT_DIR, path);
+                File file = new File(getRootDir(mScene), path);
 
                 if (!file.canRead()) {
                     throw new IOException(file + " can not be read");

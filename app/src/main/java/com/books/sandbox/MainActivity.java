@@ -117,7 +117,7 @@ public class MainActivity extends Activity {
 
     private void selectBook(String name) {
         String url = ViewerBridge.ROOT_URI.toString() + name + "/";
-        File dir = new File(ViewerBridge.ROOT_DIR, name);
+        File dir = new File(ViewerBridge.getRootDir(this), name);
         dir.mkdirs();
 
         File meta = new File(dir, "META-INF");

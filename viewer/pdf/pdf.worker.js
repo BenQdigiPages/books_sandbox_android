@@ -35961,6 +35961,8 @@ var JpxImage = (function JpxImageClosure() {
           case 0x72726571: // 'rreq'
           case 0x72657320: // 'res '
           case 0x69686472: // 'ihdr'
+          case 0x70636C72: // 'pclr' //Henry add
+          case 0x636D6170: // 'cmap' //Henry add
             break;
           default:
             var headerType = String.fromCharCode((tbox >> 24) & 0xFF,

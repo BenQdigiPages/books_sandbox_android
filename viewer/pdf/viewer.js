@@ -74,7 +74,6 @@ function onURL_and_AppReady(resultOutput) {
 
     var owl = $('#thumbnailView');
     owl.owlCarousel();
-
     //Handle pdf view canvas click event.
     $('#viewerContainer').click(function() {
         toolBarVisible = !(toolBarVisible);
@@ -138,6 +137,7 @@ function onFirstPageRendered() {
     owl2.trigger('to.owl.carousel',[currentPageNum - 1, 300, true]);
 
     zoomInOutFix.getCarouselInfo(currentPageNum-1);
+    $("#book_loading").fadeOut(); //Henry add
 }
 
 function onDocumentReady(pdfDocument) {
@@ -266,14 +266,18 @@ function webUIInitialized() {
     document.getElementById('paginate').value = currentPageNum;
     document.getElementById('paginate').max = pdfDoc.numPages;
     document.getElementById('total_pages').textContent = pdfDoc.numPages;
-
-    document.getElementById('previous').addEventListener('click',
-        function() {
+    //Henry modify for next/previous page
+    $(".arrow_icon1").on('click', function() {
             onPrevPage();
     });
-    document.getElementById('next').addEventListener('click',
-        function() {
+    $(".arrow_icon2").on('click', function() {
             onNextPage();
+    });
+
+    //Henry add, for support undo button
+    document.getElementById('undo').addEventListener('click',
+        function() {
+            PDFViewerApplication.undoPage();
     });
     document.getElementById('paginate').addEventListener('change',
         function() {
@@ -7550,6 +7554,7 @@ var PDFViewerApplication = {
   preferencetwoPageViewModeOnLoad: -1,
   isViewerEmbedded: (window.parent !== window),
   url: '',
+  historyPage: null, //Henry add
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -7802,6 +7807,13 @@ var PDFViewerApplication = {
     } else {
       this.page++;
     }
+  },
+  //Henry add, for support undo
+  undoPage: function pdfUndoPage() {
+      this.page = this.historyPage;
+       var owl = $('#viewer');
+       owl.owlCarousel();
+       owl.trigger('to.owl.carousel', [this.page-1, 300, true]);
   },
 
   get lastPageNumber() {
@@ -9162,21 +9174,11 @@ window.addEventListener('scalechange', function scalechange(evt) {
 window.addEventListener('pagechange', function pagechange(evt) {
   var page = evt.pageNumber;
   if (evt.previousPageNumber !== page) {
-    //[Bruce]
-    /*
-    document.getElementById('pageNumber').value = page;
-    */
-    //End : [Bruce]
-    //[Bruce]
-    /*
-    if (PDFViewerApplication.sidebarOpen) {
-      PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);
-    }
-    */
     // Update footbar page info
     if(toolBarVisible) {
         document.getElementById('current_page').textContent = currentPageNum;
         document.getElementById('paginate').value = currentPageNum;
+        PDFViewerApplication.historyPage = evt.previousPageNumber;  //Henry add, for supporting undo
         // Info App
         App.onChangePage("", currentPageNum, currentPageNum, pdfDoc.numPages);
     }

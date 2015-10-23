@@ -64,15 +64,16 @@ function onURL_and_AppReady(resultOutput) {
     // Listen to owl events:
     owl.on('changed.owl.carousel',
         function callback(event) {
-            if (TwoPageViewMode.active){
-                currentPageNum = (event.item.index * 2) + 1;
-            }else {
-                currentPageNum  = event.item.index + 1;
+            if (!(TwoPageViewMode.inProcess)){
+               if (TwoPageViewMode.active){
+                    currentPageNum = (event.item.index * 2) + 1;
+                }else {
+                    currentPageNum  = event.item.index + 1;
+                }
+                // Update current page number
+                PDFViewerApplication.page = currentPageNum;
+                zoomInOutFix.getCarouselInfo(event.item.index);
             }
-            // Update current page number
-            PDFViewerApplication.page = currentPageNum;
-
-            zoomInOutFix.getCarouselInfo(event.item.index);
     });
 
     var owl = $('#thumbnailView');
@@ -7138,6 +7139,7 @@ var TWO_PAGE_CONTAINER = 'twoPageContainer';
 
 var TwoPageViewMode = {
   active: false,
+  inProcess : false,
   numPages: 0,
   numTwoPageContainers: 0,
   containers: {},
@@ -7153,6 +7155,7 @@ var TwoPageViewMode = {
   },
 
   _createTwoPageView: function twoPageViewMode_createTwoPageView() {
+    this.inProcess = true;
     this.previousPageNumber = PDFViewerApplication.pdfViewer.currentPageNumber;
 
     this.numPages = PDFViewerApplication.pdfViewer.pagesCount;
@@ -7201,9 +7204,11 @@ var TwoPageViewMode = {
         }
     }
     this.active = true;
+	this.inProcess = false;
   },
 
   _destroyTwoPageView: function twoPageViewMode_destroyTwoPageView() {
+    this.inProcess = true;	  
     this.previousPageNumber = PDFViewerApplication.pdfViewer.currentPageNumber;
 
     var pageDiv;
@@ -7234,6 +7239,7 @@ var TwoPageViewMode = {
     }
 
     this._resetParameters();
+    this.inProcess = false;
   },
 
   _resetParameters: function twoPageViewMode_resetParameters() {

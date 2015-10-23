@@ -64,8 +64,11 @@ function onURL_and_AppReady(resultOutput) {
     // Listen to owl events:
     owl.on('changed.owl.carousel',
         function callback(event) {
-            currentPageNum  = event.item.index + 1;
-
+            if (TwoPageViewMode.active){
+                currentPageNum = (event.item.index * 2) + 1;
+            }else {
+                currentPageNum  = event.item.index + 1;
+            }
             // Update current page number
             PDFViewerApplication.page = currentPageNum;
 
@@ -130,7 +133,12 @@ function onFirstPageRendered() {
     // Set this page forcefully to let Carousel to start run
     var owl = $('#viewer');
     owl.owlCarousel();
-    owl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
+    if (TwoPageViewMode.active){
+        owl.trigger('to.owl.carousel', [(Math.floor((currentPageNum+1)/2))-1,300,true]);
+    }else{
+        owl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
+    }
+   
     // render thumbnail to current page.
     var owl2 = $('#thumbnailView');
     owl2.owlCarousel();
@@ -5803,7 +5811,11 @@ var PDFViewer = (function pdfViewer() {
               return;
           var owl = $('#viewer');
           owl.owlCarousel();
-          owl.trigger('to.owl.carousel',[val - 1, 200, true]);
+          if (TwoPageViewMode.active){
+            owl.trigger('to.owl.carousel', [(Math.floor((val+1)/2))-1,200,true]);
+          }else{
+            owl.trigger('to.owl.carousel',[val - 1, 200, true]);
+          }
       }
       //End : [Bruce]
 
@@ -7183,7 +7195,7 @@ var TwoPageViewMode = {
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
         var owl = $('#viewer');
         owl.owlCarousel();
-        owl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
+        owl.trigger('to.owl.carousel', [(Math.floor((currentPageNum+1)/2))-1,300,true]);
         for (var i = 1; i <= this.numPages; i++) {
             owl.trigger('remove.owl.carousel',0);
         }
@@ -7813,7 +7825,11 @@ var PDFViewerApplication = {
       this.page = this.historyPage;
        var owl = $('#viewer');
        owl.owlCarousel();
-       owl.trigger('to.owl.carousel', [this.page-1, 300, true]);
+       if (TwoPageViewMode.active){
+           owl.trigger('to.owl.carousel', [(Math.floor((this.page+1)/2))-1,300,true]);
+       }else{
+           owl.trigger('to.owl.carousel', [this.page-1,300,true]);
+       }
   },
 
   get lastPageNumber() {

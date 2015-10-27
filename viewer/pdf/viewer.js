@@ -142,11 +142,6 @@ function onFirstPageRendered() {
     }else{
         owl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
     }
-   
-    // render thumbnail to current page.
-    var owl2 = $('#thumbnailView');
-    owl2.owlCarousel();
-    owl2.trigger('to.owl.carousel',[currentPageNum - 1, 300, true]);
 
     $("#book_loading").fadeOut(); //Henry add
 }
@@ -6733,6 +6728,7 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
       if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
           var owl = $('#thumbnailView');
           owl.owlCarousel();
+          owl.trigger('refresh.owl.carousel');
           owl.trigger('to.owl.carousel',[page - 1, 200, true]);
           return;
       }

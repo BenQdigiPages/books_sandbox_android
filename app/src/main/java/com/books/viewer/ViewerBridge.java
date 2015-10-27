@@ -29,6 +29,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -56,11 +57,13 @@ public class ViewerBridge {
     // This is for sandbox only, sandbox has direct mapping from ROOT_URI to ROOT_DIR
     private static File ROOT_DIR;
     public static final Uri ROOT_URI = Uri.parse("http://fake.benqguru.com/books/");
-    private static final Uri ASSETS_URI = ROOT_URI.buildUpon().path("/(ASSETS)/").build();
+    public static final Uri ASSETS_URI = ROOT_URI.buildUpon().path("/(ASSETS)/").build();
 
     public static final String LAYOUT_SINGLE = "single";
     public static final String LAYOUT_SIDE_BY_SIDE = "side_by_side";
     public static final String LAYOUT_CONTINUOUS = "continuous";
+
+    public static Context mContext;
 
     private ViewerActivity mScene;
     private WebView mWebView;
@@ -74,7 +77,13 @@ public class ViewerBridge {
     private int mEvalToken = 1;
     private final HashMap<Integer, ValueCallback<String>> mEvalCallbacks = new HashMap<Integer, ValueCallback<String>>();
 
+    public static void getBaseDir(Context context) {
+
+        mContext = context;
+    }
+
     public static File getRootDir(Context context) {
+
         if (ROOT_DIR != null) return ROOT_DIR;
 
         File dir = context.getExternalFilesDir("books");
@@ -409,6 +418,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onChangeTitle(final String title) {
+            Toast.makeText(mContext, (String) "onChangeTitle",Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
                     mScene.setTitle(title);
@@ -423,6 +433,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onChangeTOC(final String toc_json) {
+            Toast.makeText(mContext, (String) "onChangeTOC",Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
                     try {
@@ -447,6 +458,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onChangeView(int offset_x, int offset_y, double scale) {
+            Toast.makeText(mContext, (String) "onChangeView",Toast.LENGTH_LONG).show();
 
         }
 
@@ -460,6 +472,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onChangePage(String chapter, String cfi, int current, int total) {
+            Toast.makeText(mContext, (String) "onChangePage",Toast.LENGTH_LONG).show();
             Log.i(TAG, "onChangePage chapter=" + chapter + ", cfi=" + cfi + ", " + current + " / " + total);
         }
 
@@ -471,6 +484,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onTrackAction(String action, String cfi) {
+            Toast.makeText(mContext, (String) "onTrackAction",Toast.LENGTH_LONG).show();
             Log.i(TAG, "onTrackAction action=" + action + ", cfi=" + cfi);
         }
 
@@ -481,6 +495,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onToggleToolbar(final boolean visible) {
+            Toast.makeText(mContext, (String) "onToggleToolbar",Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
                     mScene.setTitleVisible(visible);
@@ -503,6 +518,9 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onRequestHighlights(final String callback) {
+            Toast.makeText(mContext, (String) "onRequestHighlights",Toast.LENGTH_LONG).show();
+
+
             final JSONArray list = new JSONArray();
 
             synchronized (mHighlights) {
@@ -532,6 +550,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onAddHighlight(String highlight_json, final String callback) {
+            Toast.makeText(mContext, (String) "onAddHighlight",Toast.LENGTH_LONG).show();
             try {
                 JSONObject highlight = new JSONObject(highlight_json);
                 final String uuid = UUID.randomUUID().toString();
@@ -558,6 +577,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onUpdateHighlight(String highlight_json) {
+            Toast.makeText(mContext, (String) "onUpdateHighlight",Toast.LENGTH_LONG).show();
             try {
                 JSONObject highlight = new JSONObject(highlight_json);
                 String uuid = highlight.getString("uuid");
@@ -577,6 +597,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onRemoveHighlight(String uuid) {
+            Toast.makeText(mContext, (String) "onRemoveHighlight",Toast.LENGTH_LONG).show();
             synchronized (mHighlights) {
                 mHighlights.remove(uuid);
             }
@@ -589,6 +610,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onShareHighlight(final String uuid) {
+            Toast.makeText(mContext, (String) "onShareHighlight",Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
                     new AlertDialog.Builder(mScene)
@@ -606,6 +628,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onAnnotateHighlight(final String uuid) {
+            Toast.makeText(mContext, (String) "onAnnotateHighlight",Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
                     new AlertDialog.Builder(mScene)
@@ -631,6 +654,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onRequestBookmarks(final String callback) {
+            Toast.makeText(mContext, (String) "onRequestBookmarks",Toast.LENGTH_LONG).show();
             final JSONArray list = new JSONArray();
 
             synchronized (mBookmarks) {
@@ -660,6 +684,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onAddBookmark(String bookmark_json, final String callback) {
+            Toast.makeText(mContext, (String) "onAddBookmark",Toast.LENGTH_LONG).show();
             try {
                 JSONObject bookmark = new JSONObject(bookmark_json);
                 final String uuid = UUID.randomUUID().toString();
@@ -686,6 +711,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onUpdateBookmark(String bookmark_json) {
+            Toast.makeText(mContext, (String) "onUpdateBookmark",Toast.LENGTH_LONG).show();
             try {
                 JSONObject bookmark = new JSONObject(bookmark_json);
                 synchronized (mBookmarks) {
@@ -704,6 +730,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onRemoveBookmark(String uuid) {
+            Toast.makeText(mContext, (String) "onRemoveBookmark",Toast.LENGTH_LONG).show();
             synchronized (mBookmarks) {
                 mBookmarks.remove(uuid);
             }
@@ -718,6 +745,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onSearchResult(final String keyword, final String result_json) {
+            Toast.makeText(mContext, (String) "onSearchResult",Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
                     try {
@@ -782,7 +810,16 @@ public class ViewerBridge {
 
             try {
                 String path = uri.getPath().substring(ASSETS_URI.getPath().length());
-                InputStream inputStream = mScene.getAssets().open(path);
+                InputStream inputStream;
+
+                File basedir = ViewerBridge.mContext.getExternalFilesDir(null);
+                File internalBooksPath = new File(basedir.getPath() + "/assets/");
+                if(internalBooksPath != null && internalBooksPath.isDirectory()) {
+                    File dir = new File(internalBooksPath.getPath() + "/" + path);
+                    inputStream = new FileInputStream(dir);
+                }
+                else
+                    inputStream = mScene.getAssets().open(path);
                 headers.put("Cache-Control", "no-cache");
 
                 return createResponse(mimeType, 200, "OK", headers, inputStream);

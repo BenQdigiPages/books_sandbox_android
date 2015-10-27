@@ -29,6 +29,7 @@ import com.books.viewer.ViewerBridge;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -100,8 +101,31 @@ public class MainActivity extends Activity {
     }
 
     private void findBooks() {
-        AssetManager assets = getAssets();
+
         mItems = new ArrayList<>();
+        ViewerBridge.getBaseDir(this.getApplicationContext());
+        //File internalBooksPath = new File(ViewerBridge.ASSETS_URI.getPath());
+        File basedir = ViewerBridge.mContext.getExternalFilesDir(null);
+        File internalBooksPath = new File(basedir.getPath() + "/assets/");
+        if(internalBooksPath != null && internalBooksPath.isDirectory()) {
+            File sdPath = internalBooksPath;
+            if(sdPath != null && sdPath.isDirectory()) {
+                File file[] = sdPath.listFiles();
+                Log.d("Files", "Size: "+ file.length);
+                for (int i=0; i < file.length; i++)
+                {
+                    Log.d("Files", "FileName:" + file[i].getName());
+                    String strfile = file[i].getName();
+                    if (strfile.endsWith(".epub")) {
+                        mItems.add(strfile);
+                    }
+                }
+
+                return;
+            }
+        }
+
+        AssetManager assets = getAssets();
 
         try {
             String[] files = assets.list("");
@@ -140,7 +164,14 @@ public class MainActivity extends Activity {
     }
 
     public void extractBook(File root, String book) throws Exception {
-        InputStream in = getAssets().open(book);
+        File dir = new File(ViewerBridge.ASSETS_URI.getPath()+"/"+book);
+
+        InputStream in;
+        if (dir.exists() == true)
+            in = new FileInputStream(dir);
+        else
+            in = getAssets().open(book);
+
         ZipInputStream zip = new ZipInputStream(new BufferedInputStream(in));
         byte[] buffer = new byte[1024];
 

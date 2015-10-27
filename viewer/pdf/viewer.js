@@ -5,17 +5,14 @@ var pdfDoc = null,
     pageRendering = false,
     pageNumPending = null,
     scale = 1.0,
-    scaleDelta = 1.0,
     canvas,
     ctx,
     toolBarVisible = true,
     thumbnailBarVisible = false,
-    touchStartX = 0.0,
-    touchStartY = 0.0,
     currentLayoutMode = "single",
-    currentTouchs = [],
     tmpBookmark = null,
     savedBookmarks = [],
+    originalCSSScale = 0,
     pdfOutlineArray = null;
 
 var ua = navigator.userAgent;
@@ -65,14 +62,17 @@ function onURL_and_AppReady(resultOutput) {
     owl.on('changed.owl.carousel',
         function callback(event) {
             if (!(TwoPageViewMode.inProcess)){
-               if (TwoPageViewMode.active){
+                if (TwoPageViewMode.active){
                     currentPageNum = (event.item.index * 2) + 1;
                 }else {
                     currentPageNum  = event.item.index + 1;
+                    PDFViewerApplication.pdfViewer._pages[PDFViewerApplication.page - 1].resetCSSTransformScale();
                 }
                 // Update current page number
                 PDFViewerApplication.page = currentPageNum;
-                zoomInOutFix.getCarouselInfo(event.item.index);
+                if (TwoPageViewMode.active === false){
+                    PDFViewerApplication.pdfViewer._pages[currentPageNum - 1].applyCSSTransformScale();
+                }
             }
     });
 
@@ -148,7 +148,6 @@ function onFirstPageRendered() {
     owl2.owlCarousel();
     owl2.trigger('to.owl.carousel',[currentPageNum - 1, 300, true]);
 
-    zoomInOutFix.getCarouselInfo(currentPageNum-1);
     $("#book_loading").fadeOut(); //Henry add
 }
 
@@ -508,333 +507,6 @@ function isBookmarkExist() {
 Viewer.searchText = function(keyword) {
     window.alert("Viewer.searchText=" + keyword)
 }
-
-Viewer.handleZoomOutInEvent = function(event) {
-    var event = event || window.event;
-
-    if(event.type === "touchstart") {
-        for (var id in event.touches) {
-            if(event.touches[id].identifier === undefined) {
-                continue;
-            }
-
-            var eventTouchPoint = event.touches[id];
-            var id = eventTouchPoint.identifier;
-
-            // Check whether is new TouchPoint
-            if(currentTouchs[id] !== undefined && currentTouchs[id] !== null) {
-                currentTouchs.splice(id,1);
-            }
-
-            currentTouchs[id] = new TouchPoint(eventTouchPoint.clientX,eventTouchPoint.clientY);
-        }
-    } else if(event.type === "touchmove") {
-
-        var checkedTouchPoints = [],
-            result = {
-                         targetPoint: null,
-                         zoomPolicy: 0
-                     };
-
-        for (var id in event.changedTouches) {
-            if(event.changedTouches[id].identifier === undefined) {
-                continue;
-            }
-            var eventTouchPoint = event.changedTouches[id];
-            var innerTP = currentTouchs[eventTouchPoint.identifier];
-            // If touchstart is not fired
-            if(innerTP === undefined || innerTP === null) {
-                currentTouchs[eventTouchPoint.identifier] = new TouchPoint(eventTouchPoint.clientX,eventTouchPoint.clientY);
-                innerTP = currentTouchs[eventTouchPoint.identifier];
-            }
-            innerTP.updateCoordinate(eventTouchPoint.clientX,eventTouchPoint.clientY);
-
-            // Start scan
-            if(result.targetPoint === null) {
-                var result;
-                if(checkedTouchPoints.length >= 1) {
-                    result = innerTP.handleZoomPolicy(checkedTouchPoints);
-                }
-
-                if(result.targetPoint === null) {
-                    checkedTouchPoints.push(innerTP);
-                } else {
-                    // Do before the zoom in/out action is done
-                    zoomInOutFix.onBeforeZoom([innerTP,result.targetPoint],PDFViewerApplication.pdfViewer.currentScale);
-                    if(result.zoomPolicy > 0) {
-                        PDFViewerApplication.zoomIn();
-                    } else if(result.zoomPolicy < 0) {
-                        PDFViewerApplication.zoomOut();
-                    }
-                }
-            }
-        }
-        if(currentTouchs.length >= 2) {
-            event.stopPropagation();
-        }
-    } else if(event.type === "touchend") {
-        var pendingDeleteId = [];
-
-        if(event.touches.length === 0) {
-            for (var id in currentTouchs) {
-                pendingDeleteId.push(id);
-            }
-        } else {
-            for (var id in event.changedTouches) {
-                if(event.changedTouches[id].identifier === undefined) {
-                    continue;
-                }
-                var eventTouchPoint = event.changedTouches[id];
-
-                pendingDeleteId.push(eventTouchPoint.identifier);
-            }
-        }
-
-        // Delete touch element from local buffer
-        pendingDeleteId.forEach(function (id) {
-            currentTouchs.splice(id,1);
-        });
-        if(currentTouchs.length < 2) {
-            zoomInOutFix.reset();
-        }
-    }
-}
-
-var zoomInOutFix = new ZoomInOutOffSetFix();
-function ZoomInOutOffSetFix() {
-    this.arrayIndex = 0;
-    this.touchMiddle = null;
-
-    this.carouselLeft = 0;
-    this.carouselTop = 0;
-    this.carouselZAxis = 0;
-
-    this.touchLeft = 0;
-    this.touchTop = 0;
-
-    this.elsementParent = null;
-    this.scale = 1;
-    this.styleArray = null;
-
-    this.width = 0;
-
-    this.originalScale = 0;
-
-    this.getCarouselInfo = function ZoomInOutOffSetFix_getCarouselInfo(index) {
-        this.arrayIndex = index;
-
-        var element = document.querySelector('.owl-item');
-        this.elsementParent = element.offsetParent;
-
-        var widthString = element.style.width;
-        this.width = parseFloat(widthString.substring(0,widthString.indexOf('p')),10);
-
-        this.styleArray = this.elsementParent.style.cssText.split(';');
-        // PATTERN : transform:'translate3d(100px, 100px, 15px)'
-        var transformString = this.elsementParent.style.transform;
-        var argList = (transformString.substring(transformString.indexOf('(') + 1,transformString.indexOf(')'))).split(',');
-
-        // Find left
-        this.carouselLeft = parseFloat(argList[0].substring(0,argList[0].indexOf('p')),10) - this.arrayIndex * this.width * (-1);
-
-        // Find Top
-        this.carouselTop = parseFloat(argList[1].substring(0,argList[1].indexOf('p')),10);
-
-        // Store the original value
-        this.carouselZAxis = parseFloat(argList[2].substring(0,argList[2].indexOf('p')),10);
-    };
-
-    this.onBeforeZoom = function ZoomInOutOffSetFix_onBeforeZoom(touchPoints,scale) {
-        this.scale = scale;
-
-        // Store the fit page scale
-        if(this.originalScale === 0) {
-            this.originalScale = scale;
-        }
-
-        // We assume only two element in array
-        var touch1 = touchPoints[0];
-        var touch2 = touchPoints[1];
-        this.touchMiddle = new TouchPoint((touch1.oriX + touch2.oriX)/2,(touch1.oriY + touch2.oriY)/2);
-
-        this.touchLeft = Math.abs(this.touchMiddle.oriX - this.carouselLeft);
-        this.touchTop = Math.abs(this.touchMiddle.oriY - this.carouselTop);
-
-        var element = document.querySelector('.owl-item.active');
-        element.style.visibility = "hidden";
-        this.hideTimeout = setTimeout(this.onFixOffsetDone, 300);
-    };
-
-    this.onFixOffsetDone = function  ZoomInOutOffSetFix_onFixOffsetDone() {
-        var element = document.querySelector('.owl-item.active');
-        element.style.visibility = "visible";
-        this.getCarouselInfo(currentPageNum-1);
-    }
-
-    this.onAfterZoom = function ZoomInOutOffSetFix_onAfterZoom(scale) {
-        if(this.touchMiddle === null)
-            return;
-        if(this.elsementParent === null)
-            return;
-
-        var oriScale = this.scale;
-        var afterScale = scale;
-
-        // Change by scale
-        this.touchLeft = this.touchLeft / oriScale * afterScale;
-        this.touchTop = this.touchTop / oriScale * afterScale;
-        //this.width = this.width / oriScale * afterScale;
-        this.scale = afterScale;
-
-        // carouselLeft/carouselTop is only related to this page , not all scroll view
-        this.carouselLeft = this.touchMiddle.oriX - this.touchLeft;
-        this.carouselTop = this.touchMiddle.oriY - this.touchTop;
-
-        var setLeft = this.carouselLeft + this.arrayIndex * this.width * (-1);
-        var setTop = this.carouselTop;
-
-        // Set style
-        var styleBuffer = "";
-        for (var id in this.styleArray) {
-            if(this.styleArray[id].indexOf("transform") !== -1) {
-                styleBuffer += 'transform: translate3d(' + setLeft + 'px,' + setTop + 'px,' +  this.carouselZAxis + 'px);';
-                continue;
-            }
-            /*
-            if(this.styleArray[id].indexOf("width") !== -1) {
-                styleBuffer += 'width: ' + this.width * pdfDoc.numPages + 'px;';
-                continue;
-            }
-            */
-            // We must recover the reset of style.cssText
-            styleBuffer += this.styleArray[id] + ';';
-        }
-        this.elsementParent.setAttribute('style', styleBuffer);
-    };
-
-    this.reset = function ZoomInOutOffSetFix_reset() {
-        this.touchMiddle = null;
-        this.getCarouselInfo(currentPageNum-1);
-    };
-}
-
-function TouchPoint(x,y) {
-    var shiftDir = {
-        "noMove"   :  0,
-        "negative" : -1,
-        "positive" : +1
-    };
-
-    this.xMoveDir = shiftDir["noMove"];
-    this.yMoveDir = shiftDir["noMove"];
-    this.xMoveDelta = 0;
-    this.yMoveDelta = 0;
-    this.cutX = x,
-    this.cutY = y,
-    this.oriX = x;
-    this.oriY = y;
-
-    this.updateCoordinate = function(x,y) {
-        var deltaX,
-            deltaY,
-            absDeltaX,
-            absDeltaY;
-
-        absDeltaX = Math.abs(x - this.oriX);
-        absDeltaY = Math.abs(y - this.oriY);
-
-        // Check whether the move direction along X is changed
-        if(absDeltaX < this.xMoveDelta) {
-            this.oriX = this.cutX;
-        }
-        // Check whether the move direction along Y is changed
-        if(absDeltaY < this.yMoveDelta) {
-            this.oriY = this.cutY;
-        }
-
-        // Init parameter
-        this.cutX = x;
-        this.cutY = y;
-        deltaX = this.cutX - this.oriX;
-        deltaY = this.cutY - this.oriY;
-
-        //Handle X
-        if(deltaX > 0) {
-            this.xMoveDir = shiftDir["positive"];
-            this.xMoveDelta = deltaX;
-        }else if(deltaX < 0) {
-            this.xMoveDir = shiftDir["negative"];
-            this.xMoveDelta = Math.abs(deltaX);
-        }
-
-        //Handle Y
-        if(deltaY > 0) {
-            this.yMoveDir = shiftDir["positive"];
-            this.yMoveDelta = deltaY;
-        }else if(deltaY < 0) {
-            this.yMoveDir = shiftDir["negative"];
-            this.yMoveDelta = Math.abs(deltaY);
-        }
-    };
-
-    this.handleZoomPolicy = function(zoomScanArray) {
-        var self = this,
-            findedTouchPoint = null,
-            zoomInt = 0;
-
-        zoomScanArray.forEach(function (targetTouchPoint) {
-
-            // If there is at least one finger holding , we always trigger zoom Out/In
-            if(self.xMoveDir === 0 && self.yMoveDir === 0) {
-                var previous = Math.pow(targetTouchPoint.oriX - self.cutX,2) + Math.pow(targetTouchPoint.oriY - self.cutY,2);
-                var cur = Math.pow(targetTouchPoint.cutX - self.cutX,2) + Math.pow(targetTouchPoint.cutY - self.cutY,2);
-                if(cur > previous) {
-                    console.log("type1 : zoom in");
-                    zoomInt = 1;
-                } else if(cur < previous) {
-                    console.log("type1 : zoom out");
-                    zoomInt = -1;
-                }
-                findedTouchPoint = targetTouchPoint;
-                return;
-            }
-
-            // If there is at least one finger holding , we always trigger zoom Out/In
-            if(targetTouchPoint.xMoveDir === 0 && targetTouchPoint.yMoveDir === 0) {
-                var previous = Math.pow(self.oriX - targetTouchPoint.cutX,2) + Math.pow(self.oriY - targetTouchPoint.cutY,2);
-                var cur = Math.pow(self.cutX - targetTouchPoint.cutX,2) + Math.pow(self.cutY - targetTouchPoint.cutY,2);
-                if(cur > previous) {
-    	            console.log("type2 : zoom in");
-                    zoomInt = 1;
-                } else if(cur < previous) {
-                    console.log("type2 : zoom out");
-                    zoomInt = -1;
-                }
-                findedTouchPoint = targetTouchPoint;
-                return;
-            }
-
-            if((self.xMoveDir + targetTouchPoint.xMoveDir) === 0
-                && (self.yMoveDir + targetTouchPoint.yMoveDir) === 0) {
-                var previous = Math.pow(self.oriX - targetTouchPoint.oriX,2) + Math.pow(self.oriY - targetTouchPoint.oriY,2);
-                var cur = Math.pow(self.cutX - targetTouchPoint.cutX,2) + Math.pow(self.cutY - targetTouchPoint.cutY,2);
-                if(cur > previous) {
-                    console.log("type3 : zoom in");
-                    zoomInt = 1;
-                } else if(cur < previous) {
-                    console.log("type3 : zoom out");
-                    zoomInt = -1;
-                }
-                findedTouchPoint = targetTouchPoint;
-                return;
-            }
-        });
-
-        return {targetPoint: findedTouchPoint,zoomPolicy:zoomInt};
-    };
-}
-
-
 
 /**
  * Displays previous page.
@@ -1499,7 +1171,7 @@ var DEFAULT_PREFERENCES = {
   disableAutoFetch: true,
   disableFontFace: false,
   disableTextLayer: true,
-  useOnlyCssZoom: false
+  useOnlyCssZoom: true
 };
 
 
@@ -4623,6 +4295,8 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     this.rotation = 0;
     this.scale = scale || 1.0;
+    // [Bruce] For interact.js
+    this.transformScale = 1.0;
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
@@ -4665,9 +4339,43 @@ var PDFPageView = (function PDFPageViewClosure() {
     } else {
         container.appendChild(div);
     }
-    this.div.addEventListener('touchstart',Viewer.handleZoomOutInEvent, false);
-    this.div.addEventListener('touchmove',Viewer.handleZoomOutInEvent, false);
-    this.div.addEventListener('touchend',Viewer.handleZoomOutInEvent, false);
+    // [Bruce] interact.js
+    var initScale = 0;
+    var tempScale = 0;
+    var targetName = '#' + div.id;
+    interact(targetName)
+        .gesturable({
+            onstart: function (event) {
+                if(originalCSSScale === 0) {
+                    originalCSSScale = 1;
+                }
+                tempScale = this.transformScale;
+                initScale = tempScale;
+            }.bind(this),
+            onmove: function (event) {
+                tempScale  = Math.max((tempScale * (1 + event.ds)),originalCSSScale);
+                var scaleElement = event.target;
+
+                scaleElement.style.MozTransformOrigin =
+                scaleElement.style.webkitTransformOrigin =
+                scaleElement.style.transformOrigin =
+                event.x0 + 'px' + ' ' + event.y0 + 'px';
+
+                scaleElement.style.webkitTransform =
+                scaleElement.style.transform =
+                'scale(' + tempScale + ')';
+            }.bind(this),
+            onend: function (event) {
+                PDFViewerApplication.pdfViewer.transformScale = tempScale;
+            }
+        })
+        .draggable({
+            enabled: false
+        })
+        .resizable({
+            enabled: false
+        });
+
     //End : [Bruce]
   }
 
@@ -4736,6 +4444,28 @@ var PDFPageView = (function PDFPageViewClosure() {
       this.loadingIconDiv.className = 'loadingIcon';
       div.appendChild(this.loadingIconDiv);
     },
+
+    // [Bruce] Used for interact.js
+    setTransformScale: function PDFPageView_setTransformScale(scale) {
+      if (scale  !== undefined && isNaN(scale) === false )  {
+          this.transformScale = scale;
+      } 
+    },
+
+    applyCSSTransformScale: function PDFPageView_applyCSSTransformScale() {
+      var div = this.div;
+      div.style.webkitTransform =
+      div.style.transform =
+      'scale(' + this.transformScale + ')';
+    },
+
+    resetCSSTransformScale: function PDFPageView_resetCSSTransformScale() {
+      var div = this.div;
+      div.style.webkitTransform =
+      div.style.transform =
+      'scale(1)';
+    },
+    // End : [Bruce]
 
     update: function PDFPageView_update(scale, rotation) {
       this.scale = scale || this.scale;
@@ -5837,6 +5567,26 @@ var PDFViewer = (function pdfViewer() {
       this.scrollPageIntoView(val);
     },
 
+    // [Bruce] interact.js
+    /**
+     * @returns {number}
+     */
+    get transformScale() {
+      return this._transformScale !== UNKNOWN_SCALE ? this._transformScale :
+                                                    DEFAULT_SCALE;
+    },
+
+    /**
+     * @param {number} val - Scale of the pages in percents.
+     */
+    set transformScale(val) {
+      if (isNaN(val))  {
+        throw new Error('Invalid numeric scale');
+      }
+      this._setTransformScaleUpdatePages(val);
+    },
+    // End : [Bruce] interact.js
+
     /**
      * @returns {number}
      */
@@ -6058,6 +5808,21 @@ var PDFViewer = (function pdfViewer() {
       }
       this.container.dispatchEvent(event);
     },
+
+    // [Bruce] for interact.js
+    _setTransformScaleUpdatePages: function pdfViewer_setTransformScaleUpdatePages(
+        newScale) {
+
+      if (isSameScale(this._transformScale, newScale)) {
+        return;
+      }
+
+      for (var i = 0, ii = this._pages.length; i < ii; i++) {
+        this._pages[i].setTransformScale(newScale);
+      }
+      this._transformScale = newScale;
+    },
+    // End : [Bruce] for interact.js
 
     _setScaleUpdatePages: function pdfViewer_setScaleUpdatePages(
         newScale, newValue, noScroll, preset) {
@@ -7811,7 +7576,7 @@ var PDFViewerApplication = {
       newScale = Math.floor(newScale * 10) / 10;
       //[Bruce]
       //newScale = Math.max(MIN_SCALE, newScale);
-      newScale = Math.max(zoomInOutFix.originalScale, newScale);
+      newScale = Math.max(originalScale, newScale);
     } while (--ticks > 0 && newScale > MIN_SCALE);
     this.setScale(newScale, true);
   },
@@ -9170,7 +8935,6 @@ window.addEventListener('scalechange', function scalechange(evt) {
   document.getElementById('zoomOut').disabled = (evt.scale === MIN_SCALE);
   document.getElementById('zoomIn').disabled = (evt.scale === MAX_SCALE);
   */
-  zoomInOutFix.onAfterZoom(evt.scale);
   //End : [Bruce]
 
   if (evt.presetValue) {

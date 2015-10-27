@@ -88,6 +88,9 @@ function onURL_and_AppReady(resultOutput) {
                 $('#thumbnailView').hide();
             }
             $('#footer').show();
+            //Henry add, when toolbar raised, page number have to refresh
+            document.getElementById('current_page').textContent = currentPageNum;
+            document.getElementById('paginate').value = currentPageNum;
         } else {
             if (thumbnailBarVisible) {
                 $('#thumbnailView').hide();
@@ -291,9 +294,11 @@ function webUIInitialized() {
     document.getElementById('paginate').addEventListener('change',
         function() {
             var page = parseInt(document.getElementById('paginate').value,10);
+            if (TwoPageViewMode.active && page % 2 == 0)
+                page--;   //Henry add, for support TwoPageViewMode
             PDFViewerApplication.page = page;
     });
-
+/*  Henry remove, duplicate from above EvenListener
     $('#paginate').on('input', function() {
         // get the current value of the input field.
         var value = parseInt($(this).val(),10);
@@ -301,7 +306,7 @@ function webUIInitialized() {
         var owl = $('#thumbnailView');
         owl.trigger('to.owl.carousel',[value - 1, 200, true]);
     });
-
+*/
     document.getElementById('thumbnailbar').addEventListener('click',
         function() {
             thumbnailBarVisible = !(thumbnailBarVisible);

@@ -457,11 +457,15 @@ Viewer.toggleBookmark = function(color) {
             };
             App.onAddBookmark(tmpBookmark,"AddBookmarkCallBack");
         }
+        $("#bookmark")[0].className = "bookmark " + color;
     } else {
         //Remove bookmark in current page.
         var bookmark = null;
         if ((bookmark = isBookmarkExist()) !== null) {
             App.onRemoveBookmark(bookmark.uuid);
+            var index = savedBookmarks.indexOf(bookmark);
+            delete savedBookmarks[index];
+            $("#bookmark")[0].className = "bookmark_icon ";
         }
     }
 }
@@ -8968,6 +8972,13 @@ window.addEventListener('pagechange', function pagechange(evt) {
         PDFViewerApplication.historyPage = evt.previousPageNumber;  //Henry add, for supporting undo
         // Info App
         App.onChangePage("", currentPageNum, currentPageNum, pdfDoc.numPages);
+        $("#bookmark")[0].className = "bookmark ";
+                for(var i in savedBookmarks) {
+                    if (savedBookmarks[i].cfi === currentPageNum) {
+                        color = savedBookmarks[i].color;
+                        $("#bookmark")[0].className = "bookmark " + color;
+                    }
+                }
     }
 
     // Update thumbnail

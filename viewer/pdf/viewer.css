@@ -1996,3 +1996,22 @@ input[type=range]:focus {
 input[type=range]:focus::-webkit-slider-runnable-track {
     background: #ccc;
 }
+.bookmark {
+    width: 24px;
+    height: 43px;
+    position: fixed;
+    top: 40px;
+    right: 0px;
+    display: block;
+    z-index: 4;
+    cursor: pointer;
+}
+.bookmark.pink {
+	background: url(img/bookmark_icon1.png) no-repeat center;
+}
+.bookmark.yellow {
+	background: url(img/bookmark_icon2.png) no-repeat center;
+}
+.bookmark.blue {
+	background: url(img/bookmark_icon3.png) no-repeat center;
+}

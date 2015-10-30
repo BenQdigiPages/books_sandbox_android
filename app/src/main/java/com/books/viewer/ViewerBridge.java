@@ -369,14 +369,18 @@ public class ViewerBridge {
     /// or do nothing if there is currently no bookmark
     ///
     /// @tag: string or null
-    ///     color - the bookmark color, either "red", "yellow" or "blue"
+    ///     color - the bookmark color type, either "red", "yellow" or "blue"
     ///     null - to remove current bookmark
-    public void setBookmark(String color) {
-        eval("Viewer.toggleBookmark(\"" + color + "\")", null);
+    /// @page_offset: either 0 or 1
+    ///     for single page mode, page_offset is always 0
+    ///     for side by side mode, 0 is for left page, 1 is for right page
+    ///
+    public void setBookmark(String color, int pageOffset) {
+        eval("Viewer.toggleBookmark(\"" + color + "\", " + pageOffset + ")", null);
     }
 
-    public void removeBookmark() {
-        eval("Viewer.toggleBookmark(null)", null);
+    public void removeBookmark(int pageOffset) {
+        eval("Viewer.toggleBookmark(null, " + pageOffset + ")", null);
     }
 
     ///

@@ -167,8 +167,11 @@ Viewer.gotoPosition(cfi)
 /// @tag: string or null
 ///     color - the bookmark color type, either "red", "yellow" or "blue"
 ///     null - to remove current bookmark
+/// @page_offset: either 0 or 1
+///     for single page mode, page_offset is always 0
+///     for side by side mode, 0 is for left page, 1 is for right page
 ///
-Viewer.toggleBookmark(color)
+Viewer.toggleBookmark(color, page_offset)
 
 ///
 /// Search text and mark the found text, the search is case-insensitive

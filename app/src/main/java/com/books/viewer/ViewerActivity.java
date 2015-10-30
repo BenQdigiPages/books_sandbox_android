@@ -207,27 +207,51 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         PopupMenu popup = new PopupMenu(this);
         popup.setOnClickPopupListener(this);
 
-        popup.add(R.drawable.btn_pinklabel, "Bookmark: pink", new Runnable() {
+        popup.add(R.drawable.btn_pinklabel, "Bookmark: red (left page)", new Runnable() {
             public void run() {
-                mBridge.setBookmark("pink");
+                mBridge.setBookmark("red", 0);
             }
         });
 
-        popup.add(R.drawable.btn_yellowlabel, "Bookmark: yellow", new Runnable() {
+        popup.add(R.drawable.btn_yellowlabel, "Bookmark: yellow (left page)", new Runnable() {
             public void run() {
-                mBridge.setBookmark("yellow");
+                mBridge.setBookmark("yellow", 0);
             }
         });
 
-        popup.add(R.drawable.btn_bluelabel, "Bookmark: blue", new Runnable() {
+        popup.add(R.drawable.btn_bluelabel, "Bookmark: blue (left page)", new Runnable() {
             public void run() {
-                mBridge.setBookmark("blue");
+                mBridge.setBookmark("blue", 0);
             }
         });
 
-        popup.add(R.drawable.btn_nonelabel, "Remove bookmark", new Runnable() {
+        popup.add(R.drawable.btn_nonelabel, "Remove bookmark (left page)", new Runnable() {
             public void run() {
-                mBridge.removeBookmark();
+                mBridge.removeBookmark(0);
+            }
+        });
+
+        popup.add(R.drawable.btn_pinklabel, "Bookmark: red (right page)", new Runnable() {
+            public void run() {
+                mBridge.setBookmark("red", 1);
+            }
+        });
+
+        popup.add(R.drawable.btn_yellowlabel, "Bookmark: yellow (right page)", new Runnable() {
+            public void run() {
+                mBridge.setBookmark("yellow", 1);
+            }
+        });
+
+        popup.add(R.drawable.btn_bluelabel, "Bookmark: blue (right page)", new Runnable() {
+            public void run() {
+                mBridge.setBookmark("blue", 1);
+            }
+        });
+
+        popup.add(R.drawable.btn_nonelabel, "Remove bookmark (right page)", new Runnable() {
+            public void run() {
+                mBridge.removeBookmark(1);
             }
         });
 

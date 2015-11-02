@@ -6154,25 +6154,21 @@ var PDFViewer = (function pdfViewer() {
         //End : [Bruce]
       //[Bruce]
       } else if(this.isInCarouselMode){
-        if (!TwoPageViewMode.active) {
-            var visible = [];
-            var currentPage = this._pages[this._currentPageNumber - 1];
-            var nextPage = currentPage;
-            visible.push({ id: currentPage.id, view: currentPage });
+        var visible = [];
+        var currentPage = this._pages[this._currentPageNumber - 1];
+        var nextPage = currentPage;
+        visible.push({ id: currentPage.id, view: currentPage });
 
-            // Try to load the next page
-            if((currentPage.id - 1) < this._pages.length) {
-                var nextPage = this._pages[this._currentPageNumber];
-                if(nextPage) {
-                    visible.push({ id: nextPage.id, view: nextPage });
-                } else {
-                    nextPage = currentPage;
-                }
+        // Try to load the next page
+        if((currentPage.id - 1) < this._pages.length) {
+            var nextPage = this._pages[this._currentPageNumber];
+            if(nextPage) {
+                visible.push({ id: nextPage.id, view: nextPage });
+            } else {
+                nextPage = currentPage;
             }
-            return { first: currentPage, last: nextPage, views: visible };
-        } else {
-            return getVisibleElements(this.container, this._pages, true);  //Phoebe
         }
+        return { first: currentPage, last: nextPage, views: visible };
       //End : [Bruce]
       } else {
         // The algorithm in getVisibleElements doesn't work in all browsers and

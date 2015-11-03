@@ -1910,24 +1910,26 @@ p.index {
 
 footer.bar {
     position: fixed;
-    left:0px;
-    right:0px;
-    bottom: 0;
     width: 100%;
-    height: 40;
-    background: #5A595B;
-    margin-top: 2px;
-    z-index: 3; /* Henry modify */
+    height: 40px;
+    bottom: 0;
+    background: #666;
+    z-index: 3;
+    text-align: center;
+    overflow: visible;
+    min-width: 0px;
+    transition: bottom .3s;
 }
+/* Henry modify */
 footer.bar a {
 	display: inline-block;
-	height: 30px;
+	height: 32px;
+	margin: 0 10px;
+	vertical-align: middle;
 }
 
 footer.bar a.arrow_1 {
-	margin-left: 20px;
-    margin-Right: 2.5px;
-	width: 5%;
+    width: 30px;  /* Henry modify */
 	background: url(img/arrow_icon1.png) no-repeat center;
 }
 
@@ -1937,36 +1939,31 @@ footer.bar a.arrow_2 {
     margin-Right: 2.5px;
 	background: url(img/arrow_icon2.png) no-repeat center;
 }
-
+/* Henry modify, show at sencond line */
 footer.bar a.number {
-	position: fixed;
-	width: 20%;
-	right: 10%;
-	margin-top: 2px;
-    margin-left: 2.5px;
-    margin-Right: 8px;
-	line-height: 32px;
-	color: #fff;
+	position: absolute;
+	top: 22px;
+	display: block;
+	width: 100%;
+	z-index: -1;
+	color: #fff;  /* Henry add */
+	margin: 0;
 }
 
+/* Henry modify */
 footer.bar .thumbnailbtn {
-	right: 0px;
-	width: 10%;
-	height: 35px;
-    margin-Right: 20px;
-	position: fixed;
-	background: url(img/footer-icon1.png) no-repeat center;
-	display: inline-block;
-	cursor: pointer;
-}
+    width: 30px;
+    height: 32px;
+    background: url(img/footer-icon1.png) no-repeat center;
+    display: inline-block;
+    cursor: pointer;
+    margin: 0 10px;
+    vertical-align: middle
+ }
 
 footer.bar input[type=range] {
-	display: inline-block;
-    margin-left: 10px;
-    margin-Right: 2.5px;
-	height: 32px;
-	width: 50%;
-    background: #5A595B;
+	width: 60%;  /* Henry modify, make it longer */
+	border: 1px solid white; /* Henry modify */
 }
 
 input[type=range] {

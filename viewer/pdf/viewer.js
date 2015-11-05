@@ -4339,8 +4339,9 @@ var PDFPageView = (function PDFPageViewClosure() {
         container.appendChild(div);
     }
     // [Bruce] interact.js
-    var initScale = 0;
     var tempScale = 0;
+
+    var oriX,oriY;
     var targetName = '#' + div.id;
     interact(targetName)
         .gesturable({
@@ -4349,22 +4350,39 @@ var PDFPageView = (function PDFPageViewClosure() {
                     originalCSSScale = 1;
                 }
                 tempScale = this.transformScale;
-                initScale = tempScale;
+
+                // Determining ratio of displayed dimensions to "actual" dimensions
+                var scaleElement = event.target;
+
+                //************Below is try to get the position of current touch point related to non-transformed div
+                var boundingRect = scaleElement.getBoundingClientRect();
+                var dimRatio = scaleElement.clientWidth / boundingRect.width;
+
+                //**** (1) Get the touch point related to tranformed div
+                var transfromedX = event.x0 + scaleElement.offsetLeft - boundingRect.left;
+                var transfromedY = event.y0 + scaleElement.offsetTop - boundingRect.top;
+
+                //**** (2) Restore to the original coordinate system
+                oriX = transfromedX*dimRatio;
+                oriY = transfromedY*dimRatio;
             }.bind(this),
             onmove: function (event) {
-                tempScale  = Math.max((tempScale * (1 + event.ds)),originalCSSScale);
                 var scaleElement = event.target;
+                tempScale  = Math.max((tempScale * (1 + event.ds)),originalCSSScale);
 
                 scaleElement.style.MozTransformOrigin =
                 scaleElement.style.webkitTransformOrigin =
                 scaleElement.style.transformOrigin =
-                event.x0 + 'px' + ' ' + event.y0 + 'px';
+                oriX + 'px' + ' ' + oriY + 'px';
 
                 scaleElement.style.webkitTransform =
                 scaleElement.style.transform =
                 'scale(' + tempScale + ')';
             }.bind(this),
             onend: function (event) {
+                var scaleElement = event.target;
+
+                // Store scale
                 PDFViewerApplication.pdfViewer.transformScale = tempScale;
             }
         })
@@ -4453,6 +4471,9 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     applyCSSTransformScale: function PDFPageView_applyCSSTransformScale() {
       var div = this.div;
+      var newTranslateX = (parseFloat(div.getAttribute('data-x')) || 0);
+      var newTranslateY = (parseFloat(div.getAttribute('data-y')) || 0);
+
       div.style.webkitTransform =
       div.style.transform =
       'scale(' + this.transformScale + ')';

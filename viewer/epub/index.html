@@ -8,7 +8,6 @@
     <link rel="stylesheet" type="text/css" href="libs/assets/css/reset.css">
     <link rel="stylesheet" type="text/css" href="libs/fancybox/source/jquery.fancybox.css" />
     <link rel="stylesheet" type="text/css" href="libs/assets/css/style.css">
-    <link rel="stylesheet" type="text/css" id="for_book" href="libs/book.css">
     <link rel="stylesheet" type="text/css" href="libs/assets/css/mobile.css">
     <script src="libs/epub_cfi_test/build/libs/jquery/jquery-2.1.0.min.js"></script>
     <script src="libs/assets/js/jquery.blockui.js"></script>
@@ -47,6 +46,16 @@
     <div id="book_area" class="reader_main"></div>
     <a href="#" class="arrow_icon1 prev_page"></a>
     <a href="#" class="arrow_icon2 next_page"></a>
+    <!-- 書籤 -->
+    <label class="bookmark icon1" for="selectbookmark">
+        <input type="checkbox" id="selectbookmark">
+        <ul class="tab">
+            <li class="red"><a href="#"></a></li>
+            <li class="yellow"><a href="#"></a></li>
+            <li class="blue"><a href="#"></a></li>
+            <li class="del"><a href="#"></a></li>
+        </ul>
+    </label>
     <!-- 劃線工具 -->
     <div id="bookline">
         <div>
@@ -72,6 +81,7 @@
         <div class="main">
             <h1>【填寫劃線筆記】</h1>
             <input type="hidden" name="index" />
+            <input type="hidden" name="uuid" />
             <input type="hidden" name="action" />
             <h2>章節：<span class="inline chapter_info">為未來而教 葉丙成的 bts 教育新思維</span></h2>
             <strong class="page">102頁</strong>
@@ -96,6 +106,57 @@
             </div>
         </div>
         <i class="fa fa-times fa-2x close" onclick="$('#popup3').hide();"></i>
+    </div>
+    
+    <div id="hot_score_temp" class="hidden">
+        <li><a href="#"><span><strong>畫線</strong></span></a></li>
+    </div>
+    <div id="hot_feedback_temp" class="hidden">
+        <li>
+            <label class="btn">
+                <input type="checkbox" name="like">
+                <i class="fa fa-star-o"> 999讚</i>
+            </label>
+            <span>
+                <strong class="nickname"></strong>
+            </span>
+            <a href="javascript:" onclick="document.getElementById('popup1').style.display = 'block';"><span>
+                <strong>心得</strong>
+            </span></a>
+        </li>
+    </div>
+    <div id="bookmark_temp" class="hidden">
+        <li>
+            <span class="btn"><i class="fa fa-trash-o"> 刪除</i></span>
+            <span class="content"></span>
+        </li>
+    </div>
+    <div id="highlight_temp" class="hidden">
+        <li>
+            <strong>畫線</strong>
+            <span class="highlight"></span>
+            <strong>筆記</strong>
+            <span class="note"></span>
+            <span class="btn">
+                <i class="fa fa-trash-o"> 刪除</i>
+                <label class="edit"><input type="checkbox" name="edit"><i class="fa fa-pencil"> 編輯</i></label>
+                <label class="cancel hidden"><input type="checkbox" name="cancel"><i class="fa">取消</i></label>
+                <label class="save hidden"><input type="checkbox" name="save"><i class="fa">儲存</i></label>
+                <label class="publish"><input type="checkbox" name="publish"><i class="fa fa-folder-o"> <b>已</b>公開</i></label>
+                <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Fwww.books.com.tw&t=" target="_blank" title="Share on Facebook" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(document.URL) + '&t=' + encodeURIComponent(document.URL)); return false;">
+                    <i class="fa fa-facebook-square fa-2x"></i>
+                </a>
+                <a href="https://twitter.com/intent/tweet?source=http%3A%2F%2Fwww.books.com.tw&text=:%20http%3A%2F%2Fwww.books.com.tw" target="_blank" title="Tweet" onclick="window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(document.title) + ':%20' + encodeURIComponent(document.URL)); return false;">
+                    <i class="fa fa-twitter-square fa-2x"></i>
+                </a>
+                <a href="https://plus.google.com/share?url=http%3A%2F%2Fwww.books.com.tw" target="_blank" title="Share on Google+" onclick="window.open('https://plus.google.com/share?url=' + encodeURIComponent(document.URL)); return false;">
+                    <i class="fa fa-google-plus-square fa-2x"></i>
+                </a>
+                <a href="mailto:?subject=&body=:%20http%3A%2F%2Fwww.books.com.tw" target="_blank" title="Email" onclick="window.open('mailto:?subject=' + encodeURIComponent(document.title) + '&body=' +  encodeURIComponent(document.URL)); return false;">
+                    <i class="fa fa-envelope-square fa-2x"></i>
+                </a>
+            </span>
+        </li>
     </div>
     <!--<h1>Viewer Sandbox</h1>-->
     <!--<button id="showToolbar" class="hidden" onclick="App.onToggleToolbar(true)">Show toolbar</button><br>-->

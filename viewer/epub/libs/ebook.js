@@ -103,9 +103,17 @@ function eBook(tag, options) {
                 document.webkitCancelFullScreen();
         }
     });
-
-    $("input[name='menu_like']").change(function(){
-        _this._AddMark($("input[name='menu_like']:checked").val());
+    
+    $(".tab li").click(function(){
+        if($(this).hasClass('del'))
+            var b_idx;
+            $.each(_this.bookmark,function(k, v) {
+                if(Book.renderer.currentChapter.href==this.href)
+                    b_idx = k;
+            });
+            _this._DeleteMark(k);
+        else
+            _this._AddMark(this.className, $(".tab li").index(this));
     });
 
     $(".accordings > .according-head").click(function(){
@@ -123,6 +131,7 @@ function eBook(tag, options) {
             _this._OpenModal(href);
         }
     });
+
     $("#note button.save").click(function(){
         _this._UpdateNote();
     });
@@ -139,6 +148,7 @@ function eBook(tag, options) {
             $("#menu_list").hide();
         }
     });
+
     $("#delete").on("click","button[type='submit']", function(){
         var type =  $("#delete").find("input[name='type']").val();
         var idx =  $("#delete").find("input[name='index']").val();
@@ -818,7 +828,7 @@ eBook.prototype = {
 
         return {str: cfiStr, range:tr };
     },
-    _AddMark: function(color) {
+    _AddMark: function(color, idx) {
         var now = new Date();
         var current = Book.renderer.currentChapter;
         $("#bookmark").addClass(color);
@@ -836,7 +846,7 @@ eBook.prototype = {
             $("label[for='operate3']").find(".num").html(this.bookmark.length);
         }
         $("#menu_like").hide();
-        $("input[name='menu_like']:checked")[0].checked = false;
+        $("lable.bookmark").addClass("icon"+(idx+1));
         this._RenderBookmark();
     },
     _DeleteMark: function(idx) {

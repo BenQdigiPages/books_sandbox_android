@@ -12,8 +12,31 @@ var current_highlight = null;
 var change_page = false;
 var current_page = 1;
 var loader = [];
+var toolbar = false;
 var book_uni_id;
 var host = window.location.origin;
+var callNote = false;
+
+
+var ua = navigator.userAgent;
+var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
+var isAndroidDevice = /Android/g.test(ua);
+
+// searchText
+// onChangePage
+// onTrackAction
+
+// onRequestHighlights
+// onAddHighlight
+// onUpdateHighlight
+// onRemoveHighlight
+// onShareHighlight
+// onAnnotateHighlight
+// onRequestBookmarks
+// onAddBookmark
+// onUpdateBookmark
+// onRemoveBookmark
+// onSearchResult
 
 ///
 /// Load ebook from server url
@@ -27,15 +50,44 @@ var host = window.location.origin;
 /// @url: string - base url of ebook
 /// @legacy: bool - true if legecy mode is needed
 ///
+
+$(".bookmark li a").click(function(){ 
+    UpdateBookNote({
+        type: "bookmark",
+        chapter: current_chapter.spinePos,
+        cfi: current_chapter.cfi,
+        href: current_chapter.href,
+        page: current_page,
+        color: $(this).parent("li")[0].className,
+        action: "add"
+    });
+});
+
 $("input[name='bookcolor']").change(function(argument) {
-    setHighlight($("input[name='bookcolor']:checked").val(), false);
+    setHighlight($("input[name='bookcolor']:checked").val());
 });
 
 $("#bookline").on("click","a.note",function(){
-    setHighlightWithNote();
+    if(!current_highlight) {
+        callNote = true;
+        setHighlight("red");
+    } else {
+        App.onAnnotateHighlight(current_highlight.uuid);
+    }
+}).on("click","a.share", function(){
+    App.onShareHighlight(current_highlight.uuid);
+}).on("click",".fa-times", function(){
+    closeContextMenu();
+});
+
+$("#popup3").find("input[name='update']").click(function(){
+    $("#popup3").hide();
 });
 
 Viewer.loadBook = function(url, legacy) {
+    App.onToggleToolbar(false);
+    toolbar = false;
+    alert("loadBook: "+url+", legacy: "+legacy);
     RenderBook(url);
 };
 
@@ -45,6 +97,7 @@ Viewer.loadBook = function(url, legacy) {
 /// @scale: double - 1.0 is original size
 ///
 Viewer.getFontScale = function(scale) {
+    alert("getFontScale: "+scale);
     return 1.0;
 };
 
@@ -53,10 +106,10 @@ Viewer.getFontScale = function(scale) {
 ///
 /// @scale: double - 1.0 is original size
 ///
-Viewer.setFontScale = function(scale) {
-    // alert(scale);
-    current_font.size = (current_font.size*scale).toFixed(1);
-    current_font.line = (current_font.line*scale).toFixed(1);
+Viewer.setTextAppearance = function(size, rgb) {
+    alert("setFontScale: "+size+","+rgb);
+    current_font.size = size;
+    current_font.line = (current_font.size*1.5).toFixed(1);
     SetFont();
 };
 
@@ -65,8 +118,8 @@ Viewer.setFontScale = function(scale) {
 ///
 /// @[r, g, b] - page background color
 ///
-Viewer.getBackgroundColor = function(r) {
-//    alert(r);
+Viewer.getBackgroundColor = function(rgb) {
+   alert("getBackgroundColor: "+rgb);
    BookData.bg = r;
 };
 
@@ -76,9 +129,16 @@ Viewer.getBackgroundColor = function(r) {
 /// @[r, g, b] - page background color
 ///
 Viewer.setBackgroundColor = function(rgb) {
+    alert("setBackgroundColor: "+rgb);
     BookData.bg = rgb;
     SetBackground();
 };
+
+Viewer.setBackgroundImage = function(img) {
+    alert("setBackgroundColor: "+img);
+    BookData.bg = img;
+    SetBackground();
+}
 
 ///
 /// Get an array of available page layout modes for this book
@@ -86,6 +146,9 @@ Viewer.setBackgroundColor = function(rgb) {
 /// @mode: string - either "single", "side_by_side" or "continuous"
 ///
 Viewer.getAvailableLayoutModes = function() {
+    if (isIOSDevice || isAndroidDevice) {
+        return ["single", "side_by_side"];
+    }
     return ["single", "side_by_side", "continuous"];
 };
 
@@ -95,6 +158,7 @@ Viewer.getAvailableLayoutModes = function() {
 /// @mode: string - either "single", "side_by_side" or "continuous"
 ///
 Viewer.getLayoutMode = function(mode) {
+    alert("getLayoutMode: "+mode);
     if(mode=="continuous") {
         layout = "scroll";
         scollmode = true;
@@ -104,12 +168,14 @@ Viewer.getLayoutMode = function(mode) {
     SetLayout();
 };
 
+
 ///
 /// Set page layout mode
 ///
 /// @mode: string - either "single", "side_by_side" or "continuous"
 ///
 Viewer.setLayoutMode = function(mode) {
+    alert("setLayoutMode: "+mode);
     if(mode=="continuous") {
         layout = "scroll";
         scollmode = true;
@@ -127,9 +193,8 @@ Viewer.setLayoutMode = function(mode) {
 /// @current_page: int - page number of current page
 /// @total_pages: int - total number of pages
 ///
-Viewer.getCurrentPosition = function(data) {
-    total_pages = 100;
-    return ["ooxx", "oooxxx", 1, 100];
+Viewer.getCurrentPosition = function() {
+    return ["", Book.renderer.currentChapter.cfi, current_page, total_pages];
 };
 
 ///
@@ -138,6 +203,7 @@ Viewer.getCurrentPosition = function(data) {
 /// @link: string - target file link (relative to base url)
 ///
 Viewer.gotoLink = function(link) {
+    alert("gotoLink"+link);
     if(!Book==false)
         Book.goto(link);
 //    window.alert("Viewer.gotoLink=" + link)
@@ -149,6 +215,7 @@ Viewer.gotoLink = function(link) {
 /// @cfi: string - epub cfi
 ///
 Viewer.gotoPosition = function(cfi) {
+    alert("gotoPosition: "+cfi);
     if(!Book==false) {
         Book.displayChapter(cfi);
     }
@@ -169,6 +236,7 @@ Viewer.gotoPosition = function(cfi) {
 ///     null - to remove current bookmark
 ///
 Viewer.toggleBookmark = function(color) {
+    alert("toggleBookmark: "+color);
     if(!BookData.bookmark) BookData.bookmark = [];
     var cur = Book.renderer.currentChapter;
     if(!color) {
@@ -180,6 +248,7 @@ Viewer.toggleBookmark = function(color) {
         BookData.bookmark.splice(idx, 1);
     } else {
         BookData.bookmark.push(cur);
+        $(".bookmark").removeClass('red').removeClass('yellow').removeClass('blue').addClass(color);
     }
 //    window.alert("Viewer.toggleBookmark=" + color)
 };
@@ -251,6 +320,7 @@ function RenderBook(url) {
     // 設定上下頁 click 事件
     Book.on("book:ready",function(){
         iframe = $("#book_area").find('iframe')[0];
+        var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
 
         $('.prev_page').click(function(){
 //            $(window).unbind("scroll", DoScroll));
@@ -263,6 +333,7 @@ function RenderBook(url) {
             Book.nextPage();
         });
 
+
         // 設定字體
         SetFont();
         // 設定背景
@@ -270,14 +341,22 @@ function RenderBook(url) {
     });
     // 設定CSS檔
     Book.on('renderer:chapterDisplayed', function(location){
-        idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
-        var link = document.createElement('link');
+        var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
+        // var link = document.createElement('link');
         
-        link.setAttribute("rel","stylesheet");
-        link.setAttribute("type","text/css");
-        link.setAttribute("href", host+"/(ROOTVIEWER)/epub/libs/book.css");
+        // link.setAttribute("rel","stylesheet");
+        // link.setAttribute("type","text/css");
+        // link.setAttribute("href", host+"/(ROOTVIEWER)/epub/libs/book.css");
 
-        idoc.head.appendChild(link);
+        // idoc.head.appendChild(link);
+
+        $(idoc.body).click(function(){ 
+            toolbar = !toolbar;
+            if(toolbar) 
+                App.onToggleToolbar(true); 
+            else 
+                App.onToggleToolbar(false); 
+        });
 
         if(scollmode) {
             iframe.style.height = iframe.contentWindow.document.body.scrollHeight;
@@ -384,20 +463,27 @@ function SetFont() {
 
 function SetBackground() {
     var bg = BookData.bg;
-    Book.setStyle('background',"rgb("+bg[0]+","+bg[1]+","+bg[2]+")");
+    if(typeof bg == "object") {
+        Book.setStyle('background',"rgb("+bg[0]+","+bg[1]+","+bg[2]+")");
 
-    if(bg[0]==255 && bg[1]==255 && bg[2]==255) {
-//        window.alert('default');
-        $("#book_container")[0].className = "default";
-        idoc.body.className = "default";
+        if(bg[0]==255 && bg[1]==255 && bg[2]==255) {
+    //        window.alert('default');
+            $("#book_container, #book_area").css({"background": "rgb("+bg[0]+","+bg[1]+","+bg[2]+")", 'color':"#fff"});
+            Book.setStyle('color',"#000");
+        }  
+        if(bg[0]==0 && bg[1]==0 && bg[2]==0) {
+    //        window.alert('night');
+            $("#book_container, #book_area").css({"background": "rgb("+bg[0]+","+bg[1]+","+bg[2]+")", 'color':"#000"});
+            Book.setStyle('color',"#FFF");
+        }
+    } else {
+        Book.setStyle('background', bg);
         Book.setStyle('color',"#000");
+        $("#book_container, #book_area").css({"background":bg, 'color':"#000"});
     }
-    if(bg[0]==128 && bg[1]==128 && bg[2]==128) {
-//        window.alert('night');
-        $("#book_container")[0].className = "night";
-        idoc.body.className = "night";
-        Book.setStyle('color',"#FFF");
-    }
+
+    App.onToggleToolbar(false);
+    toolbar = false;
 }
 
 function GetReadProgress() {
@@ -436,6 +522,8 @@ function SetLayout() {
             });
             break;
     }
+    App.onToggleToolbar(false);
+    toolbar = false;
 }
 
 function setHighlightWithNote() {
@@ -457,18 +545,21 @@ function setHighlightWithNote() {
     $("#popup3").find(".page").text(current_highlight.page).end()
         .find(".chapter_info").text(current_highlight.text).end()
         .find("input[name='index']").val(current_highlight_idx).end()
+        .find("input[name='uuid']").val(current_highlight.uuid).end()
         .find("input[name='action']").val(current_highlight_idx==""?"add":"edit").end()
         .fadeIn();
 
     closeContextMenu();
 }
 
-function setHighlight(color, note) {
+function setHighlight(color) {
+    alert("start set highlight");
     if( !current_highlight ) {
         var selection = GetSelection();
         var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
         var is_same = false;
         // var r_content = selection.range.cloneContents();
+        if(callNote) alert("after add, need onAnnotateHighlight");
         UpdateBookNote({
             type: "highlight",
             chapter: current_chapter.spinePos,
@@ -487,31 +578,31 @@ function setHighlight(color, note) {
 }
 
 function UpdateBookNote(options) {
-    // var data = {};
-    // data.records = [{
-    //     uuid: this.uuid,
-    //     book_uni_id: this.options.book_uni_id,
-    //     version: this.options.cur_version,
-    //     type: options.type,
-    //     href: !options.cfi?'':options.href,
-    //     cfi: !options.cfi?'':options.cfi,
-    //     is_public: !options.is_public?"N":options.is_public,
-    //     action: options.action,
-    //     book_format: this.BookInfo.book_format,
-    //     updated_time: moment().format()
-    // }];
+    
+    var data = {};
+    data.records = [{
+            uuid: guid(),
+            book_uni_id: "12345",
+            version: "V001.01",
+            type: options.type,
+            href: !options.cfi?'':options.href,
+            cfi: !options.cfi?'':options.cfi,
+            is_public: !options.is_public?"N":options.is_public,
+            action: options.action,
+            updated_time: moment().format()
+        }];
 
-    // if(options.type=="bookmark") {
-    //     data.records[0].chapter = options.chapter;
-    //     data.records[0].color = options.color;
-    //     data.records[0].spine = Book.renderer.currentChapter.spinePos;
-    // }
-    // if(options.type=="highlight") {
-    //     data.records[0].color = options.color;
-    //     data.records[0].chapter = options.chapter;
-    //     data.records[0].highlight_text = options.text;
-    //     data.records[0].text = !options.note?'':options.note;
-    // }
+    if(options.type=="bookmark") {
+        data.records[0].chapter = options.chapter;
+        data.records[0].color = options.color;
+        data.records[0].spine = current_chapter.spinePos;
+    }
+    if(options.type=="highlight") {
+        data.records[0].color = options.color;
+        data.records[0].chapter = options.chapter;
+        data.records[0].highlight_text = options.text;
+        data.records[0].text = !options.note?'':options.note;
+    }
     // if(options.type=="feedback") {
     //     data.records[0].note = options.note;
     //     data.records[0].author_nick = options.author_nick;
@@ -541,14 +632,34 @@ function UpdateBookNote(options) {
     //         console.log(r.error_message);
     //     }
     // });
+    
+    alert(options.type+"/"+options.action);
+
     switch(options.type) {
         case "feedback":
-            UpdateFeedBack(options);
+            UpdateFeedBack(data);
+            break;
+        case "bookmark":
+            App.onAddBookmark(data, 'updateBookmark');
             break;
         case "highlight":
-            UpdateHighlight(options);
+            // UpdateHighlight(data);
+            if(options.action=="add") {
+                // alert(App.onAddHighlight);
+                alert("call App.onAddHighlight");
+                // UpdateHighlight(data);
+                App.onAddHighlight(data, UpdateHighlight);
+            } else if(options.action=="edit") {
+                // App.onUpdateHighlight(data)
+                alert(App.onUpdateHighlight);
+                UpdateHighlight(data);
+            }
             break;
     }
+}
+
+function updateBookmark(data) {
+    alert("update bookmark");
 }
 
 function GetSelection() {
@@ -567,7 +678,7 @@ function GetSelection() {
 }
 
 function UpdateHighlight(data) {
-    
+    alert("show highlight");
     var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
 
     switch(data.action) {
@@ -575,6 +686,7 @@ function UpdateHighlight(data) {
             var id = highlights.length;
             highlights.push({
                 id: id,
+                uuid: data.uuid,
                 range: data.range,
                 text: data.text,
                 chapter: data.chapter,
@@ -622,6 +734,10 @@ function UpdateHighlight(data) {
             }
             break;
     }
+    
+    if(callNote) App.onAnnotateHighlight(data.uuid);
+
+    callNote = false;
     current_highlight = null;
     closeContextMenu();
 }
@@ -638,10 +754,12 @@ function HighlightWords(content, color, idx) {
     var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
     var cfi = new EPUBJS.EpubCFI();
     var range = cfi.generateRangeFromCfi(content,idoc);
-
+    var h = highlights[idx];
     var span = document.createElement("span");
+
     span.id = "highlight-"+idx;
     span.setAttribute("class","highlight "+color);
+    span.setAttribute("data-uuid"," "+h.uuid);
     range.surroundContents(span);
 
     span.onclick = function() {
@@ -663,4 +781,29 @@ function closeContextMenu() {
         $("input[name='bookcolor']:checked")[0].checked = false;
 
     $("#bookline").removeClass("show");
+}
+
+function guid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+  }
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+}
+
+
+function renderBookmark(data) {
+    alert("get bookmark 1");
+}
+
+function renderBookmark2(data) {
+    alert("get bookmark 2");
+}
+
+function renderHighlight(data) {
+    alert("get heghlight");
+}
+window.onload = function() {
+    App.onRequestHighlights("renderHighlight");
+    App.onRequestBookmarks(renderBookmark);
+    App.onRequestBookmarks('renderBookmark2');
 }

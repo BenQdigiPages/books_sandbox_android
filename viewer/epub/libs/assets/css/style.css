@@ -5,7 +5,7 @@ body {
 	font-family: 'San Francisco Display','cwtexhei', serif;
 	background: #EFEFEF;
 	font-size: 14px;
-	min-width: 1024px;
+	min-width: 100%;
 	color: #333;
 	overflow-x: hidden;
 }
@@ -17,7 +17,7 @@ body {
 body.night,
 body.night .reader_main {
 	color: #FFF;
-	background: rgb(128,128,128) !important;
+	background: rgb(0,0,0) !important;
 }
 body.classic,
 body.classic .reader_main {
@@ -28,6 +28,21 @@ body.default,
 body.default .reader_main {
 	color: #000 !important;
 	background: #FFF !important;
+}
+body.paper1,
+body.paper1 .reader_main {
+    color: #000;
+    background: url(../img/paper1.jpg);
+}
+body.paper2,
+body.paper2 .reader_main {
+    color: #000;
+    background: url(../img/paper2.jpg);
+}
+body.paper3,
+body.paper3 .reader_main {
+    color: #000;
+    background: url(../img/paper3.jpg);
 }
 a {
 	text-decoration: none;
@@ -643,7 +658,7 @@ nav ul li a {
 }
 .show { display: block !important; }
 .reader_main {
-	position: relative;
+	position: absolute;
 	top: 0;
 	left: 0;
 	right: 0;
@@ -655,7 +670,7 @@ nav ul li a {
 	width: calc(100% - 40px);
 	overflow: auto;
 	background: #fff;
-	min-height: calc(100vh - 90px);
+	min-height: calc(100% - 40px);
 }
 .reader_main img.big {
 	display: block;
@@ -976,31 +991,99 @@ footer.reader .more .page ul li.close {
 	line-height: 30px;
 }
 .bookmark {
-	width: 37px;
-	height: 65px;
-	position: fixed;
-	top: 56px;
-	right: 30px;
+	width: 32px;
+	height: 32px;
+	margin: 0 10px;
 	display: block;
-	z-index: 4;
+	top: 0;
+	right: 20px;
+	vertical-align: middle;
 	cursor: pointer;
+	position: fixed;
+	background-repeat: no-repeat;
+	background-position: center;
 }
-.bookmark,
-.bookmark.icon1 {
-	background: url(../img/bookmark_icon1.jpg) no-repeat center;
+.bookmark {
+    background-image: url(../img/bookmark_icon1.png);
 }
-.bookmark.green,
-.bookmark.icon2 {
-	background: url(../img/bookmark_icon2.jpg) no-repeat center;
+.bookmark.red {
+    background-image: url(../img/bookmark_icon2.png);
 }
-.bookmark.blue,
-.bookmark.icon3 {
-	background: url(../img/bookmark_icon3.jpg) no-repeat center;
+.bookmark.yellow {
+    background-image: url(../img/bookmark_icon3.png);
 }
-.bookmark.red,
-.bookmark.icon4 {
-	background: url(../img/bookmark_icon4.jpg) no-repeat center;
+.bookmark.blue {
+    background-image: url(../img/bookmark_icon4.png);
 }
+.bookmark input {
+	display: none;
+}
+.bookmark .tab {
+	position: absolute;
+	z-index: 2;
+	right: 0px;
+	top: 35px;
+	border: 1px solid #aaa;
+	box-shadow: 1px 1px 5px #555;
+	-moz-box-shadow: 1px 1px 5px #555;
+	-webkit-box-shadow: 1px 1px 5px #555;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	background: #F1F1F1;
+	width: 100%;
+	display: none;
+	text-align: left;
+	min-width: 140px;
+}
+.bookmark .tab {
+	min-width: 0px;
+	width: 120px;
+	height: 198px;
+	background: url(../img/bookmark-bg.png) no-repeat;
+	border: 0;
+	box-shadow: none;
+	-moz-box-shadow: none;
+	-webkit-box-shadow: none;
+	padding-top: 14px;
+	top: 30px;
+	left: -37px;
+}
+.bookmark .tab li {
+	width: 100px;
+	display: block;
+	margin-left: 5px;
+}
+.bookmark .tab li a {
+	padding: 0;
+	height: 43px;
+	display: block;
+	color: #3B393B;
+	margin: 0;
+	text-align: center;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+
+.bookmark .tab li.red a {
+	background-image: url(../img/bookmark_icon2.png);
+}
+.bookmark .tab li.yellow a {
+	background-image: url(../img/bookmark_icon3.png);
+}
+.bookmark .tab li.blue a {
+	background-image: url(../img/bookmark_icon4.png);
+}
+.bookmark .tab li.del a {
+	background-image: url(../img/bookmark_icon5.png);
+}
+.bookmark .tab li a:hover {
+	background-color: #E6D5BE;
+}
+.bookmark input:checked + .tab {
+	display: block;
+}
+
 #menu_list,
 #menu_search,
 #menu_like,

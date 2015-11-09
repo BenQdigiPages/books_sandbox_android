@@ -13,7 +13,9 @@ var pdfDoc = null,
     tmpBookmark = null,
     savedBookmarks = [],
     originalCSSScale = 0,
-    pdfOutlineArray = null;
+    pdfOutlineArray = null,
+    drmFilePath = null;
+    ignoreReadLimit = false;
 
 var ua = navigator.userAgent;
 var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
@@ -39,6 +41,78 @@ var customEventsManager =  {
             Promise.all(mulityReadyPromises).then(readyToDo);
         },
 };
+
+var drmReadLimit  =   {
+
+	_StartTime: 0 ,
+	_EndTime: -1,
+	_Duration: 0,
+	_GracePeriod: 0,
+	_ChapterPrice: '',
+	_ChapterLimit: 'ALL',
+	get StartTime () {
+		return this._StartTime;
+	},
+	set StartTime (starttime) {
+		this._StartTime = starttime;
+	},
+	get EndTime () {
+		return this._EndTime;
+	},
+	set EndTime (endtime) {
+		this._EndTime = endtime;
+	},
+	get Duration () {
+		return this._Duration;
+	},
+	set Duration (duration) {
+		this._Duration = duration;
+	},
+	get GracePeriod () {
+		return this._GracePeriod;
+	},
+	set GracePeriod (graceperiod) {
+		this._GracePeriod = graceperiod;
+	},
+	get ChapterPrice () {
+		return this._ChapterPrice;
+	},
+	set ChapterPrice (chapterprice) {
+		this._ChapterPrice = chapterprice;
+	},
+	get ChapterLimit () {
+		return this._ChapterLimit;
+	},
+	set ChapterLimit (chapterlimit) {
+		this._ChapterLimit = chapterlimit;
+	}
+};
+
+function updateReadLimit() {
+	console.log("updateReadLimit");
+	var xhttp = new XMLHttpRequest();
+   	xhttp.open('GET', drmFilePath, false);
+  	xhttp.send();
+  	var drmDoc = xhttp.responseXML;
+  	var rootReadLimit = drmDoc.getElementsByTagName("ReadLimit")[0];
+  	var starttime = new Date(rootReadLimit.getElementsByTagName("StartTime")[0].childNodes[0].nodeValue);
+  	var endtime = new Date(rootReadLimit.getElementsByTagName("EndTime")[0].childNodes[0].nodeValue);
+  	drmReadLimit.StartTime = Date.parse(starttime); 	
+  	drmReadLimit.EndTime=Date.parse(endtime);
+  	 //TODO: deal with all the limits
+//  	drmReadLimit.Duration = rootReadLimit.getElementsByTagName("Duration")[0].childNodes[0].nodeValue;
+//  	drmReadLimit.GracePeriod = rootReadLimit.getElementsByTagName("GracePeriod")[0].childNodes[0].nodeValue;
+//  	drmReadLimit.ChapterPrice = rootReadLimit.getElementsByTagName("ChapterPrice")[0].childNodes[0].nodeValue;
+//  	drmReadLimit.ChapterLimit = rootReadLimit.getElementsByTagName("ChapterLimit")[0].childNodes[0].nodeValue;
+}
+
+//TODO: check all items in ReadLimit
+function canRead() {	
+	var currentTime = new Date().getTime();
+	if (currentTime >= drmReadLimit.StartTime && (drmReadLimit.EndTime < 0  || currentTime < drmReadLimit.EndTime))
+		return true;
+	return false;
+}
 
 function ViewerObserver() {
     this.confirmThisIsReady = null;
@@ -74,6 +148,17 @@ function onURL_and_AppReady(resultOutput) {
                     PDFViewerApplication.pdfViewer._pages[currentPageNum - 1].applyCSSTransformScale();
                 }
             }
+            //prevent callback loop
+            if(ignoreReadLimit)  {
+            	ignoreReadLimit = false;
+            	return;
+            }
+           //TODO: check ChapterLimit
+            if (!canRead()) {
+    	window.alert("Read time expired");
+    	ignoreReadLimit = true;
+    	PDFViewerApplication.undoPage();
+            } 
     });
 
     var owl = $('#thumbnailView');
@@ -241,6 +326,18 @@ Viewer.loadBook = function(url, legacy) {
     xhttp.open('GET', url + opfFile, false);
     xhttp.send();
     opfDoc = xhttp.responseXML;
+    
+    //[Esther]
+    //TODO:pare path from herf
+    if (opfDoc.getElementById("drm") != null) {
+    	drmFilePath = url + "DRM/drm.xml";
+           	updateReadLimit();
+           	window.setInterval(updateReadLimit,  10*60*1000); //10mins
+    }
+    //TODO: deal with all read lmit
+    if (!canRead()){
+    	window.alert("Read time expires");
+   }  	
 
     //[Bruce]
     var thumbnailNames = [];
@@ -283,10 +380,20 @@ function webUIInitialized() {
     //Henry add, for support undo button
     document.getElementById('undo').addEventListener('click',
         function() {
+             //TODO: check ChapterLimit
+            if (!canRead()){
+    	window.alert("Read time expired");
+    	return;
+            } 
             PDFViewerApplication.undoPage();
     });
     document.getElementById('paginate').addEventListener('change',
         function() {
+            //TODO: check ChapterLimit
+            if (!canRead()){
+    	window.alert("Read time expired");
+    	return;
+            } 
             var page = parseInt(document.getElementById('paginate').value,10);
             if (TwoPageViewMode.active && page % 2 == 0)
                 page--;   //Henry add, for support TwoPageViewMode
@@ -369,6 +476,11 @@ Viewer.getLayoutMode = function() {
 ///
 Viewer.setLayoutMode = function(mode) {
     console.log("Viewer.setLayoutMode=" + mode);
+    //TODO: check ChapterLimit
+    if (!canRead()){
+    	window.alert("Read time expired");
+    	return;
+    } 
     if (mode !== currentLayoutMode) {
         currentLayoutMode = mode;
         if (currentLayoutMode === "single") {
@@ -403,6 +515,11 @@ Viewer.getCurrentPosition = function() {
 /// @link: string - target file link (relative to base url)
 ///
 Viewer.gotoLink = function(link) {
+   //TODO: check ChapterLimit
+    if (!canRead()){
+    	window.alert("Read time expired");
+    	return;
+    }  
    var index = parseInt(link);
    var dest = pdfOutlineArray[index].outline.dest;
    PDFViewerApplication.pdfLinkService.navigateTo(dest);
@@ -511,6 +628,11 @@ Viewer.searchText = function(keyword) {
  * Displays previous page.
  */
 function onPrevPage() {
+    //TODO: check ChapterLimit
+    if (!canRead()){
+    	window.alert("Read time expired");
+    	return;
+    }
     if (currentPageNum <= 1) {
         return;
     }
@@ -527,6 +649,11 @@ function onPrevPage() {
  * Displays next page.
  */
 function onNextPage() {
+    //TODO: check ChapterLimit
+    if (!canRead()){
+    	window.alert("Read time expired");
+    	return;
+    }
     if (currentPageNum >= pdfDoc.numPages) {
         return;
     }
@@ -2422,7 +2549,7 @@ var PDFLinkService = (function () {
 
         case 'PrevPage':
           //this.page--;
-            PDFViewerApplication.previousPage()();
+            PDFViewerApplication.previousPage();
           break;
 
         case 'LastPage':
@@ -6849,6 +6976,11 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
           this.thumbnails.push(thumbnail);
         }
         $('#thumbnailView').on('click', '.owl-item', function(e) {
+             //TODO: check ChapterLimit
+            if (!canRead()){
+    	window.alert("Read time expired");
+    	return;
+            } 
             PDFViewerApplication.page = $(this).index() + 1;
         });
       }.bind(this));

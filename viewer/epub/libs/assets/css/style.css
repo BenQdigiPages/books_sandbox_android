@@ -1690,7 +1690,7 @@ footer.reader .more .page ul li.close {
 	display: inline-block;
 }
 #bookline div {
-	width: 210px;
+	width: 260px;
 	height: 80px;
 	position: fixed;
 	top: 0;
@@ -1735,12 +1735,12 @@ footer.reader .more .page ul li.close {
 #bookline label input[type=radio]:checked + i {
 	display: block;
 }
-#bookline .green {
-	background-color: #9abb64;
+#bookline .yellow {
+	background-color: #eed885;
 }
 #bookline .blue {
-	background-color: #7ccce7;
+	background-color: #85b9d7;
 }
 #bookline .red {
-	background-color: #e1605a;
+	background-color: #f4a5a5;
 }

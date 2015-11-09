@@ -5,6 +5,7 @@ var currentPage = 0;
 var total_pages = 0;
 var iframe;
 var highlights = [];
+var bookmarks = [];
 var position = 0;
 var current_chapter = null;
 var current_highlight_idx = 0;
@@ -16,7 +17,10 @@ var toolbar = false;
 var book_uni_id;
 var host = window.location.origin;
 var callNote = false;
-
+var current_data;
+var search_index = 0;
+var keyword = "";
+var search_result = [];
 
 var ua = navigator.userAgent;
 var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
@@ -52,15 +56,52 @@ var isAndroidDevice = /Android/g.test(ua);
 ///
 
 $(".bookmark li a").click(function(){ 
-    UpdateBookNote({
-        type: "bookmark",
-        chapter: current_chapter.spinePos,
-        cfi: current_chapter.cfi,
-        href: current_chapter.href,
-        page: current_page,
-        color: $(this).parent("li")[0].className,
-        action: "add"
-    });
+    var bm = document.querySelector(".bookmark");
+    var li = $(this).parent('li');
+
+    if(bm.className.search(/[red|yellow|blue]/)>-1) {
+        for(var i in bookmarks) {
+            if( bookmarks[i].href==current_chapter.href )
+                current_data = bookmarks[i];
+        }
+    } 
+    console.log(current_data);
+    if(li.hasClass("del") && !current_data==false) {
+        UpdateBookNote({
+            type: "bookmark",
+            uuid: current_data.uuid,
+            chapter: current_data.spinePos,
+            cfi: current_data.cfi,
+            href: current_data.href,
+            page: current_page,
+            spine: current_data.spine,
+            color: current_data.color,
+            action: "del"
+        });    
+    } else {
+        if(!current_data) 
+            UpdateBookNote({
+                type: "bookmark",
+                chapter: current_chapter.spinePos,
+                cfi: current_chapter.cfi,
+                href: current_chapter.href,
+                page: current_page,
+                color: $(this).parent("li")[0].className,
+                action: "add"
+            });
+        else
+            UpdateBookNote({
+                type: "bookmark",
+                uuid: current_data.uuid,
+                chapter: current_data.spinePos,
+                cfi: current_data.cfi,
+                href: current_chapter.href,
+                page: current_data.page,
+                color: $(this).parent("li")[0].className,
+                spine: current_data.spine,
+                action: "edit"
+            });    
+    }
 });
 
 $("input[name='bookcolor']").change(function(argument) {
@@ -68,26 +109,37 @@ $("input[name='bookcolor']").change(function(argument) {
 });
 
 $("#bookline").on("click","a.note",function(){
-    if(!current_highlight) {
-        callNote = true;
-        setHighlight("red");
-    } else {
-        App.onAnnotateHighlight(current_highlight.uuid);
-    }
+    setHighlightWithNote();
 }).on("click","a.share", function(){
-    App.onShareHighlight(current_highlight.uuid);
+    App.onShareHighlight(current_data.uuid);
+}).on("click",".del", function(){
+    UpdateBookNote({
+        type: "highlight", 
+        uuid: current_data.uuid, 
+        chapter: current_data.spinePos, 
+        range: current_data.range, 
+        cfi: current_data.cfi, 
+        href: current_data.href, 
+        highlight_text: current_data.highlight_text, 
+        page: current_data.page, 
+        color: current_data.color,
+        action: "del"
+    });
 }).on("click",".fa-times", function(){
     closeContextMenu();
 });
 
 $("#popup3").find("input[name='update']").click(function(){
     $("#popup3").hide();
+    App.onAnnotateHighlight(current_data.uuid);
+}).end().find(".fa-trash-o").click(function(){
+    var uuid = $("#popup3").find('input[name="uuid"]').val();
+
 });
 
 Viewer.loadBook = function(url, legacy) {
     App.onToggleToolbar(false);
     toolbar = false;
-    alert("loadBook: "+url+", legacy: "+legacy);
     RenderBook(url);
 };
 
@@ -146,10 +198,7 @@ Viewer.setBackgroundImage = function(img) {
 /// @mode: string - either "single", "side_by_side" or "continuous"
 ///
 Viewer.getAvailableLayoutModes = function() {
-    if (isIOSDevice || isAndroidDevice) {
-        return ["single", "side_by_side"];
-    }
-    return ["single", "side_by_side", "continuous"];
+    return ["single", "continuous"];
 };
 
 ///
@@ -157,15 +206,8 @@ Viewer.getAvailableLayoutModes = function() {
 ///
 /// @mode: string - either "single", "side_by_side" or "continuous"
 ///
-Viewer.getLayoutMode = function(mode) {
-    alert("getLayoutMode: "+mode);
-    if(mode=="continuous") {
-        layout = "scroll";
-        scollmode = true;
-    } else {
-        layout = (mode=="single")?"single":"double";
-    }
-    SetLayout();
+Viewer.getLayoutMode = function() {
+    return layout;
 };
 
 
@@ -174,8 +216,8 @@ Viewer.getLayoutMode = function(mode) {
 ///
 /// @mode: string - either "single", "side_by_side" or "continuous"
 ///
-Viewer.setLayoutMode = function(mode) {
-    alert("setLayoutMode: "+mode);
+Viewer.setLayoutMode = function() {
+    // alert("setLayoutMode: "+mode);
     if(mode=="continuous") {
         layout = "scroll";
         scollmode = true;
@@ -194,7 +236,8 @@ Viewer.setLayoutMode = function(mode) {
 /// @total_pages: int - total number of pages
 ///
 Viewer.getCurrentPosition = function() {
-    return ["", Book.renderer.currentChapter.cfi, current_page, total_pages];
+    var toc = getTOC(BookData.toc, Book.renderer.currentChapter.href);
+    return [toc.label, Book.renderer.currentChapter.cfi, Book.renderer.currentChapter.spinePos, BookData.toc.length];
 };
 
 ///
@@ -203,7 +246,7 @@ Viewer.getCurrentPosition = function() {
 /// @link: string - target file link (relative to base url)
 ///
 Viewer.gotoLink = function(link) {
-    alert("gotoLink"+link);
+    // alert("gotoLink"+link);
     if(!Book==false)
         Book.goto(link);
 //    window.alert("Viewer.gotoLink=" + link)
@@ -215,7 +258,7 @@ Viewer.gotoLink = function(link) {
 /// @cfi: string - epub cfi
 ///
 Viewer.gotoPosition = function(cfi) {
-    alert("gotoPosition: "+cfi);
+    // alert("gotoPosition: "+cfi);
     if(!Book==false) {
         Book.displayChapter(cfi);
     }
@@ -236,9 +279,10 @@ Viewer.gotoPosition = function(cfi) {
 ///     null - to remove current bookmark
 ///
 Viewer.toggleBookmark = function(color) {
-    alert("toggleBookmark: "+color);
+    // alert("toggleBookmark: "+color);
     if(!BookData.bookmark) BookData.bookmark = [];
     var cur = Book.renderer.currentChapter;
+
     if(!color) {
         var idx;
         for(var i in BookData.bookmark) {
@@ -247,10 +291,18 @@ Viewer.toggleBookmark = function(color) {
         }
         BookData.bookmark.splice(idx, 1);
     } else {
-        BookData.bookmark.push(cur);
+        BookData.bookmark.push({
+            href: !current_data.cfi?'':current_data.href,
+            cfi: !current_data.cfi?'':current_data.cfi,
+            is_public: !current_data.is_public?"N":current_data.is_public,
+            chapter: current_data.chapter,
+            color: color,
+            spine: current_data.spinePos
+        });
+
         $(".bookmark").removeClass('red').removeClass('yellow').removeClass('blue').addClass(color);
     }
-//    window.alert("Viewer.toggleBookmark=" + color)
+
 };
 
 ///
@@ -263,31 +315,16 @@ Viewer.toggleBookmark = function(color) {
 Viewer.searchText = function(keyword) {
     window.alert("Viewer.searchText=" + keyword)
 };
-//var myElement = document.getElementById('book_container');
-//var mc = new Hammer(myElement);
-//mc.get('pan').set({ direction: Hammer.DIRECTION_ALL });
-//mc.on("panup pandown tap press", function(ev) {
-//    if(ev.type=="tap") {
-//
-//    } else {
-//        if( layout!="scroll" || change_page ) return false;
-//
-//        var scroll = myElement.scrollTop;
-//
-//        if(ev.type=="panup") { // Down
-//            if( scroll+myElement.clientHeight>=myElement.scrollHeight) {
-//                window.alert("go next");
-//                $(".next_page").click();
-//            }
-//        } else { // Up
-//            if( scroll==0 ) {
-//                window.alert("go prev");
-//                $(".prev_page").click();
-//            }
-//        }
-//        position = scroll;
-//    }
-//});
+
+$(".highlight_list").on("click", "a", function(){
+    var cfi = $(this).data("cfi");
+    Viewer.gotoPosition(cfi);
+});
+
+$(".bookmark_list").on("click", "a", function(){
+    var cfi = $(this).data("cfi");
+    Viewer.gotoPosition(cfi);
+});
 
 function DoScroll(){
     if( layout!="scroll" || change_page==true ) return false;
@@ -333,22 +370,27 @@ function RenderBook(url) {
             Book.nextPage();
         });
 
+        App.onRequestHighlights("renderHighlight");
+        App.onRequestBookmarks('renderBookmark');
 
         // 設定字體
         SetFont();
         // 設定背景
         SetBackground();
+        Viewer.searchText("DEAD");
+        // App.onSearchResult("DEAD",result);
+        submitKeyword("DEAD");
     });
     // 設定CSS檔
     Book.on('renderer:chapterDisplayed', function(location){
         var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
-        // var link = document.createElement('link');
+        var link = document.createElement('link');
         
-        // link.setAttribute("rel","stylesheet");
-        // link.setAttribute("type","text/css");
-        // link.setAttribute("href", host+"/(ROOTVIEWER)/epub/libs/book.css");
+        link.setAttribute("rel","stylesheet");
+        link.setAttribute("type","text/css");
+        link.setAttribute("href", host+"/(ASSETS)/epub/libs/book.css");
 
-        // idoc.head.appendChild(link);
+        idoc.head.appendChild(link);
 
         $(idoc.body).click(function(){ 
             toolbar = !toolbar;
@@ -367,8 +409,14 @@ function RenderBook(url) {
                 $("#book_area").height($(iframe).height()+50).scrollTop(1);
         }
 //
-        change_page = false;
+        for(var i in highlights) {
+            var item = highlights[i];
+            HighlightWords(item.cfi, item.color, item.uuid);
+        }
 
+        change_page = false;
+        SetBookmark();
+        submitKeyword("DEAD");
     });
 
     Book.on('renderer:chapterDisplayed', function(){
@@ -395,12 +443,14 @@ function RenderBook(url) {
 //            $('.next_page').show();
 //            $('.prev_page').show();
 //        }
+        App.onTrackAction("locationChanged", current_chapter.cfi);
 
         if(layout=="scroll"){
             change_page = false;
             position = 0;
             $("#book_area").scrollTop(1);
         }
+
     });
 
     Book.on('renderer:selected', function(selectedRange){
@@ -420,6 +470,7 @@ function RenderBook(url) {
             
             if(!$("#bookline .del").hasClass("hidden"))
                 $("#bookline .del").addClass("hidden");
+
             $('#bookline').show().find("div").css({ top:top_dis, left:left });
         }
     });
@@ -430,13 +481,12 @@ function RenderBook(url) {
     });
 
     Book.getToc().then(function(toc){
+        // console.log(toc);
+        // App.onChangeTOC(toc);
         BookData.toc = RenderToc(toc, null, 0);
+        // console.log(BookData.toc);
         App.onChangeTOC(BookData.toc);
     });
-}
-
-function GetReadProgress() {
-
 }
 
 function RenderToc(toc, ary, lv) {
@@ -444,8 +494,15 @@ function RenderToc(toc, ary, lv) {
 
     $.each(toc, function(k,v){
         result.push({
+            cfi: this.cfi,
+            href: this.href,
+            id: this.id,
+            label: this.label,
+            parent: this.parent,
+            subitems: this.subitems,
             title: this.label,
             url: this.href,
+            link: this.href,
             level: lv,
         });
 
@@ -463,23 +520,18 @@ function SetFont() {
 
 function SetBackground() {
     var bg = BookData.bg;
-    if(typeof bg == "object") {
-        Book.setStyle('background',"rgb("+bg[0]+","+bg[1]+","+bg[2]+")");
-
+    if(typeof BookData.bg == "object") {
         if(bg[0]==255 && bg[1]==255 && bg[2]==255) {
-    //        window.alert('default');
-            $("#book_container, #book_area").css({"background": "rgb("+bg[0]+","+bg[1]+","+bg[2]+")", 'color':"#fff"});
+            document.querySelector("body").className = 'default';
             Book.setStyle('color',"#000");
         }  
         if(bg[0]==0 && bg[1]==0 && bg[2]==0) {
-    //        window.alert('night');
-            $("#book_container, #book_area").css({"background": "rgb("+bg[0]+","+bg[1]+","+bg[2]+")", 'color':"#000"});
+            document.querySelector("body").className = 'night';
             Book.setStyle('color',"#FFF");
         }
     } else {
-        Book.setStyle('background', bg);
         Book.setStyle('color',"#000");
-        $("#book_container, #book_area").css({"background":bg, 'color':"#000"});
+        document.querySelector("body").className = 'paper1';
     }
 
     App.onToggleToolbar(false);
@@ -527,26 +579,30 @@ function SetLayout() {
 }
 
 function setHighlightWithNote() {
-    if(!current_highlight) {
+    if(!current_data) {
         var selection = GetSelection();
         var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
-        var r_content = selection.range.toString();
-
-        current_highlight_idx = "";
-        current_highlight = {
-            text: r_content,
-            color: "green",
+        
+        current_data = {
+            color: "red",
+            cfi: selection.str,
+            uuid: guid(),
+            href: Book.renderer.currentChapter.href,
+            highlight_text: selection.range.toString(),
+            page: current_page,
             cfi: selection.str,
             page: current_page,
-            range: selection.range
+            range: selection.range,
+            action: "add"
         };
+    } else {
+        current_data.action = 'edit';
     }
 
-    $("#popup3").find(".page").text(current_highlight.page).end()
-        .find(".chapter_info").text(current_highlight.text).end()
-        .find("input[name='index']").val(current_highlight_idx).end()
-        .find("input[name='uuid']").val(current_highlight.uuid).end()
-        .find("input[name='action']").val(current_highlight_idx==""?"add":"edit").end()
+    $("#popup3").find(".page").text(current_data.page).end()
+        .find(".chapter_info").text(current_data.text).end()
+        .find("input[name='uuid']").val(current_data.uuid).end()
+        .find("input[name='action']").val(current_data.action).end()
         .fadeIn();
 
     closeContextMenu();
@@ -554,34 +610,43 @@ function setHighlightWithNote() {
 
 function setHighlight(color) {
     alert("start set highlight");
-    if( !current_highlight ) {
+    if( !current_data ) {
         var selection = GetSelection();
         var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
         var is_same = false;
         // var r_content = selection.range.cloneContents();
-        if(callNote) alert("after add, need onAnnotateHighlight");
+        // if(callNote) alert("after add, need onAnnotateHighlight");
         UpdateBookNote({
             type: "highlight",
             chapter: current_chapter.spinePos,
             range: selection.range,
             cfi: selection.str,
             href: Book.renderer.currentChapter.href,
-            text: selection.range.toString(),
+            highlight_text: selection.range.toString(),
             page: current_page,
             color: color,
             action: "add"
         });
     } else {
-        current_highlight.color = color;
-        UpdateBookNote(current_chapter);
+        UpdateBookNote({
+            type: "highlight", 
+            uuid: current_data.uuid, 
+            chapter: current_data.spinePos, 
+            range: current_data.range, 
+            cfi: current_data.cfi, 
+            href: current_data.href, 
+            highlight_text: current_data.highlight_text, 
+            page: current_data.page, 
+            color: color,
+            action: "edit"
+        });
     }
 }
 
 function UpdateBookNote(options) {
     
-    var data = {};
-    data.records = [{
-            uuid: guid(),
+    var data = {
+            uuid: !options.uuid?guid():options.uuid,
             book_uni_id: "12345",
             version: "V001.01",
             type: options.type,
@@ -590,68 +655,51 @@ function UpdateBookNote(options) {
             is_public: !options.is_public?"N":options.is_public,
             action: options.action,
             updated_time: moment().format()
-        }];
+        };
 
     if(options.type=="bookmark") {
-        data.records[0].chapter = options.chapter;
-        data.records[0].color = options.color;
-        data.records[0].spine = current_chapter.spinePos;
+        data.chapter = options.chapter;
+        data.color = options.color;
+        data.spine = current_chapter.spinePos;
     }
     if(options.type=="highlight") {
-        data.records[0].color = options.color;
-        data.records[0].chapter = options.chapter;
-        data.records[0].highlight_text = options.text;
-        data.records[0].text = !options.note?'':options.note;
+        data.color = options.color;
+        data.chapter = options.chapter;
+        data.highlight_text = options.highlight_text;
+        data.text = !options.note?'':options.note;
     }
     // if(options.type=="feedback") {
     //     data.records[0].note = options.note;
     //     data.records[0].author_nick = options.author_nick;
     // }
 
-    // $.ajax({
-    //     url: this.apihost+"/V1.2/CMSAPIApp/MemberEpubBookNote",
-    //     type : "POST",
-    //     contentType : "application/json" ,
-    //     data: JSON.stringify(data),
-    //     dataType : "json",
-    // }).done(function(ref){
-    //     var r = (typeof ref =="string")?JSON.parse(ref):ref;
-    //     if(!r.error_code) {
-    //         switch(options.type) {
-    //             case "feedback":
-    //                 $this.updateFeedBack(options);
-    //                 break;
-    //             case "highlight":
-    //                 $this.updateHighlight(options);
-    //                 break;
-    //             case "bookmark":
-    //                 $this.updateBookmark(options);
-    //                 break;
-    //         }
-    //     } else {
-    //         console.log(r.error_message);
-    //     }
-    // });
-    
     alert(options.type+"/"+options.action);
-
+    current_data = data;
+    
     switch(options.type) {
         case "feedback":
             UpdateFeedBack(data);
             break;
         case "bookmark":
-            App.onAddBookmark(data, 'updateBookmark');
+            if(options.action=="add") {
+                App.onAddBookmark(data, 'updateBookmark');
+            } else if(options.action=="edit") {
+                App.onUpdateBookmark(data);
+                updateBookmark(data);
+            } else {
+                App.onRemoveBookmark(data.uuid);
+                updateBookmark(data);
+            }
             break;
         case "highlight":
-            // UpdateHighlight(data);
+            
             if(options.action=="add") {
-                // alert(App.onAddHighlight);
-                alert("call App.onAddHighlight");
-                // UpdateHighlight(data);
-                App.onAddHighlight(data, UpdateHighlight);
+                App.onAddHighlight(data, "UpdateHighlight");
             } else if(options.action=="edit") {
-                // App.onUpdateHighlight(data)
-                alert(App.onUpdateHighlight);
+                App.onUpdateHighlight(data);
+                UpdateHighlight(data);
+            } else if(options.action=="del") {
+                App.onRemoveHighlight(data.uuid);
                 UpdateHighlight(data);
             }
             break;
@@ -659,7 +707,54 @@ function UpdateBookNote(options) {
 }
 
 function updateBookmark(data) {
-    alert("update bookmark");
+    switch(current_data.action) {
+        case "add":
+            alert("add bookmark: "+data);
+            var id = bookmarks.length;
+            bookmarks.push({
+                uuid: data,
+                type: current_data.type,
+                href: !current_data.cfi?'':current_data.href,
+                cfi: !current_data.cfi?'':current_data.cfi,
+                is_public: !current_data.is_public?"N":current_data.is_public,
+                chapter: current_data.chapter,
+                color: current_data.color,
+                spine: current_data.spinePos
+            });
+
+            $(".bookmark").removeClass("red").removeClass("yellow").removeClass("blue").addClass(current_data.color);
+
+            break;
+        case "edit":
+            var idx = 0;
+            for(var i in bookmarks) {
+                if(bookmarks[i].uuid==current_data.uuid)
+                    bookmarks[i].color = current_data.color;
+            }
+
+            $(".bookmark").removeClass("red").removeClass("yellow").removeClass("blue").addClass(current_data.color);
+
+            break;
+        case "del":
+
+            this.unHighlightWords(current_data.uuid);
+
+            for(var i in bookmarks) {
+                if(bookmarks[i].uuid==current_data.uuid) {
+                    bookmarks.splice(i, 1);
+                    break;
+                }
+            }
+
+            if(current_chapter.href==current_data.href)
+                $(".bookmark").removeClass(current_data.color);
+
+            break;
+    }
+
+    document.querySelector("#selectbookmark").checked = false;
+    // renderBookmarkList();
+    current_data = null;
 }
 
 function GetSelection() {
@@ -678,50 +773,52 @@ function GetSelection() {
 }
 
 function UpdateHighlight(data) {
-    alert("show highlight");
     var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
 
-    switch(data.action) {
+    switch(current_data.action) {
         case "add":
+            alert("add highlight:"+data);
             var id = highlights.length;
             highlights.push({
-                id: id,
-                uuid: data.uuid,
-                range: data.range,
-                text: data.text,
-                chapter: data.chapter,
-                cfi: data.cfi,
-                page: data.page,
-                note: !data.note?"":data.note,
-                href: data.href,
-                color: data.color
-            });
-            HighlightWords(data.cfi, data.color, id);
+                uuid: data,
+                range: current_data.range,
+                highlight_text: current_data.highlight_text,
+                chapter: current_data.chapter,
+                cfi: current_data.cfi,
+                page: current_data.page,
+                note: !current_data.note?"":current_data.note,
+                href: current_data.href,
+                color: current_data.color
+            }); 
+
+            HighlightWords(current_data.cfi, current_data.color, data);
             break;
         case "edit":
-            var idx = data.idx;
+            var idx = 0;
+            for(var i in highlights) {
+                if(highlights[i].uuid==current_data.uuid)
+                    idx = i;
+            }
 
-            highlights[idx].note = data.note;
-
-            if(data.is_public=="Y") {
+            if(current_data.is_public=="Y") {
                 highlights[idx].is_public = true;
-                highlights[idx].nickname = data.author_nick;
+                highlights[idx].nickname = current_data.author_nick;
                 highlights[idx].date = moment().format();
-                $("#popup3 .nickname").html(data.author_nick);
+                $("#popup3 .nickname").html(current_data.author_nick);
             } else {
                 highlights[idx].is_public = false;
             }
             
             var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
-            $(idoc.body).find("span#highlight-"+idx)[0].className = "highlights "+data.color;
+            $(idoc.body).find("span#"+current_data.uuid)[0].className = "highlight "+current_data.color;
 
             break;
         case "del":
             var idx;
-            UnHighlightWords(data.id);
+            UnHighlightWords(current_data.uuid);
 
             for(var i in highlights) {
-                if(highlights[i].id==data.id) {
+                if(highlights[i].uuid==current_data.uuid) {
                     highlights.splice(i, 1);
                     break;
                 }
@@ -735,39 +832,44 @@ function UpdateHighlight(data) {
             break;
     }
     
-    if(callNote) App.onAnnotateHighlight(data.uuid);
+    if(callNote) App.onAnnotateHighlight(current_data.uuid);
 
     callNote = false;
-    current_highlight = null;
+    current_data = null;
     closeContextMenu();
 }
 
-function UnHighlightWords(idx) {
+function UnHighlightWords(uuid) {
+    console.log("UnHighlightWords: "+uuid);
     var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
-    var idx = idx;
-    var span =  $(idoc.body).find("span#highlight-"+idx);
+    var span =  $(idoc.body).find("span#"+uuid);
 
     span.replaceWith(span.html());
 }
 
-function HighlightWords(content, color, idx) {
+function HighlightWords(content, color, uuid) {
+    console.log("HighlightWords: "+content+", "+color+", "+uuid);
+
     var idoc = iframe.contentDocument || iframe.contentWindow.document; // For IE.
     var cfi = new EPUBJS.EpubCFI();
     var range = cfi.generateRangeFromCfi(content,idoc);
-    var h = highlights[idx];
     var span = document.createElement("span");
 
-    span.id = "highlight-"+idx;
+    span.id = uuid;
     span.setAttribute("class","highlight "+color);
-    span.setAttribute("data-uuid"," "+h.uuid);
+    // span.setAttribute("id",uuid);
     range.surroundContents(span);
 
     span.onclick = function() {
-        var id = this.id.split("-");
-        current_highlight = highlights[id[1]];
+        for(var i in highlights) {
+            if(highlights[i].uuid == this.id) 
+            current_data = highlights[i];
+        }
+        
+        console.log(current_data);
 
         $("#bookline").find("input[name='bookcolor']").removeAttr("checked");
-        $("#bookline").find("input[value='"+current_highlight.color+"']")[0].checked = true;
+        $("#bookline").find("input[value='"+current_data.color+"']")[0].checked = true;
         $("#bookline").find(".del").removeClass("hidden");
         $("#bookline").addClass("show");
     }
@@ -790,20 +892,108 @@ function guid() {
   return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
 
-
 function renderBookmark(data) {
-    alert("get bookmark 1");
-}
-
-function renderBookmark2(data) {
-    alert("get bookmark 2");
+    alert("bookmarks: "+data.length);
+    bookmarks = data;
 }
 
 function renderHighlight(data) {
-    alert("get heghlight");
+    alert("highlights: "+data.length);
+    highlights = data;
 }
-window.onload = function() {
-    App.onRequestHighlights("renderHighlight");
-    App.onRequestBookmarks(renderBookmark);
-    App.onRequestBookmarks('renderBookmark2');
+
+function SetBookmark() {
+    $(".bookmark").removeClass("red");
+    $(".bookmark").removeClass("yellow");
+    $(".bookmark").removeClass("blue");
+    
+    for(var i in bookmarks ) {
+        var item = bookmarks[i];
+        if(current_chapter.id==item.id) {
+            $(".bookmark").addClass(item.color);
+        }
+    }
+}
+
+function getTOC(ary, href) {
+    var r = 0;
+
+    for(var i in ary) {
+        var item = ary[i];
+        if( item.href==href ) {
+            r = item;
+            break;
+        }
+
+        if( item.subitems.length ) {
+            r = getTOC(item.subitems, href);
+            if(r!=0) break;
+        }
+    }
+
+    return r;
+}
+
+function submitKeyword(value) {
+    search_index++;
+    keyword = value;
+    var result_container = $("#search-result");
+    var spine = Book.spine[search_index];
+    // debugger;
+    if(search_index+1>Book.spine.length) {
+        
+        console.log(search_result);
+
+        if(!search_result.length) {
+            result_container.find(".title").html("共搜尋到 0 筆");
+        } else {
+            result_container.find(".title").html('共搜尋到 <span class="num">'+this.search_result.length+'</span> 筆');
+            $.each(this.search_result, function(k, v){
+                var li;
+                // if(!$("a[data-href='"+v.data.cfi+"']").length) {
+                //     $.each(toc, function(k2,v2){
+                //         if(v.data.href==v2.href)
+                //             li = $("<li/>").html("<a data-href='"+v.data.cfi+"'>"+v2.label+"</a>").append(
+                //                 $("<ul/>").addClass("list show")
+                //             );
+                //     });
+                // } else {
+                    
+                // }
+                li = $("a[data-href='"+v.data.cfi+"']:eq(0)").parents("li");
+                li.find("ul.list").append(
+                    $("<li/>").html("<a data-href='"+v.data.cfi+"'>"+v.text+"</a>")
+                );
+                li.highlight(val);
+                result_container.append(li);
+            });
+        }
+    } else {
+        $.ajax({
+            url: spine.url,
+            data: "json"
+        }).done(function(r){
+            var doc = $.parseXML(r);
+            searchWord($(doc.body), val, spine);
+            submitKeyword(val);
+        });
+    }
+}
+function searchWord(elm, val, data) {
+    console.log("searchWord");
+    elm.children().each(function(){
+        if(this.children.length) {
+            searchWord($(this), val, data);
+        } else {
+            var pos = this.innerHTML.search(val);
+
+            if(pos>-1) {
+                search_result.push({
+                    pos: pos, data: data, text: this.innerHTML
+                });
+            }
+        }
+    });
+
+    return;
 }

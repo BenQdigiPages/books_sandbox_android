@@ -14,6 +14,39 @@
     <script src="libs/assets/js/moment.js"></script>
     <script src="libs/highlight.js"></script>
     <script src="libs/fancybox/source/jquery.fancybox.js"></script>
+    <!--<style type="text/css">
+        .highlight_list {
+            position: fixed;
+            padding: 10px;
+            background: #333;
+            left: 0;
+            top: 0;
+            width: 200px;
+            height: 300px;
+            display: block;
+            overflow-y: auto;
+        }
+        .highlight_list a {
+            display: block;
+            color: #FFF;
+            margin: 5px 0;
+        }
+        .bookmark_list {
+            position: fixed;
+            padding: 10px;
+            background: #666;
+            left: 200px;
+            width: 200px;
+            height: 300px;
+            display: block;
+            overflow-y: auto;
+        }
+        .bookmark_list a {
+            display: block;
+            color: #FFF;
+            margin: 5px 0;
+        }
+    </style>-->
     <!--<script src="libs/base64.js"></script>-->
     <script type="text/javascript">
     	var decode = false;
@@ -47,7 +80,7 @@
     <a href="#" class="arrow_icon1 prev_page"></a>
     <a href="#" class="arrow_icon2 next_page"></a>
     <!-- 書籤 -->
-    <label class="bookmark icon1" for="selectbookmark">
+    <label class="bookmark" for="selectbookmark">
         <input type="checkbox" id="selectbookmark">
         <ul class="tab">
             <li class="red"><a href="#"></a></li>
@@ -56,23 +89,26 @@
             <li class="del"><a href="#"></a></li>
         </ul>
     </label>
+<!--     <div class="highlight_list"></div>
+    <div class="bookmark_list"></div> -->
     <!-- 劃線工具 -->
     <div id="bookline">
         <div>
-            <label class="green">
-                <input type="radio" name="bookcolor" value="green">
+            <label class="red">
+                <input type="radio" name="bookcolor" value="red">
+                <i class="fa fa-check"></i>
+            </label>
+            <label class="yellow">
+                <input type="radio" name="bookcolor" value="yellow">
                 <i class="fa fa-check"></i>
             </label>
             <label class="blue">
                 <input type="radio" name="bookcolor" value="blue">
                 <i class="fa fa-check"></i>
             </label>
-            <label class="red">
-                <input type="radio" name="bookcolor" value="red">
-                <i class="fa fa-check"></i>
-            </label>
             <a href="javascript:" class="note"><i class="fa fa-pencil-square-o"></i></a>
             <a href="javascript:" class="share"><i class="fa fa-share-alt"></i></a>
+            <a href="javascript:" class="del"><i class="fa fa-trash"></i></a>
             <i class="fa fa-times fa-2x" onclick="$('#bookline').hide();"></i>
         </div>
     </div>

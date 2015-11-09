@@ -3,6 +3,7 @@ html, body {
 	padding: 0;
 	width: 100% !important;
 	height: 101% !important;
+	background: none !important;
 }
 .frontmatter-rw, 
 .body-rw, 
@@ -49,16 +50,13 @@ body.night * {
 }
 span.highlight { background: yellow; }
 span.highlight.red { 
-	background: #e1605a !important;
-	color: #FFF;
+	background: #f4a5a5 !important;
 }
-span.highlight.green { 
-	background: #9abb64 !important;
-	color: #FFF;
+span.highlight.yellow { 
+	background: #eed885 !important;
 }
 span.highlight.blue { 
-	background: #7ccce7 !important;
-	color: #FFF;
+	background: #85b9d7 !important;
 }
 img, svg { display: inline-block; }
 div {

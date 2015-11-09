@@ -8989,6 +8989,8 @@ window.addEventListener('resize', function webViewerResize(evt) {
 });
 
 window.addEventListener('hashchange', function webViewerHashchange(evt) {
+  // [Bruce] We will use carousel 'click' event to change page instead of 'href=#page + pagenumber'
+  /*
   if (PDFViewerApplication.pdfHistory.isHashChangeUnlocked) {
     var hash = document.location.hash.substring(1);
     if (!hash) {
@@ -9000,6 +9002,8 @@ window.addEventListener('hashchange', function webViewerHashchange(evt) {
       PDFViewerApplication.pdfLinkService.setHash(hash);
     }
   }
+  */
+  // End : [Bruce]
 });
 
 window.addEventListener('change', function webViewerChange(evt) {

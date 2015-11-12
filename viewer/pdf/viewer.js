@@ -685,7 +685,7 @@ function UpdateBookmark(cfi, color) {
         tmpBookmark = {
             "uuid": "",
             "title": "",
-            "cfi": currentPageNum,
+            "cfi": cfi,
             "color": color
         };
         App.onAddBookmark(tmpBookmark,"AddBookmarkCallBack");

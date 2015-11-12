@@ -1993,7 +1993,17 @@ input[type=range]:focus {
 input[type=range]:focus::-webkit-slider-runnable-track {
     background: #ccc;
 }
-.bookmark {
+#bookmark_left {
+    width: 24px;
+    height: 43px;
+    position: fixed;
+    top: 40px;
+    left: 0px;
+    display: block;
+    z-index: 4;
+    cursor: pointer;
+}
+#bookmark {
     width: 24px;
     height: 43px;
     position: fixed;
@@ -2003,7 +2013,7 @@ input[type=range]:focus::-webkit-slider-runnable-track {
     z-index: 4;
     cursor: pointer;
 }
-.bookmark.pink {
+.bookmark.red {
 	background: url(img/bookmark_icon1.png) no-repeat center;
 }
 .bookmark.yellow {

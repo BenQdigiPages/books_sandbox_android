@@ -176,11 +176,17 @@ function onURL_and_AppReady(resultOutput) {
             //Henry add, when toolbar raised, page number have to refresh
             document.getElementById('current_page').textContent = currentPageNum;
             document.getElementById('paginate').value = currentPageNum;
+            //[HW]
+            $("#bookmark").css("top",40);
+            $("#bookmark_left").css("top",40);
         } else {
             if (thumbnailBarVisible) {
                 $('#thumbnailView').hide();
             }
             $('#footer').hide();
+            //[HW]
+            $("#bookmark").css("top",0);
+            $("#bookmark_left").css("top",0);
         }
         App.onToggleToolbar(toolBarVisible);
     });
@@ -469,6 +475,33 @@ Viewer.getLayoutMode = function() {
     return currentLayoutMode;
 }
 
+//[HW] update Bookmark icon
+function updateBookmarkIcon() {
+    $("#bookmark")[0].className = "bookmark ";
+    $("#bookmark_left")[0].className = "bookmark ";
+    if (TwoPageViewMode.active) {
+        for(var i in savedBookmarks) {
+            if (savedBookmarks[i].cfi === currentPageNum) {
+                color = savedBookmarks[i].color;
+                $("#bookmark_left")[0].className = "bookmark " + color;
+            }
+        }
+        for(var i in savedBookmarks) {
+            if (savedBookmarks[i].cfi === currentPageNum + 1) {
+                color = savedBookmarks[i].color;
+                $("#bookmark")[0].className = "bookmark " + color;
+            }
+        }
+    } else {
+        for(var i in savedBookmarks) {
+            if (savedBookmarks[i].cfi === currentPageNum) {
+                color = savedBookmarks[i].color;
+                $("#bookmark")[0].className = "bookmark " + color;
+            }
+        }
+    }
+}
+
 ///
 /// Set page layout mode
 ///
@@ -494,6 +527,8 @@ Viewer.setLayoutMode = function(mode) {
             TwoPageViewMode.disable();
             console.log("Viewer.setLayoutMode: others");
         }
+        //[HW] update bookmark icon
+        updateBookmarkIcon();
     }
 }
 
@@ -557,32 +592,48 @@ Viewer.gotoPosition = function(cfi) {
 ///     color - the bookmark color, either "red", "yellow" or "blue"
 ///     null - to remove current bookmark
 ///
-Viewer.toggleBookmark = function(color) {
-    console.log("Viewer.toggleBookmark=" + color);
-    if (color !== null) {
-        var bookmark = null;
-        if ((bookmark = isBookmarkExist()) !== null) {
-            bookmark.color = color;
-            App.onUpdateBookmark(bookmark);
-        } else {
-            //send tmp bookmark to app for getting uuid.
-            tmpBookmark = {
-               "uuid": "",
-               "title": "",
-               "cfi": currentPageNum,
-               "color": color
-            };
-            App.onAddBookmark(tmpBookmark,"AddBookmarkCallBack");
+Viewer.toggleBookmark = function(color, page_offset) {
+    if (TwoPageViewMode.active) {
+        if (page_offset == 0) { //left page
+            if (color !== null) {
+                UpdateBookmark(currentPageNum, color);
+                $("#bookmark_left")[0].className = "bookmark " + color;
+            } else {
+                var bookmark = null;
+                if ((bookmark = isBookmarkExist(currentPageNum)) !== null) {
+                    App.onRemoveBookmark(bookmark.uuid);
+                    var index = savedBookmarks.indexOf(bookmark);
+                    delete savedBookmarks[index];
+                    $("#bookmark_left")[0].className = "bookmark_icon ";
+                }
+            }
+        } else if (page_offset == 1) { //right page
+            if (color !== null) {
+                UpdateBookmark(currentPageNum + 1, color);
+                $("#bookmark")[0].className = "bookmark " + color;
+            } else {
+                var bookmark = null;
+                if ((bookmark = isBookmarkExist(currentPageNum + 1)) !== null) {
+                    App.onRemoveBookmark(bookmark.uuid);
+                    var index = savedBookmarks.indexOf(bookmark);
+                    delete savedBookmarks[index];
+                    $("#bookmark")[0].className = "bookmark_icon ";
+                }
+            }
         }
-        $("#bookmark")[0].className = "bookmark " + color;
     } else {
-        //Remove bookmark in current page.
-        var bookmark = null;
-        if ((bookmark = isBookmarkExist()) !== null) {
-            App.onRemoveBookmark(bookmark.uuid);
-            var index = savedBookmarks.indexOf(bookmark);
-            delete savedBookmarks[index];
-            $("#bookmark")[0].className = "bookmark_icon ";
+        if (color !== null) {
+            UpdateBookmark(currentPageNum, color);
+            $("#bookmark")[0].className = "bookmark " + color;
+        } else {
+            //Remove bookmark in current page.
+            var bookmark = null;
+            if ((bookmark = isBookmarkExist()) !== null) {
+                App.onRemoveBookmark(bookmark.uuid);
+                var index = savedBookmarks.indexOf(bookmark);
+                delete savedBookmarks[index];
+                $("#bookmark")[0].className = "bookmark_icon ";
+            }
         }
     }
 }
@@ -611,6 +662,34 @@ function isBookmarkExist() {
         }
     }
     return null;
+}
+
+//[HW] for Bookmark
+function isBookmarkExist(cfi) {
+    console.log("isBookmarkExist() cfi: " + cfi);
+    for(var i in savedBookmarks) {
+        if (savedBookmarks[i].cfi === cfi) {
+            return savedBookmarks[i];
+        }
+    }
+    return null;
+}
+
+function UpdateBookmark(cfi, color) {
+    var bookmark = null;
+    if ((bookmark = isBookmarkExist(cfi)) !== null) {
+        bookmark.color = color;
+        App.onUpdateBookmark(bookmark);
+    } else {
+        //send tmp bookmark to app for getting uuid.
+        tmpBookmark = {
+            "uuid": "",
+            "title": "",
+            "cfi": currentPageNum,
+            "color": color
+        };
+        App.onAddBookmark(tmpBookmark,"AddBookmarkCallBack");
+    }
 }
 
 ///
@@ -9120,20 +9199,13 @@ window.addEventListener('pagechange', function pagechange(evt) {
   if (evt.previousPageNumber !== page) {
     // Update footbar page info
     if(toolBarVisible) {
-        document.getElementById('current_page').textContent = currentPageNum;
-        document.getElementById('paginate').value = currentPageNum;
-        PDFViewerApplication.historyPage = evt.previousPageNumber;  //Henry add, for supporting undo
-        // Info App
-        App.onChangePage("", currentPageNum, currentPageNum, pdfDoc.numPages);
-        $("#bookmark")[0].className = "bookmark ";
-                for(var i in savedBookmarks) {
-                    if (savedBookmarks[i].cfi === currentPageNum) {
-                        color = savedBookmarks[i].color;
-                        $("#bookmark")[0].className = "bookmark " + color;
-                    }
-                }
+      document.getElementById('current_page').textContent = currentPageNum;
+      document.getElementById('paginate').value = currentPageNum;
+      PDFViewerApplication.historyPage = evt.previousPageNumber;  //Henry add, for supporting undo
+      // Info App
+      App.onChangePage("", currentPageNum, currentPageNum, pdfDoc.numPages);
+      updateBookmarkIcon(); //[HW] update Bookmark Icon
     }
-
     // Update thumbnail
     if(thumbnailBarVisible) {
         PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(currentPageNum);

@@ -41,6 +41,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.viewer);
         getActionBar().hide();

@@ -1,0 +1,6 @@
+Changes with Android PDF viewer v0.9.01.01
+
+  *) First version
+  *) Add viewer version on right bottom
+  *) Add loading icon while each page loading
+  *) Remove unnecessary css files

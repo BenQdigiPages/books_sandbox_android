@@ -205,6 +205,7 @@ public class ViewerBridge {
     /// @legacy: bool - true if legacy mode is needed
     ///
     public void loadBook(final String url, boolean isPdf) {
+        Log.d(TAG, "loadBook "+ url);
         mBookUri = url;
 
         if (mIsLibraryLoaded && mIsPdf == isPdf) {

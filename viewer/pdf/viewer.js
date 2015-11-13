@@ -211,6 +211,7 @@ function onURL_and_AppReady(resultOutput) {
      * Asynchronously downloads PDF.
      */
     // Open
+    console.log("PDFViewerApplication open url");
     PDFViewerApplication.open(url, 0 , null , null , null , legacy);
 
     //Request bookmarks from app when book is loaded.
@@ -241,11 +242,10 @@ function onFirstPageRendered() {
     }else{
         $viewerOwl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
     }
-
-    $("#book_loading").fadeOut(); //Henry add
 }
 
 function onDocumentReady(pdfDocument) {
+    console.log("(onDocumentReady)");
     pdfDoc = pdfDocument;
     webUIInitialized();
 }
@@ -317,12 +317,13 @@ function onOutlineReady(outline) {
 ///
 Viewer.loadBook = function(url, legacy) {
 
-    console.log("url= "+ url + ", legacy= "+legacy);
+    console.log("lookBook url= "+ url + ", legacy= "+legacy);
 
     // turn on streaming for App
     PDFJS.disableRange = false;
     PDFJS.disableStream = false;
     PDFJS.disableAutoFetch = true;
+    //PDFJS.verbosity = PDFJS.VERBOSITY_LEVELS.infos;
 
     var containerDoc = null;
     var opfDoc = null;
@@ -432,6 +433,7 @@ function webUIInitialized() {
                 $('#thumbnailView').hide();
             }
     });
+    $("#book_loading").fadeOut(); //Henry add
 }
 
 ///
@@ -5926,6 +5928,7 @@ var PDFViewer = (function pdfViewer() {
             resolveOnePageRendered();
             //[Bruce]
             customEventsManager['onFirstPageRendered'].confirmThisIsReady();
+            console.log("(onFirstPageRendered)");
           }
         };
       };
@@ -7767,6 +7770,7 @@ var PDFViewerApplication = {
     //End : [Bruce][TempDisable]
 
     //[Bruce]
+    console.log("(onAppInitialized)")
     customEventsManager["onAppInitialized"].confirmThisIsReady();
     return initializedPromise.then(function () {
       PDFViewerApplication.initialized = true;

@@ -20,16 +20,18 @@
     <script src="interact.min.js"></script>
     <script>
         $(document).ready(function(){
-            $('#viewer').owlCarousel({
+            $viewerOwl = $('#viewer').owlCarousel({
                 items: 1,
                 margin: 0,
+                onInitialized: onViewerCarouselInitialized,
             });
-            $('#thumbnailView').owlCarousel({
+            $viewThumbnailOwl = $('#thumbnailView').owlCarousel({
                 stagePadding:50,
                 items: 8,
                 autoWidth:true,
                 center:true,
                 lazyLoad: true,
+                onInitialized: onThumbnailViewCarouselInitialized,
             });
         });
     </script>

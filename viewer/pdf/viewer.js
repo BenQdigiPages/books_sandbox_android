@@ -14,7 +14,9 @@ var pdfDoc = null,
     savedBookmarks = [],
     originalCSSScale = 0,
     pdfOutlineArray = null,
-    drmFilePath = null;
+    drmFilePath = null,
+    $viewerOwl,
+    $viewThumbnailOwl,
     ignoreReadLimit = false;
 
 var ua = navigator.userAgent;
@@ -30,6 +32,8 @@ var customEventsManager =  {
         "onOwlLayoutReady"                 : new ViewerObserver(),
         "onThumbnailExternalLinkReady"     : new ViewerObserver(),
         "onFirstPageRendered"              : new ViewerObserver(),
+        "onViewerOwlReady"                 : new ViewerObserver(),
+        "onThumbnailViewOwlReady"          : new ViewerObserver(),
 
         doAfterMultiReady     : function customEventsManager_setMultiReady(mulityReadyArray,readyToDo){
             var mulityReadyPromises = [],
@@ -124,16 +128,24 @@ function ViewerObserver() {
     };
 }
 
+function onViewerCarouselInitialized() {
+    console.log("(onViewerCarouselInitialized)");
+    customEventsManager["onViewerOwlReady"].confirmThisIsReady();
+}
+
+function onThumbnailViewCarouselInitialized() {
+    console.log("(onThumbnailViewCarouselInitialized)");
+    customEventsManager["onThumbnailViewOwlReady"].confirmThisIsReady();
+}
+
 function onURL_and_AppReady(resultOutput) {
     var args =  resultOutput[0];
     var url =  args[0];
     var legacy =  args[1];
 
     //initOwl
-    var owl = $('#viewer');
-    owl.owlCarousel();
     // Listen to owl events:
-    owl.on('changed.owl.carousel',
+    $viewerOwl.on('changed.owl.carousel',
         function callback(event) {
             if (!(TwoPageViewMode.inProcess)){
                 if (TwoPageViewMode.active){
@@ -161,8 +173,6 @@ function onURL_and_AppReady(resultOutput) {
             } 
     });
 
-    var owl = $('#thumbnailView');
-    owl.owlCarousel();
     //Handle pdf view canvas click event.
     $('#viewerContainer').click(function() {
         toolBarVisible = !(toolBarVisible);
@@ -226,12 +236,10 @@ function onFirstPageRendered() {
     App.onToggleToolbar(toolBarVisible);
 
     // Set this page forcefully to let Carousel to start run
-    var owl = $('#viewer');
-    owl.owlCarousel();
     if (TwoPageViewMode.active){
-        owl.trigger('to.owl.carousel', [(Math.floor((currentPageNum+1)/2))-1,300,true]);
+        $viewerOwl.trigger('to.owl.carousel', [(Math.floor((currentPageNum+1)/2))-1,300,true]);
     }else{
-        owl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
+        $viewerOwl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
     }
 
     $("#book_loading").fadeOut(); //Henry add
@@ -367,7 +375,7 @@ Viewer.loadBook = function(url, legacy) {
     url = url + pdfFile;
 
     customEventsManager["onURLReady"].confirmThisIsReady([url,legacy]);
-    customEventsManager.doAfterMultiReady(["onURLReady","onAppInitialized"],onURL_and_AppReady);
+    customEventsManager.doAfterMultiReady(["onURLReady","onAppInitialized","onViewerOwlReady","onThumbnailViewOwlReady"],onURL_and_AppReady);
 }
 
 function webUIInitialized() {
@@ -4538,9 +4546,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     //[Bruce]
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-        var owl = $('#viewer');
-        owl.owlCarousel();
-        owl.trigger('add.owl.carousel',[this.div]);
+        $viewerOwl.trigger('add.owl.carousel',[this.div]);
     } else {
         container.appendChild(div);
     }
@@ -4586,8 +4592,6 @@ var PDFPageView = (function PDFPageViewClosure() {
                 'scale(' + tempScale + ')';
             }.bind(this),
             onend: function (event) {
-                var scaleElement = event.target;
-
                 // Store scale
                 PDFViewerApplication.pdfViewer.transformScale = tempScale;
             }
@@ -4677,8 +4681,6 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     applyCSSTransformScale: function PDFPageView_applyCSSTransformScale() {
       var div = this.div;
-      var newTranslateX = (parseFloat(div.getAttribute('data-x')) || 0);
-      var newTranslateY = (parseFloat(div.getAttribute('data-y')) || 0);
 
       div.style.webkitTransform =
       div.style.transform =
@@ -5771,12 +5773,10 @@ var PDFViewer = (function pdfViewer() {
       if(this.isInCarouselMode) {
           if(this.currentPageNumber === val)
               return;
-          var owl = $('#viewer');
-          owl.owlCarousel();
           if (TwoPageViewMode.active){
-            owl.trigger('to.owl.carousel', [(Math.floor((val+1)/2))-1,200,true]);
+            $viewerOwl.trigger('to.owl.carousel', [(Math.floor((val+1)/2))-1,200,true]);
           }else{
-            owl.trigger('to.owl.carousel',[val - 1, 200, true]);
+            $viewerOwl.trigger('to.owl.carousel',[val - 1, 200, true]);
           }
       }
       //End : [Bruce]
@@ -6689,9 +6689,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
 
     //[Bruce]
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-        var owl = $('#thumbnailView');
-        owl.owlCarousel();
-        owl.trigger('add.owl.carousel',[anchor]);
+        $viewThumbnailOwl.trigger('add.owl.carousel',[anchor]);
     } else {
         container.appendChild(anchor);
     }
@@ -6953,10 +6951,8 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
         function PDFThumbnailViewer_scrollThumbnailIntoView(page) {
       //[Bruce]
       if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-          var owl = $('#thumbnailView');
-          owl.owlCarousel();
-          owl.trigger('refresh.owl.carousel');
-          owl.trigger('to.owl.carousel',[page - 1, 200, true]);
+          $viewThumbnailOwl.trigger('refresh.owl.carousel');
+          $viewThumbnailOwl.trigger('to.owl.carousel',[page - 1, 200, true]);
           return;
       }
       //End : [Bruce]
@@ -7174,9 +7170,7 @@ var TwoPageViewMode = {
 	  }
 	  this.div=div;
       if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-        var owl = $('#viewer');
-        owl.owlCarousel();
-        owl.trigger('add.owl.carousel',[this.div]);
+        $viewerOwl.trigger('add.owl.carousel',[this.div]);
       } else {
         this.viewer.appendChild(div);
       }
@@ -7194,11 +7188,9 @@ var TwoPageViewMode = {
       }
     }
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-        var owl = $('#viewer');
-        owl.owlCarousel();
-        owl.trigger('to.owl.carousel', [(Math.floor((currentPageNum+1)/2))-1,300,true]);
+        $viewerOwl.trigger('to.owl.carousel', [(Math.floor((currentPageNum+1)/2))-1,300,true]);
         for (var i = 1; i <= this.numPages; i++) {
-            owl.trigger('remove.owl.carousel',0);
+            $viewerOwl.trigger('remove.owl.carousel',0);
         }
     }
     this.active = true;
@@ -7213,24 +7205,18 @@ var TwoPageViewMode = {
     for (var i = 1, ii = this.numPages; i <= ii; i++) {
         pageDiv = PDFViewerApplication.pdfViewer.getPageView(i - 1).div;
         if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-            var owl = $('#viewer');
-            owl.owlCarousel();
-            owl.trigger('add.owl.carousel',[pageDiv]);
+            $viewerOwl.trigger('add.owl.carousel',[pageDiv]);
         } else {
 			this.viewer.appendChild(pageDiv);
         }
 
     }
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-        var owl = $('#viewer');
-        owl.owlCarousel();
-        owl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
+        $viewerOwl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
     }
     for (var uid in this.containers) {
         if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-            var owl = $('#viewer');
-            owl.owlCarousel();
-            owl.trigger('remove.owl.carousel',0);
+            $viewerOwl.trigger('remove.owl.carousel',0);
         } else {
             this.viewer.removeChild(this.containers[uid]);
         }
@@ -7827,12 +7813,10 @@ var PDFViewerApplication = {
   //Henry add, for support undo
   undoPage: function pdfUndoPage() {
       this.page = this.historyPage;
-       var owl = $('#viewer');
-       owl.owlCarousel();
        if (TwoPageViewMode.active){
-           owl.trigger('to.owl.carousel', [(Math.floor((this.page+1)/2))-1,300,true]);
+           $viewerOwl.trigger('to.owl.carousel', [(Math.floor((this.page+1)/2))-1,300,true]);
        }else{
-           owl.trigger('to.owl.carousel', [this.page-1,300,true]);
+           $viewerOwl.trigger('to.owl.carousel', [this.page-1,300,true]);
        }
   },
 

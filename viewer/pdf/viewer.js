@@ -165,11 +165,11 @@ function onURL_and_AppReady(resultOutput) {
             	ignoreReadLimit = false;
             	return;
             }
-           //TODO: check ChapterLimit
+            //TODO: check ChapterLimit
             if (!canRead()) {
-    	window.alert("Read time expired");
-    	ignoreReadLimit = true;
-    	PDFViewerApplication.undoPage();
+	    	window.alert("此書目前無法閱讀");
+	    	ignoreReadLimit = true;
+	    	PDFViewerApplication.undoPage();
             } 
     });
 
@@ -351,7 +351,9 @@ Viewer.loadBook = function(url, legacy) {
     }
     //TODO: deal with all read lmit
     if (!canRead()){
-    	window.alert("Read time expires");
+    	window.alert("此書目前無法閱讀");
+    	$("#book_loading").fadeOut();
+    	return;
    }  	
 
     //[Bruce]
@@ -397,8 +399,8 @@ function webUIInitialized() {
         function() {
              //TODO: check ChapterLimit
             if (!canRead()){
-    	window.alert("Read time expired");
-    	return;
+    		window.alert("此書目前無法閱讀");
+    		return;
             } 
             PDFViewerApplication.undoPage();
     });
@@ -406,8 +408,9 @@ function webUIInitialized() {
         function() {
             //TODO: check ChapterLimit
             if (!canRead()){
-    	window.alert("Read time expired");
-    	return;
+    		window.alert("此書目前無法閱讀");
+    		document.getElementById('paginate').value = PDFViewerApplication.page;
+        	return false; 
             } 
             var page = parseInt(document.getElementById('paginate').value,10);
             if (TwoPageViewMode.active && page % 2 == 0)
@@ -521,7 +524,7 @@ Viewer.setLayoutMode = function(mode) {
     console.log("Viewer.setLayoutMode=" + mode);
     //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("Read time expired");
+    	window.alert("此書目前無法閱讀");
     	return;
     } 
     if (mode !== currentLayoutMode) {
@@ -562,7 +565,7 @@ Viewer.getCurrentPosition = function() {
 Viewer.gotoLink = function(link) {
    //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("Read time expired");
+    	window.alert("此書目前無法閱讀");
     	return;
     }  
    var index = parseInt(link);
@@ -719,7 +722,7 @@ Viewer.searchText = function(keyword) {
 function onPrevPage() {
     //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("Read time expired");
+    	window.alert("此書目前無法閱讀");
     	return;
     }
     if (currentPageNum <= 1) {
@@ -740,7 +743,7 @@ function onPrevPage() {
 function onNextPage() {
     //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("Read time expired");
+    	window.alert("此書目前無法閱讀");
     	return;
     }
     if (currentPageNum >= pdfDoc.numPages) {
@@ -7056,8 +7059,8 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
         $('#thumbnailView').on('click', '.owl-item', function(e) {
              //TODO: check ChapterLimit
             if (!canRead()){
-    	window.alert("Read time expired");
-    	return;
+    		window.alert("此書目前無法閱讀");
+    		return false;
             } 
             PDFViewerApplication.page = $(this).index() + 1;
         });

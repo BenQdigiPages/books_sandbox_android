@@ -16,8 +16,7 @@ var pdfDoc = null,
     pdfOutlineArray = null,
     drmFilePath = null,
     $viewerOwl,
-    $viewThumbnailOwl,
-    ignoreReadLimit = false;
+    $viewThumbnailOwl;
 
 var ua = navigator.userAgent;
 var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
@@ -160,17 +159,6 @@ function onURL_and_AppReady(resultOutput) {
                     PDFViewerApplication.pdfViewer._pages[currentPageNum - 1].applyCSSTransformScale();
                 }
             }
-            //prevent callback loop
-            if(ignoreReadLimit)  {
-            	ignoreReadLimit = false;
-            	return;
-            }
-            //TODO: check ChapterLimit
-            if (!canRead()) {
-	    	window.alert("此書目前無法閱讀");
-	    	ignoreReadLimit = true;
-	    	PDFViewerApplication.undoPage();
-            } 
     });
 
     //Handle pdf view canvas click event.
@@ -5761,6 +5749,16 @@ var PDFViewer = (function pdfViewer() {
       if (!this.pdfDocument) {
         this._currentPageNumber = val;
         return;
+      }
+      
+      if (!canRead() && this.currentPageNumber !== val){
+    	window.alert("此書目前無法閱讀");
+    	if (TwoPageViewMode.active){
+            $viewerOwl.trigger('to.owl.carousel', [(Math.floor((this.currentPageNumber+1)/2))-1,200,true]);
+        }else{
+            $viewerOwl.trigger('to.owl.carousel',[this.currentPageNumber - 1, 200, true]);
+        }
+    	return;
       }
 
       var event = document.createEvent('UIEvents');

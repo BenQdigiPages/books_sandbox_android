@@ -223,6 +223,17 @@ function onFirstPageRendered() {
         $('#footer').hide();
     }
     App.onToggleToolbar(toolBarVisible);
+    //Phoebe, fix bug#212, invisible toolbar, footer after 3 secs. when first load.
+    setTimeout(function(){
+        if (toolBarVisible) {
+            if (thumbnailBarVisible) {
+               $('#thumbnailView').hide();
+            }
+            $('#footer').hide();
+            toolBarVisible = !(toolBarVisible);
+            App.onToggleToolbar(toolBarVisible);
+        }
+    }, 3000);
 
     // Set this page forcefully to let Carousel to start run
     if (TwoPageViewMode.active){

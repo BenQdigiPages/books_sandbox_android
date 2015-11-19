@@ -7114,6 +7114,11 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
     },
 
     setDocument: function PDFThumbnailViewer_setDocument(pdfDocument) {
+      if(DEBUG_CHROME_DEV_TOOL) {
+          console.time('PDFThumbnailViewer.setDocument()');
+          console.timeStamp('PDFThumbnailViewer.setDocument()');
+      }
+
       if (this.pdfDocument) {
         // cleanup of the elements and views
         var thumbsView = this.container;
@@ -7131,6 +7136,10 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
       //[Bruce]
       var firstPagePromise = pdfDocument.getPage(1);
       Promise.all([firstPagePromise,customEventsManager["onThumbnailExternalLinkReady"].promise]).then(function (resultOutPut) {
+        if(DEBUG_CHROME_DEV_TOOL) {
+            console.time('PDFThumbnailViewer.setDocument() firstPagePromise onThumbnailExternalLinkReady');
+            console.timeStamp('PDFThumbnailViewer.setDocument() firstPagePromise onThumbnailExternalLinkReady');
+        }
         var firstPage = resultOutPut[0];
         var pagesCount = pdfDocument.numPages;
         var viewport = firstPage.getViewport(1.0);
@@ -7153,7 +7162,15 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
             } 
             PDFViewerApplication.page = $(this).index() + 1;
         });
+
+        if(DEBUG_CHROME_DEV_TOOL) {
+            console.timeEnd('PDFThumbnailViewer.setDocument() firstPagePromise onThumbnailExternalLinkReady');
+        }
       }.bind(this));
+
+      if(DEBUG_CHROME_DEV_TOOL) {
+          console.timeEnd('PDFThumbnailViewer.setDocument()');
+      }
       return firstPagePromise;
       /*
       return pdfDocument.getPage(1).then(function (firstPage) {

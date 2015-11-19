@@ -364,7 +364,7 @@ Viewer.loadBook = function(url, legacy) {
     }
     //TODO: deal with all read lmit
     if (!canRead()){
-    	window.alert("æ­¤æ›¸?®å??¡æ??±è?");
+    	window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
     	$("#book_loading").fadeOut();
     	return;
    }  	
@@ -421,7 +421,7 @@ function webUIInitialized() {
         function() {
              //TODO: check ChapterLimit
             if (!canRead()){
-    		window.alert("æ­¤æ›¸?®å??¡æ??±è?");
+    		window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
     		return;
             } 
             PDFViewerApplication.undoPage();
@@ -430,7 +430,7 @@ function webUIInitialized() {
         function() {
             //TODO: check ChapterLimit
             if (!canRead()){
-    		window.alert("æ­¤æ›¸?®å??¡æ??±è?");
+    		window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
     		document.getElementById('paginate').value = PDFViewerApplication.page;
         	return false; 
             } 
@@ -600,7 +600,7 @@ Viewer.getCurrentPosition = function() {
 Viewer.gotoLink = function(link) {
    //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("æ­¤æ›¸?®å??¡æ??±è?");
+    	window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
     	return;
     }  
    var index = parseInt(link);
@@ -775,7 +775,7 @@ Viewer.searchText = function(keyword) {
 function onPrevPage() {
     //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("æ­¤æ›¸?®å??¡æ??±è?");
+    	window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
     	return;
     }
     if (currentPageNum <= 1) {
@@ -796,7 +796,7 @@ function onPrevPage() {
 function onNextPage() {
     //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("æ­¤æ›¸?®å??¡æ??±è?");
+    	window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
     	return;
     }
     if (currentPageNum >= pdfDoc.numPages) {
@@ -5817,7 +5817,7 @@ var PDFViewer = (function pdfViewer() {
       }
       
       if (!canRead() && this.currentPageNumber !== val){
-    	window.alert("æ­¤æ›¸?®å??¡æ??±è?");
+    	window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
     	if (TwoPageViewMode.active){
             $viewerOwl.trigger('to.owl.carousel', [(Math.floor((this.currentPageNumber+1)/2))-1,200,true]);
         }else{
@@ -7148,7 +7148,7 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
         $('#thumbnailView').on('click', '.owl-item', function(e) {
              //TODO: check ChapterLimit
             if (!canRead()){
-    		window.alert("æ­¤æ›¸?®å??¡æ??±è?");
+    		window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
     		return false;
             } 
             PDFViewerApplication.page = $(this).index() + 1;

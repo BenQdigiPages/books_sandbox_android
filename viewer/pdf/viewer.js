@@ -17,6 +17,7 @@ var pdfDoc = null,
     drmFilePath = null,
     $viewerOwl,
     $viewThumbnailOwl;
+var DEBUG_CHROME_DEV_TOOL = false;
 
 var ua = navigator.userAgent;
 var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
@@ -142,6 +143,11 @@ function onURL_and_AppReady(resultOutput) {
     var url =  args[0];
     var legacy =  args[1];
 
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.time('onURL_and_AppReady()');
+        console.timeStamp('onURL_and_AppReady()');
+    }
+
     //initOwl
     // Listen to owl events:
     $viewerOwl.on('changed.owl.carousel',
@@ -204,6 +210,10 @@ function onURL_and_AppReady(resultOutput) {
 
     //Request bookmarks from app when book is loaded.
     App.onRequestBookmarks("RequestBookmarksCallback")
+
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.timeEnd('onURL_and_AppReady()');
+    }
 }
 
 function onFirstPageRendered() {
@@ -318,6 +328,10 @@ Viewer.loadBook = function(url, legacy) {
 
     console.log("lookBook url= "+ url + ", legacy= "+legacy);
 
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.time('Viewer.loadBook()');
+        console.timeStamp('Viewer.loadBook()');
+    }
     // turn on streaming for App
     PDFJS.disableRange = false;
     PDFJS.disableStream = false;
@@ -350,7 +364,7 @@ Viewer.loadBook = function(url, legacy) {
     }
     //TODO: deal with all read lmit
     if (!canRead()){
-    	window.alert("Ê≠§Êõ∏ÁõÆÂâçÁÑ°Ê≥ïÈñ±ËÆÄ");
+    	window.alert("Ê≠§Êõ∏?ÆÂ??°Ê??±Ë?");
     	$("#book_loading").fadeOut();
     	return;
    }  	
@@ -378,9 +392,18 @@ Viewer.loadBook = function(url, legacy) {
 
     customEventsManager["onURLReady"].confirmThisIsReady([url,legacy]);
     customEventsManager.doAfterMultiReady(["onURLReady","onAppInitialized","onViewerOwlReady","onThumbnailViewOwlReady"],onURL_and_AppReady);
+
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.timeEnd('Viewer.loadBook()');
+    }
 }
 
 function webUIInitialized() {
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.time('webUIInitialized()');
+        console.timeStamp('webUIInitialized()');
+    }
+
     document.getElementById('current_page').textContent = currentPageNum;
     document.getElementById('paginate').value = currentPageNum;
     document.getElementById('paginate').max = pdfDoc.numPages;
@@ -398,7 +421,7 @@ function webUIInitialized() {
         function() {
              //TODO: check ChapterLimit
             if (!canRead()){
-    		window.alert("Ê≠§Êõ∏ÁõÆÂâçÁÑ°Ê≥ïÈñ±ËÆÄ");
+    		window.alert("Ê≠§Êõ∏?ÆÂ??°Ê??±Ë?");
     		return;
             } 
             PDFViewerApplication.undoPage();
@@ -407,7 +430,7 @@ function webUIInitialized() {
         function() {
             //TODO: check ChapterLimit
             if (!canRead()){
-    		window.alert("Ê≠§Êõ∏ÁõÆÂâçÁÑ°Ê≥ïÈñ±ËÆÄ");
+    		window.alert("Ê≠§Êõ∏?ÆÂ??°Ê??±Ë?");
     		document.getElementById('paginate').value = PDFViewerApplication.page;
         	return false; 
             } 
@@ -436,6 +459,10 @@ function webUIInitialized() {
             }
     });
     $("#book_loading").fadeOut(); //Henry add
+
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.timeEnd('webUIInitialized()');
+    }
 }
 
 ///
@@ -520,10 +547,15 @@ function updateBookmarkIcon() {
 /// @mode: string - either "single", "side_by_side" or "continuous"
 ///
 Viewer.setLayoutMode = function(mode) {
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.time('Viewer.setLayoutMode()');
+        console.timeStamp('Viewer.setLayoutMode()');
+    }
+
     console.log("Viewer.setLayoutMode=" + mode);
     //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("Ê≠§Êõ∏ÁõÆÂâçÁÑ°Ê≥ïÈñ±ËÆÄ");
+    	window.alert("Read time expired");
     	return;
     } 
     if (mode !== currentLayoutMode) {
@@ -541,6 +573,10 @@ Viewer.setLayoutMode = function(mode) {
         }
         //[HW] update bookmark icon
         updateBookmarkIcon();
+    }
+
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.timeEnd('Viewer.setLayoutMode()');
     }
 }
 
@@ -564,7 +600,7 @@ Viewer.getCurrentPosition = function() {
 Viewer.gotoLink = function(link) {
    //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("Ê≠§Êõ∏ÁõÆÂâçÁÑ°Ê≥ïÈñ±ËÆÄ");
+    	window.alert("Ê≠§Êõ∏?ÆÂ??°Ê??±Ë?");
     	return;
     }  
    var index = parseInt(link);
@@ -578,6 +614,11 @@ Viewer.gotoLink = function(link) {
 /// @cfi: string - epub cfi
 ///
 Viewer.gotoPosition = function(cfi) {
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.time('Viewer.gotoPosition()');
+        console.timeStamp('Viewer.gotoPosition()');
+    }
+
     var regex = /^[0-9]*$/;
     //PDF doesn't support cfi, check if cfi is page number.
     if (regex.test(cfi)) {
@@ -588,6 +629,10 @@ Viewer.gotoPosition = function(cfi) {
         // Update PDFApplication
         currentPageNum = pageNum;
         PDFViewerApplication.page = currentPageNum;
+    }
+
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.timeEnd('Viewer.gotoPosition()');
     }
 }
 
@@ -605,6 +650,11 @@ Viewer.gotoPosition = function(cfi) {
 ///     null - to remove current bookmark
 ///
 Viewer.toggleBookmark = function(color, page_offset) {
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.time('Viewer.toggleBookmark()');
+        console.timeStamp('Viewer.toggleBookmark()');
+    }
+
     if (TwoPageViewMode.active) {
         if (page_offset == 0) { //left page
             if (color !== null) {
@@ -647,6 +697,10 @@ Viewer.toggleBookmark = function(color, page_offset) {
                 $("#bookmark")[0].className = "bookmark_icon ";
             }
         }
+    }
+
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.timeEnd('Viewer.toggleBookmark()');
     }
 }
 
@@ -721,7 +775,7 @@ Viewer.searchText = function(keyword) {
 function onPrevPage() {
     //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("Ê≠§Êõ∏ÁõÆÂâçÁÑ°Ê≥ïÈñ±ËÆÄ");
+    	window.alert("Ê≠§Êõ∏?ÆÂ??°Ê??±Ë?");
     	return;
     }
     if (currentPageNum <= 1) {
@@ -742,7 +796,7 @@ function onPrevPage() {
 function onNextPage() {
     //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("Ê≠§Êõ∏ÁõÆÂâçÁÑ°Ê≥ïÈñ±ËÆÄ");
+    	window.alert("Ê≠§Êõ∏?ÆÂ??°Ê??±Ë?");
     	return;
     }
     if (currentPageNum >= pdfDoc.numPages) {
@@ -5763,7 +5817,7 @@ var PDFViewer = (function pdfViewer() {
       }
       
       if (!canRead() && this.currentPageNumber !== val){
-    	window.alert("Ê≠§Êõ∏ÁõÆÂâçÁÑ°Ê≥ïÈñ±ËÆÄ");
+    	window.alert("Ê≠§Êõ∏?ÆÂ??°Ê??±Ë?");
     	if (TwoPageViewMode.active){
             $viewerOwl.trigger('to.owl.carousel', [(Math.floor((this.currentPageNumber+1)/2))-1,200,true]);
         }else{
@@ -5894,6 +5948,11 @@ var PDFViewer = (function pdfViewer() {
      * @param pdfDocument {PDFDocument}
      */
     setDocument: function (pdfDocument) {
+      if(DEBUG_CHROME_DEV_TOOL) {
+          console.time('PDFViewer.setDocument()');
+          console.timeStamp('PDFViewer.setDocument()');
+      }
+
       if (this.pdfDocument) {
         this._resetView();
       }
@@ -5948,9 +6007,18 @@ var PDFViewer = (function pdfViewer() {
       var firstPagePromise = pdfDocument.getPage(1);
       this.firstPagePromise = firstPagePromise;
 
+      if(DEBUG_CHROME_DEV_TOOL) {
+          console.timeEnd('PDFViewer.setDocument()');
+      }
+
       // Fetch a single page so we can get a viewport that will be the default
       // viewport for all pages
       return firstPagePromise.then(function(pdfPage) {
+        if(DEBUG_CHROME_DEV_TOOL) {
+            console.time('PDFViewer.setDocument() firstPagePromise');
+            console.timeStamp('PDFViewer.setDocument() firstPagePromise');
+        }
+
         var scale = this.currentScale;
         var viewport = pdfPage.getViewport(scale * CSS_UNITS);
         for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
@@ -5976,6 +6044,11 @@ var PDFViewer = (function pdfViewer() {
         // starts to create the correct size canvas. Wait until one page is
         // rendered so we don't tie up too many resources early on.
         onePageRendered.then(function () {
+          if(DEBUG_CHROME_DEV_TOOL) {
+              console.time('PDFViewer.setDocument() firstPagePromise onePageRendered');
+              console.timeStamp('PDFViewer.setDocument() firstPagePromise onePageRendered');
+          }
+
           if (!PDFJS.disableAutoFetch) {
             var getPagesLeft = pagesCount;
             for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
@@ -5995,6 +6068,10 @@ var PDFViewer = (function pdfViewer() {
             // XXX: Printing is semi-broken with auto fetch disabled.
             resolvePagesPromise();
           }
+
+          if(DEBUG_CHROME_DEV_TOOL) {
+              console.timeEnd('PDFViewer.setDocument() firstPagePromise onePageRendered');
+          }
         });
 
         var event = document.createEvent('CustomEvent');
@@ -6010,6 +6087,9 @@ var PDFViewer = (function pdfViewer() {
         }
         //[Bruce]
         customEventsManager["onOwlLayoutReady"].confirmThisIsReady();
+        if(DEBUG_CHROME_DEV_TOOL) {
+            console.timeEnd('PDFViewer.setDocument() firstPagePromise');
+        }
       }.bind(this));
     },
 
@@ -7068,7 +7148,7 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
         $('#thumbnailView').on('click', '.owl-item', function(e) {
              //TODO: check ChapterLimit
             if (!canRead()){
-    		window.alert("Ê≠§Êõ∏ÁõÆÂâçÁÑ°Ê≥ïÈñ±ËÆÄ");
+    		window.alert("Ê≠§Êõ∏?ÆÂ??°Ê??±Ë?");
     		return false;
             } 
             PDFViewerApplication.page = $(this).index() + 1;
@@ -7575,6 +7655,11 @@ var PDFViewerApplication = {
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.time('PDFViewerApplication.initialize()');
+        console.timeStamp('PDFViewerApplication.initialize()');
+    }
+
     var pdfRenderingQueue = new PDFRenderingQueue();
     pdfRenderingQueue.onIdle = this.cleanup.bind(this);
     this.pdfRenderingQueue = pdfRenderingQueue;
@@ -7784,6 +7869,11 @@ var PDFViewerApplication = {
     //[Bruce]
     console.log("(onAppInitialized)")
     customEventsManager["onAppInitialized"].confirmThisIsReady();
+
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.timeEnd('PDFViewerApplication.initialize()');
+    }
+
     return initializedPromise.then(function () {
       PDFViewerApplication.initialized = true;
     });
@@ -8174,6 +8264,10 @@ var PDFViewerApplication = {
   },
 
   load: function pdfViewLoad(pdfDocument, scale) {
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.time('PDFViewerApplication.load()');
+        console.timeStamp('PDFViewerApplication.load()');
+    }
     var self = this;
     scale = scale || UNKNOWN_SCALE;
 
@@ -8226,6 +8320,11 @@ var PDFViewerApplication = {
     //[Bruce]
     //firstPagePromise.then(function(pdfPage) {
     Promise.all([firstPagePromise, customEventsManager['onOwlLayoutReady'].promise]).then(function(pdfPage) {
+      if(DEBUG_CHROME_DEV_TOOL) {
+          console.time('PDFViewerApplication.load() firstPagePromise onOwlLayoutReady');
+          console.timeStamp('PDFViewerApplication.load() firstPagePromise onOwlLayoutReady');
+      }
+
       downloadedPromise.then(function () {
         var event = document.createEvent('CustomEvent');
         event.initCustomEvent('documentload', true, true, {});
@@ -8305,6 +8404,9 @@ var PDFViewerApplication = {
         self.pdfViewer.focus();
       }
       //End : [Bruce]
+      if(DEBUG_CHROME_DEV_TOOL) {
+          console.timeEnd('PDFViewerApplication.load() firstPagePromise onOwlLayoutReady');
+      }
     });
 
     pagesPromise.then(function() {
@@ -8332,6 +8434,10 @@ var PDFViewerApplication = {
     // outline depends on pagesRefMap
     var promises = [pagesPromise, this.animationStartedPromise];
     Promise.all(promises).then(function() {
+      if(DEBUG_CHROME_DEV_TOOL) {
+          console.time('PDFViewerApplication.load() pagesPromise, this.animationStartedPromise');
+          console.timeStamp('PDFViewerApplication.load() pagesPromise, this.animationStartedPromise');
+      }
       pdfDocument.getOutline().then(function(outline) {
         //[Bruce]
         customEventsManager['onOutlineReady'].confirmThisIsReady(outline);
@@ -8377,6 +8483,9 @@ var PDFViewerApplication = {
         */
         //End : [Bruce]
       });
+      if(DEBUG_CHROME_DEV_TOOL) {
+          console.timeEnd('PDFViewerApplication.load() pagesPromise, this.animationStartedPromise');
+      }
     });
 
     if (self.preferenceSidebarViewOnLoad === SidebarView.THUMBS) {
@@ -8386,6 +8495,11 @@ var PDFViewerApplication = {
     }
 
     pdfDocument.getMetadata().then(function(data) {
+      if(DEBUG_CHROME_DEV_TOOL) {
+          console.time('PDFViewerApplication.load() pdfDocument.getMetadata()');
+          console.timeStamp('PDFViewerApplication.load() pdfDocument.getMetadata()');
+      }
+
       var info = data.info, metadata = data.metadata;
       self.documentInfo = info;
       self.metadata = metadata;
@@ -8422,7 +8536,14 @@ var PDFViewerApplication = {
         self.fallback(PDFJS.UNSUPPORTED_FEATURES.forms);
       }
 
+      if(DEBUG_CHROME_DEV_TOOL) {
+          console.timeEnd('PDFViewerApplication.load() pdfDocument.getMetadata()');
+      }
     });
+
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.timeEnd('PDFViewerApplication.load()');
+    }
   },
 
   setInitialView: function pdfViewSetInitialView(storedHash, scale) {

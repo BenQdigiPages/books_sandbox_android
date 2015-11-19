@@ -15,6 +15,7 @@ var pdfDoc = null,
     originalCSSScale = 0,
     pdfOutlineArray = null,
     drmFilePath = null,
+    viewerPageNum = 1,
     $viewerOwl,
     $viewThumbnailOwl;
 var DEBUG_CHROME_DEV_TOOL = false;
@@ -622,13 +623,14 @@ Viewer.gotoPosition = function(cfi) {
     var regex = /^[0-9]*$/;
     //PDF doesn't support cfi, check if cfi is page number.
     if (regex.test(cfi)) {
-        var pageNum = parseInt(cfi);
-        if (pageNum < 0 || pageNum > pdfDoc.numPages) {
-            return;
-        }
+        viewerPageNum = parseInt(cfi);
+        //if (pageNum < 0 || pageNum > pdfDoc.numPages) {
+        //    return;
+        //}
         // Update PDFApplication
-        currentPageNum = pageNum;
-        PDFViewerApplication.page = currentPageNum;
+        //currentPageNum = pageNum;
+        //PDFViewerApplication.page = currentPageNum;
+
     }
 
     if(DEBUG_CHROME_DEV_TOOL) {
@@ -6039,6 +6041,13 @@ var PDFViewer = (function pdfViewer() {
           this._pages.push(pageView);
         }
         var linkService = this.linkService;
+		
+        //Phoebe, fix issue #130
+        if ((viewerPageNum > 1) && (viewerPageNum <= pdfDoc.numPages)){
+            // Update PDFApplication
+            currentPageNum = viewerPageNum;
+            PDFViewerApplication.page = currentPageNum;
+        }
 
         // Fetch all the pages since the viewport is needed before printing
         // starts to create the correct size canvas. Wait until one page is

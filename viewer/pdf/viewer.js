@@ -555,7 +555,7 @@ Viewer.setLayoutMode = function(mode) {
     console.log("Viewer.setLayoutMode=" + mode);
     //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("Read time expired");
+    	window.alert("此書目前無法閱讀");
     	return;
     } 
     if (mode !== currentLayoutMode) {

@@ -19,7 +19,7 @@ var pdfDoc = null,
     carouselPageNum = 1,
     $viewerOwl,
     $viewThumbnailOwl;
-var DEBUG_CHROME_DEV_TOOL = false;
+var DEBUG_CHROME_DEV_TOOL = true;
 
 var ua = navigator.userAgent;
 var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
@@ -6020,6 +6020,59 @@ var PDFViewer = (function pdfViewer() {
 
         var scale = this.currentScale;
         var viewport = pdfPage.getViewport(scale * CSS_UNITS);
+        // [Bruce]
+        // Only push the first two PageView's
+        var pagesCountBefore = (pagesCount <= 1)?1:2;
+        var pagesCountAfter = pagesCount - pagesCountBefore;
+
+        // Get before
+        for (var pageNum = 1; pageNum <= pagesCountBefore; ++pageNum) {
+          var textLayerFactory = null;
+          if (!PDFJS.disableTextLayer) {
+            textLayerFactory = this;
+          }
+          var pageView = new PDFPageView({
+            container: this.viewer,
+            id: pageNum,
+            scale: scale,
+            defaultViewport: viewport.clone(),
+            renderingQueue: this.renderingQueue,
+            textLayerFactory: textLayerFactory,
+            annotationsLayerFactory: this
+          });
+          bindOnAfterAndBeforeDraw(pageView);
+          this._pages.push(pageView);
+        }
+
+        // Get after
+        if(this._pages.length < pagesCount) {
+          customEventsManager['onFirstPageRendered'].doTask(function () {
+            for (var pageNum = this._pages.length + 1; pageNum <= pagesCount; ++pageNum) {
+              var textLayerFactory = null;
+              if (!PDFJS.disableTextLayer) {
+                textLayerFactory = this;
+              }
+              var pageView = new PDFPageView({
+                container: this.viewer,
+                id: pageNum,
+                scale: scale,
+                defaultViewport: viewport.clone(),
+                renderingQueue: this.renderingQueue,
+                textLayerFactory: textLayerFactory,
+                annotationsLayerFactory: this
+              });
+              bindOnAfterAndBeforeDraw(pageView);
+              this._pages.push(pageView);
+
+              // We should set proper scale value(the first two PDFPageView has been set in setInitialView() )
+              pageView.update(this._currentScale);
+            }
+            $viewerOwl.trigger('refresh.owl.carousel');
+
+          }.bind(this));
+        }
+
+        /*
         for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           var textLayerFactory = null;
           if (!PDFJS.disableTextLayer) {
@@ -6037,6 +6090,8 @@ var PDFViewer = (function pdfViewer() {
           bindOnAfterAndBeforeDraw(pageView);
           this._pages.push(pageView);
         }
+        */
+        // End : [Bruce]
         var linkService = this.linkService;
 		
         //Phoebe, fix issue #130
@@ -7156,7 +7211,13 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
         var firstPage = resultOutPut[0];
         var pagesCount = pdfDocument.numPages;
         var viewport = firstPage.getViewport(1.0);
-        for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+
+        // Only push the first two PageView's
+        var pagesCountBefore = (pagesCount <= $viewThumbnailOwl.items)?pagesCount:$viewThumbnailOwl.items;
+        var pagesCountAfter = pagesCount - pagesCountBefore;
+
+        // Get before
+        for (var pageNum = 1; pageNum <= pagesCountBefore; ++pageNum) {
           var thumbnail = new PDFThumbnailView({
             container: this.container,
             id: pageNum,
@@ -7167,6 +7228,24 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
           });
           this.thumbnails.push(thumbnail);
         }
+
+        // Get after
+        if(this.thumbnails.length < pagesCount) {
+          customEventsManager['onFirstPageRendered'].doTask(function () {
+            for (var pageNum = this.thumbnails.length + 1; pageNum <= pagesCount; ++pageNum) {
+              var thumbnail = new PDFThumbnailView({
+                container: this.container,
+                id: pageNum,
+                defaultViewport: viewport.clone(),
+                linkService: this.linkService,
+                renderingQueue: this.renderingQueue,
+                linkItems: resultOutPut[1],
+              });
+              this.thumbnails.push(thumbnail);
+            }
+          }.bind(this));
+        }
+
         $('#thumbnailView').on('click', '.owl-item', function(e) {
              //TODO: check ChapterLimit
             if (!canRead()){

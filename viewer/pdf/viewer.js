@@ -16,6 +16,7 @@ var pdfDoc = null,
     pdfOutlineArray = null,
     drmFilePath = null,
     viewerPageNum = 1,
+    carouselPageNum = 1,
     $viewerOwl,
     $viewThumbnailOwl;
 var DEBUG_CHROME_DEV_TOOL = false;
@@ -156,8 +157,10 @@ function onURL_and_AppReady(resultOutput) {
             if (!(TwoPageViewMode.inProcess)){
                 if (TwoPageViewMode.active){
                     currentPageNum = (event.item.index * 2) + 1;
+                    carouselPageNum = currentPageNum;
                 }else {
                     currentPageNum  = event.item.index + 1;
+                    carouselPageNum = currentPageNum;
                     PDFViewerApplication.pdfViewer._pages[PDFViewerApplication.page - 1].resetCSSTransformScale();
                 }
                 // Update current page number
@@ -5818,7 +5821,13 @@ var PDFViewer = (function pdfViewer() {
         return;
       }
       
-      if (!canRead() && this.currentPageNumber !== val){
+      //[Bruce] NOTE : We must do this before set this._currentPageNumber
+      if(this.isInCarouselMode) {
+          if(this.currentPageNumber === val)
+              return;
+      }
+
+      if (!canRead()){
     	window.alert("此書目前無法閱讀");
     	if (TwoPageViewMode.active){
             $viewerOwl.trigger('to.owl.carousel', [(Math.floor((this.currentPageNumber+1)/2))-1,200,true]);
@@ -5838,18 +5847,6 @@ var PDFViewer = (function pdfViewer() {
         this.container.dispatchEvent(event);
         return;
       }
-
-      //[Bruce] NOTE : We must do this before set this._currentPageNumber
-      if(this.isInCarouselMode) {
-          if(this.currentPageNumber === val)
-              return;
-          if (TwoPageViewMode.active){
-            $viewerOwl.trigger('to.owl.carousel', [(Math.floor((val+1)/2))-1,200,true]);
-          }else{
-            $viewerOwl.trigger('to.owl.carousel',[val - 1, 200, true]);
-          }
-      }
-      //End : [Bruce]
 
       event.previousPageNumber = this._currentPageNumber;
       this._currentPageNumber = val;
@@ -6253,11 +6250,18 @@ var PDFViewer = (function pdfViewer() {
 
       //[Bruce] Carousel mode no need to update page view by ourself
       if(this.isInCarouselMode) {
+          if(pageNumber !== carouselPageNum) {
+              if (TwoPageViewMode.active){
+                  $viewerOwl.trigger('to.owl.carousel', [(Math.floor((pageNumber+1)/2))-1,200,true]);
+              }else{
+                  $viewerOwl.trigger('to.owl.carousel',[pageNumber - 1, 200, true]);
+              }
+          }
+
           // Do this because navigateTo() will not set pagenumber and call this function directly
           if (this._currentPageNumber !== pageView.id) {
               // Avoid breaking getVisiblePages in presentation mode.
               this.currentPageNumber = pageView.id;
-              return;
           }
           return;
       }
@@ -9346,16 +9350,16 @@ window.addEventListener('pagechange', function pagechange(evt) {
   if (evt.previousPageNumber !== page) {
     // Update footbar page info
     if(toolBarVisible) {
-      document.getElementById('current_page').textContent = currentPageNum;
-      document.getElementById('paginate').value = currentPageNum;
+      document.getElementById('current_page').textContent = page;
+      document.getElementById('paginate').value = page;
       PDFViewerApplication.historyPage = evt.previousPageNumber;  //Henry add, for supporting undo
       // Info App
-      App.onChangePage("", currentPageNum, currentPageNum, pdfDoc.numPages);
+      App.onChangePage("", page, page, pdfDoc.numPages);
       updateBookmarkIcon(); //[HW] update Bookmark Icon
     }
     // Update thumbnail
     if(thumbnailBarVisible) {
-        PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(currentPageNum);
+        PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);
     }
     //End : [Bruce]
   }

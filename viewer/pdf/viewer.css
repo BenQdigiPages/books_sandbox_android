@@ -1951,6 +1951,16 @@ footer.bar a.number {
 	color: #fff;  /* Henry add */
 	margin: 0;
 }
+/* Phoebe add for show 2 page numbers at twoPageViewMode, bug#214 */
+footer.bar a.number_twopage {
+  position: absolute;
+  top: 20px;
+  display: block;
+  width: 100%;
+  z-index: -1;
+  color: #fff;
+  margin: 0;
+}
 
 /* Henry modify */
 footer.bar .thumbnailbtn {

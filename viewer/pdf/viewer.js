@@ -133,6 +133,7 @@ function ViewerObserver() {
 function onViewerCarouselInitialized() {
     console.log("(onViewerCarouselInitialized)");
     customEventsManager["onViewerOwlReady"].confirmThisIsReady();
+    $('.number_twopage').hide();
 }
 
 function onThumbnailViewCarouselInitialized() {
@@ -182,7 +183,20 @@ function onURL_and_AppReady(resultOutput) {
             }
             $('#footer').show();
             //Henry add, when toolbar raised, page number have to refresh
-            document.getElementById('current_page').textContent = currentPageNum;
+            //Phoebe add for show 2 page numbers at twoPageViewMode, bug#214
+            if (TwoPageViewMode.active) {
+              $('.number').hide();
+              $('.number_twopage').show(); 
+              if ((currentPageNum % 2)  == 0) {
+                currentPageNum = currentPageNum - 1;
+              }
+              document.getElementById('current_page_now').textContent = currentPageNum;
+              document.getElementById('current_page_next').textContent = ((currentPageNum+1)< pdfDoc.numPages)? (currentPageNum+1):("   ");
+            } else {
+              $('.number_twopage').hide();
+              $('.number').show();
+              document.getElementById('current_page').textContent = currentPageNum;
+            }
             document.getElementById('paginate').value = currentPageNum;
             //[HW]
             $("#bookmark").css("top",40);
@@ -230,6 +244,15 @@ function onFirstPageRendered() {
             $('#thumbnailView').hide();
         }
         $('#footer').show();
+        //Phoebe, add for show 2 page numbers at twoPageViewMode
+        if (TwoPageViewMode.active) {
+          $('.number').hide();
+          $('.number_twopage').show(); 
+        } else {
+          $('.number_twopage').hide();
+          $('.number').show();
+        }          
+
     } else {
         if (thumbnailBarVisible) {
             $('#thumbnailView').hide();
@@ -412,6 +435,7 @@ function webUIInitialized() {
     document.getElementById('paginate').value = currentPageNum;
     document.getElementById('paginate').max = pdfDoc.numPages;
     document.getElementById('total_pages').textContent = pdfDoc.numPages;
+    document.getElementById('total_pages_twopage').textContent = pdfDoc.numPages;
     //Henry modify for next/previous page
     $(".arrow_icon1").on('click', function() {
             onPrevPage();
@@ -545,6 +569,37 @@ function updateBookmarkIcon() {
     }
 }
 
+//Phoebe add for show 2 page numbers at twoPageViewMode, bug#214
+function updateToolBar(){
+    if (toolBarVisible) {
+        if (thumbnailBarVisible) {
+            $('#thumbnailView').show();
+        } else {
+            $('#thumbnailView').hide();
+        }
+        $('#footer').show();
+        //Henry add, when toolbar raised, page number have to refresh
+        //Phoebe add for show 2 page numbers at twoPageViewMode, bug#214
+        if (TwoPageViewMode.active) {
+              $('.number').hide();
+              $('.number_twopage').show(); 
+              if ((currentPageNum % 2) == 0) {
+                currentPageNum = currentPageNum -1;
+              }
+              document.getElementById('current_page_now').textContent = currentPageNum;
+              document.getElementById('current_page_next').textContent = ((currentPageNum+1)< pdfDoc.numPages)? (currentPageNum+1):("   ");
+        } else {
+              $('.number_twopage').hide();
+              $('.number').show();
+              document.getElementById('current_page').textContent = currentPageNum;
+        }
+        document.getElementById('paginate').value = currentPageNum;
+        //[HW]
+        $("#bookmark").css("top",40);
+        $("#bookmark_left").css("top",40);
+    }
+}
+
 ///
 /// Set page layout mode
 ///
@@ -575,7 +630,9 @@ Viewer.setLayoutMode = function(mode) {
             TwoPageViewMode.disable();
             console.log("Viewer.setLayoutMode: others");
         }
-        //[HW] update bookmark icon
+        //Phoebe add, for update page number
+        updateToolBar();
+		//[HW] update bookmark icon
         updateBookmarkIcon();
     }
 
@@ -9429,7 +9486,16 @@ window.addEventListener('pagechange', function pagechange(evt) {
   if (evt.previousPageNumber !== page) {
     // Update footbar page info
     if(toolBarVisible) {
-      document.getElementById('current_page').textContent = page;
+      //Phoebe add for show 2 page numbers at twoPageViewMode, bug#214
+      if (TwoPageViewMode.active) {
+        if ((page % 2) == 0) {
+            page = page -1;
+        }
+        document.getElementById('current_page_now').textContent = page;
+        document.getElementById('current_page_next').textContent = ((page+1)< pdfDoc.numPages)? (page+1):("   ");
+      } else {        
+        document.getElementById('current_page').textContent = page;
+      }
       document.getElementById('paginate').value = page;
       PDFViewerApplication.historyPage = evt.previousPageNumber;  //Henry add, for supporting undo
       // Info App

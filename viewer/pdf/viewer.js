@@ -814,6 +814,7 @@ function UpdateBookmark(cfi, color) {
             "uuid": "",
             "title": "",
             "cfi": cfi,
+            "chapter": cfi,
             "color": color
         };
         App.onAddBookmark(tmpBookmark,"AddBookmarkCallBack");
@@ -882,7 +883,7 @@ function renderPage(num) {
     if (prePageNum != num) {
         prePageNum = num;
         //chapter not implement
-        App.onChangePage("", num, num, pdfDoc.numPages);
+        App.onChangePage(num, num, num, pdfDoc.numPages);
     }
     pageRendering = true;
     // Using promise to fetch the page
@@ -9499,7 +9500,7 @@ window.addEventListener('pagechange', function pagechange(evt) {
       document.getElementById('paginate').value = page;
       PDFViewerApplication.historyPage = evt.previousPageNumber;  //Henry add, for supporting undo
       // Info App
-      App.onChangePage("", page, page, pdfDoc.numPages);
+      App.onChangePage(page, page, page, pdfDoc.numPages);
       updateBookmarkIcon(); //[HW] update Bookmark Icon
     }
     // Update thumbnail

@@ -391,7 +391,7 @@ Viewer.loadBook = function(url, legacy) {
     }
     //TODO: deal with all read lmit
     if (!canRead()){
-    	window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
+    	window.alert("æ­¤æ›¸ç„¡æ³•é–±è®€");
     	$("#book_loading").fadeOut();
     	return;
    }  	
@@ -411,7 +411,11 @@ Viewer.loadBook = function(url, legacy) {
     //End : [Bruce]
 
     var attr = opfDoc.getElementById("pdf").attributes;
-    var pdfFile = attr.getNamedItem("href").value;
+    //var pdfFile = attr.getNamedItem("href").value;
+    //TODO: using relative path against opf file
+    var temp = attr.getNamedItem("href").value;
+    var n = temp.indexOf("PDF");
+    var pdfFile = temp.substr(n);
     console.log("PDF file:" + pdfFile);
 
     //combine url and pdf file path
@@ -449,7 +453,7 @@ function webUIInitialized() {
         function() {
              //TODO: check ChapterLimit
             if (!canRead()){
-    		window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
+    		window.alert("æ­¤æ›¸ç„¡æ³•é–±è®€");
     		return;
             } 
             PDFViewerApplication.undoPage();
@@ -458,7 +462,7 @@ function webUIInitialized() {
         function() {
             //TODO: check ChapterLimit
             if (!canRead()){
-    		window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
+    		window.alert("æ­¤æ›¸ç„¡æ³•é–±è®€");
     		document.getElementById('paginate').value = PDFViewerApplication.page;
         	return false; 
             } 
@@ -614,7 +618,7 @@ Viewer.setLayoutMode = function(mode) {
     console.log("Viewer.setLayoutMode=" + mode);
     //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
+    	window.alert("æ­¤æ›¸ç„¡æ³•é–±è®€");
     	return;
     } 
     if (mode !== currentLayoutMode) {
@@ -661,7 +665,7 @@ Viewer.getCurrentPosition = function() {
 Viewer.gotoLink = function(link) {
    //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
+    	window.alert("æ­¤æ›¸ç„¡æ³•é–±è®€");
     	return;
     }  
    var index = parseInt(link);
@@ -838,7 +842,7 @@ Viewer.searchText = function(keyword) {
 function onPrevPage() {
     //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
+    	window.alert("æ­¤æ›¸ç„¡æ³•é–±è®€");
     	return;
     }
     if (currentPageNum <= 1) {
@@ -859,7 +863,7 @@ function onPrevPage() {
 function onNextPage() {
     //TODO: check ChapterLimit
     if (!canRead()){
-    	window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
+    	window.alert("æ­¤æ›¸ç„¡æ³•é–±è®€");
     	return;
     }
     if (currentPageNum >= pdfDoc.numPages) {
@@ -5886,7 +5890,7 @@ var PDFViewer = (function pdfViewer() {
       }
 
       if (!canRead()){
-    	window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
+    	window.alert("æ­¤æ›¸ç„¡æ³•é–±è®€");
     	if (TwoPageViewMode.active){
             $viewerOwl.trigger('to.owl.carousel', [(Math.floor((this.currentPageNumber+1)/2))-1,200,true]);
         }else{
@@ -7307,7 +7311,7 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
         $('#thumbnailView').on('click', '.owl-item', function(e) {
              //TODO: check ChapterLimit
             if (!canRead()){
-    		window.alert("¦¹®Ñ¥Ø«eµLªk¾\Åª");
+    		window.alert("æ­¤æ›¸ç„¡æ³•é–±è®€");
     		return false;
             } 
             PDFViewerApplication.page = $(this).index() + 1;

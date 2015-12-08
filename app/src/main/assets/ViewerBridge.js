@@ -77,3 +77,11 @@ App.onRemoveBookmark = function(uuid) {
 App.onSearchResult = function(keyword, result_array) {
     _App.onSearchResult(keyword, JSON.stringify(result_array));
 };
+
+App.onGoToBookIntro = function() {
+    _App.onGoToBookIntro();
+};
+
+App.onShareBookInfo = function() {
+    _App.onShareBookInfo();
+};

@@ -182,6 +182,13 @@ Viewer.toggleBookmark(color, page_offset)
 ///
 Viewer.searchText(keyword)
 
+
+///
+/// Notify viewer that the book is trial.
+/// Need to create the trial page in the end.
+///
+Viewer.enableTrialPage()
+
 -----------------------------------------------------------------------------
 
 Application export the following functions to javascript:
@@ -344,3 +351,25 @@ App.onRemoveBookmark(uuid)
 /// @result - an json object to represent search result
 ///
 App.onSearchResult(keyword, [result, ...])
+
+
+///
+/// Notify App the given highlight need to be shared, App will popup sharing dialog
+///
+/// @uuid - uuid of the highlight
+///
+App.onShareHighlight(uuid)
+
+
+///
+/// Notify App to go the product page of book.
+///
+/// http://www.books.com.tw/products/<book_item>
+///
+App.onGoToBookIntro()
+
+
+///
+/// Notify App the book need to be shared, App will popup sharing dialog
+///
+App.onShareBookInfo()

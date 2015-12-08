@@ -400,6 +400,15 @@ public class ViewerBridge {
         eval("Viewer.searchText(null)", null);
     }
 
+
+    ///
+    /// Notify viewer that the book is trial.
+    /// Need to create the trial page in the end.
+    ///
+    public void enableTrialPage() {
+        eval("Viewer.enableTrialPage()", null);
+    }
+
     public class JavascriptCallback {
         @JavascriptInterface
         public void onDispatchResult(int token, final String result) {
@@ -761,6 +770,38 @@ public class ViewerBridge {
                     } catch (Exception e) {
                         Log.i(TAG, "fail onSearchResult(" + keyword + ") = " + result_json, e);
                     }
+                }
+            });
+        }
+
+        ///
+        /// Notify App to go the product page of book.
+        ///
+        /// http://www.books.com.tw/products/<book_item>
+        ///
+        @JavascriptInterface
+        public void onGoToBookIntro() {
+            Toast.makeText(mContext, (String) "onGoToBookIntro", Toast.LENGTH_LONG).show();
+            mHandler.post(new Runnable() {
+                public void run() {
+                    new AlertDialog.Builder(mScene)
+                            .setTitle("onGoToBookIntro")
+                            .show();
+                }
+            });
+        }
+
+        ///
+        /// Notify App the book need to be shared, App will popup sharing dialog
+        ///
+        @JavascriptInterface
+        public void onShareBookInfo() {
+            Toast.makeText(mContext, (String) "onShareBookInfo", Toast.LENGTH_LONG).show();
+            mHandler.post(new Runnable() {
+                public void run() {
+                    new AlertDialog.Builder(mScene)
+                            .setTitle("onShareBookInfo")
+                            .show();
                 }
             });
         }

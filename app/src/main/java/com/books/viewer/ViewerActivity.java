@@ -88,6 +88,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
             }
         });
 
+        mBridge.enableTrialPage();
         mBridge.loadBook(url, is_pdf);
     }
 

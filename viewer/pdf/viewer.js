@@ -404,7 +404,11 @@ Viewer.loadBook = function(url, legacy) {
     for (i = 0 ; i < items.length ; i++) {
         if (items[i].attributes.getNamedItem("media-type").value !== "image/png")
             continue;
-        link = url + items[i].attributes.getNamedItem("href").value;
+        //TODO: using relative path against opf file
+        var temp = items[i].attributes.getNamedItem("href").value;
+        var n = temp.indexOf("THUMBNAIL");
+        var thumbnailPath = temp.substr(n);
+        link = url +  thumbnailPath;
         thumbnailNames.push(link);
     }
     customEventsManager["onThumbnailExternalLinkReady"].confirmThisIsReady(thumbnailNames);

@@ -405,8 +405,10 @@ public class ViewerBridge {
     /// Notify viewer that the book is trial.
     /// Need to create the trial page in the end.
     ///
-    public void enableTrialPage() {
-        eval("Viewer.enableTrialPage()", null);
+    ///@book_info: Json object - related book infomations in trial page
+    ///
+    public void enableTrialPage(JSONObject book_info) {
+        eval("Viewer.enableTrialPage" + "(" + book_info.toString() + ")", null);
     }
 
     public class JavascriptCallback {

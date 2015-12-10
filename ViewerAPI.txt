@@ -187,7 +187,9 @@ Viewer.searchText(keyword)
 /// Notify viewer that the book is trial.
 /// Need to create the trial page in the end.
 ///
-Viewer.enableTrialPage()
+///@book_info: Json object - related book infomations in trial page
+///
+Viewer.enableTrialPage(book_info)
 
 -----------------------------------------------------------------------------
 

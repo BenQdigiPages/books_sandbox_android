@@ -89,10 +89,26 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         });
 
         mBridge.loadBook(url, is_pdf);
-        mBridge.enableTrialPage();
+        mBridge.enableTrialPage(getBookInfoJson());
     }
 
     private JSONArray mTOC;
+
+    private JSONObject getBookInfoJson(){
+        JSONObject json = new JSONObject();
+        try {
+            json.put("c_title", "accessible_epub_3");
+            json.put("author", "茉莉戈波提爾曼寧");
+            json.put("publisher_name", "owl");
+            json.put("publish_date", "2015/05/18");
+            json.put("isbn", "9789579684255");
+            json.put("book_format", "REFLOWABLE");
+            json.put("cur_version", "V001.0001");
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+        return json;
+    }
 
     public void setTableOfContent(JSONArray toc) {
         mTOC = toc;

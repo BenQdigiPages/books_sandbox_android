@@ -6112,7 +6112,7 @@ var PDFViewer = (function pdfViewer() {
 
         // Get after
         if(this._pages.length < pagesCount) {
-          customEventsManager['onFirstPageRendered'].doTask(function () {
+          customEventsManager['onFirstPageRendered'].promise.then(function () {
             for (var pageNum = this._pages.length + 1; pageNum <= pagesCount; ++pageNum) {
               var textLayerFactory = null;
               if (!PDFJS.disableTextLayer) {
@@ -6135,7 +6135,13 @@ var PDFViewer = (function pdfViewer() {
             }
             $viewerOwl.trigger('refresh.owl.carousel');
 
-          }.bind(this));
+          }.bind(this)).then(function(){
+            //Phoebe, fix issue #581,#130
+            if ((viewerPageNum > 1) && (viewerPageNum <= pdfDoc.numPages)){
+              currentPageNum = viewerPageNum;
+              PDFViewerApplication.page = currentPageNum;
+            }
+          });
         }
 
         /*
@@ -6160,13 +6166,6 @@ var PDFViewer = (function pdfViewer() {
         // End : [Bruce]
         var linkService = this.linkService;
 		
-        //Phoebe, fix issue #130
-        if ((viewerPageNum > 1) && (viewerPageNum <= pdfDoc.numPages)){
-            // Update PDFApplication
-            currentPageNum = viewerPageNum;
-            PDFViewerApplication.page = currentPageNum;
-        }
-
         // Fetch all the pages since the viewport is needed before printing
         // starts to create the correct size canvas. Wait until one page is
         // rendered so we don't tie up too many resources early on.

@@ -1,3 +1,10 @@
+Changes with Android PDF viewer v0.9.01.03
+
+  *) Change way to get xml files, using byte receive
+  *) Filter BOM at beginning of xml files if exist
+  *) Fix opf with chinese word can't be parsed problem
+
+
 Changes with Android PDF viewer v0.9.01.02
 
   *) using relative path of thumbnail in opf file bda9c4f3feb0ac7552c10af929cd710e7101d3c6

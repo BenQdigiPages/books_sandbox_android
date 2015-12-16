@@ -20,6 +20,9 @@ var pdfDoc = null,
     $viewerOwl,
     $viewThumbnailOwl;
 var DEBUG_CHROME_DEV_TOOL = true;
+var DRM = {}; //esther
+var downloadlink; //Henry add
+var opfFile;  //Henry add
 
 var ua = navigator.userAgent;
 var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
@@ -94,30 +97,83 @@ var drmReadLimit  =   {
 	}
 };
 
-function updateReadLimit() {
-	console.log("updateReadLimit");
+function loadDRM(drmFile) {
+	console.log("loadDRM");
+	return new Promise(function(resolve, reject){
+	/*
 	var xhttp = new XMLHttpRequest();
    	xhttp.open('GET', drmFilePath, false);
   	xhttp.send();
   	var drmDoc = xhttp.responseXML;
+    */
+   	getContent(drmFile).then(function(drm) {
+          parseDRM(drm);
+          resolve(drm);
+   	},function(reason) {
+          console.log(reason);
+          reject(new Error("loadDRM fail "+reason));
+    });
+    /*
   	var rootReadLimit = drmDoc.getElementsByTagName("ReadLimit")[0];
   	var starttime = new Date(rootReadLimit.getElementsByTagName("StartTime")[0].childNodes[0].nodeValue);
   	var endtime = new Date(rootReadLimit.getElementsByTagName("EndTime")[0].childNodes[0].nodeValue);
   	drmReadLimit.StartTime = Date.parse(starttime); 	
   	drmReadLimit.EndTime=Date.parse(endtime);
+  	*/
   	 //TODO: deal with all the limits
 //  	drmReadLimit.Duration = rootReadLimit.getElementsByTagName("Duration")[0].childNodes[0].nodeValue;
 //  	drmReadLimit.GracePeriod = rootReadLimit.getElementsByTagName("GracePeriod")[0].childNodes[0].nodeValue;
 //  	drmReadLimit.ChapterPrice = rootReadLimit.getElementsByTagName("ChapterPrice")[0].childNodes[0].nodeValue;
 //  	drmReadLimit.ChapterLimit = rootReadLimit.getElementsByTagName("ChapterLimit")[0].childNodes[0].nodeValue;
+    });//new Promise
+}
+
+function parseDRM (drm) {
+        var doc= bytesToString(drm);
+        doc = doc.substr(doc.indexOf("<"));
+        $xml = $($.parseXML(doc));
+        $.each($xml.find("DRM")[0].childNodes, function(k,v){
+            if(!v.localName==false && v.childNodes.length) {
+                if(v.childNodes.length>1) {
+                    var data = {};
+                     for(var i in v.childNodes) {
+                           var v2 = v.childNodes[i];
+                            if(!v2.localName==false) {
+                                 var value = v2.childNodes.length?v2.childNodes[0].data:null;
+                                 if (value == "true")
+                                 	data[v2.localName] = true;
+                                 else if (value == "false")
+                                 	data[v2.localName] = false;
+                                 else
+                                 	data[v2.localName] = value;
+                            }
+		     }
+                     DRM[v.localName] = data;
+                } else {
+                     DRM[v.localName] = v.childNodes[0].data;
+                }
+            }
+        });
 }
 
 //TODO: check all items in ReadLimit
-function canRead() {	
+function canRead() {
+    /*
 	var currentTime = new Date().getTime();
 	if (currentTime >= drmReadLimit.StartTime && (drmReadLimit.EndTime < 0  || currentTime < drmReadLimit.EndTime))
 		return true;
 	return false;
+	*/
+    if(!DRM.ReadLimit)
+    	return true;
+    var s_str = DRM.ReadLimit.StartTime.split("T");
+    var e_str = DRM.ReadLimit.EndTime.split("T");
+    var start = new Date(s_str[0]+" "+s_str[1]);
+    var end = new Date(e_str[0]+" "+e_str[1]);
+    var today = new Date();
+    if(today.valueOf()<start.valueOf() || today.valueOf()>end.valueOf())
+    	return false;
+    return true;
 }
 
 function ViewerObserver() {
@@ -278,6 +334,14 @@ function onFirstPageRendered() {
     }else{
         $viewerOwl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
     }
+
+    //Henry add here
+    getThumbnailList(opfFile).then(function(thumbnailNames) {
+        customEventsManager["onThumbnailExternalLinkReady"].confirmThisIsReady(thumbnailNames);
+    }, function(reason) {
+        console.log("Fail _getThumbnailList" + reason);
+    });
+
 }
 
 function onDocumentReady(pdfDocument) {
@@ -354,6 +418,7 @@ function onOutlineReady(outline) {
 Viewer.loadBook = function(url, legacy) {
 
     console.log("lookBook url= "+ url + ", legacy= "+legacy);
+    downloadlink = url;
 
     if(DEBUG_CHROME_DEV_TOOL) {
         console.time('Viewer.loadBook()');
@@ -365,9 +430,49 @@ Viewer.loadBook = function(url, legacy) {
     PDFJS.disableAutoFetch = true;
     //PDFJS.verbosity = PDFJS.VERBOSITY_LEVELS.infos;
 
-    var containerDoc = null;
-    var opfDoc = null;
+    var drmFile;
+    var pdfFile;
 
+    parseContainerFile(url).then(function(opf) {
+          console.log("opf: "+opf);
+          opfFile = url+ opf;  //keep in global
+          getfilename(opfFile).then(function(paths) {
+             if (paths.drm != null) {
+                 //TODO: parse herf to get DRM path
+                 drmFile = url+ "DRM/drm.xml";
+                 loadDRM(drmFile).then(function(drm){
+                     if (!canRead()) {
+                         window.alert("此書目前無法閱讀");
+                         $("#book_loading").fadeOut();
+                         return;
+                      }
+                      window.setInterval(loadDRM,  10*60*1000); //10mins
+                      pdfFile = url + paths.pdf;
+                      renderBook(pdfFile, legacy);
+                      //$this.renderBook(url + paths.pdf, r.encrypt_type);
+                 } , function (reason) {
+                     console.log(reason); //fail to get DRM
+                     window.alert(reason);
+                     pdfFile = url + paths.pdf;
+                     renderBook(pdfFile, legacy);
+                     //$this.renderBook(url + paths.pdf, r.encrypt_type); //temp, still render it without drm file
+                 });
+       	     } else {
+       	         //DO NOTHING?
+       	         //no drm file define in opf
+       	         pdfFile = url + paths.pdf;
+       	         renderBook(pdfFile, legacy);
+       	     }
+          }, function(reason) {
+             console.log("Fail getfilename "+reason); //fail to get filename
+             window.alert(reason);
+             //$this.renderBook(null);
+          });
+    }, function(reason) {  //parseContainerFile fail case
+           console.log("Fail parseContainerFile "+reason);
+           window.alert(reason);
+    });
+   /*
     //Parsing container.xml and get .opf
     var xhttp = new XMLHttpRequest();
     xhttp.open('GET', url + "META-INF/container.xml", false);
@@ -381,7 +486,7 @@ Viewer.loadBook = function(url, legacy) {
     xhttp.open('GET', url + opfFile, false);
     xhttp.send();
     opfDoc = xhttp.responseXML;
-    
+    /*
     //[Esther]
     //TODO:pare path from herf
     if (opfDoc.getElementById("drm") != null) {
@@ -395,8 +500,9 @@ Viewer.loadBook = function(url, legacy) {
     	$("#book_loading").fadeOut();
     	return;
    }  	
-
+   */
     //[Bruce]
+    /*
     var thumbnailNames = [];
     var items = opfDoc.getElementsByTagName("item");
     var link;
@@ -412,8 +518,10 @@ Viewer.loadBook = function(url, legacy) {
         thumbnailNames.push(link);
     }
     customEventsManager["onThumbnailExternalLinkReady"].confirmThisIsReady(thumbnailNames);
+    */
     //End : [Bruce]
 
+    /*
     var attr = opfDoc.getElementById("pdf").attributes;
     //var pdfFile = attr.getNamedItem("href").value;
     //TODO: using relative path against opf file
@@ -431,6 +539,83 @@ Viewer.loadBook = function(url, legacy) {
     if(DEBUG_CHROME_DEV_TOOL) {
         console.timeEnd('Viewer.loadBook()');
     }
+    */
+}
+
+function renderBook(url, legacy){
+    console.log("PDF file:" + url);
+    customEventsManager["onURLReady"].confirmThisIsReady([url,legacy]);
+    customEventsManager.doAfterMultiReady(["onURLReady","onAppInitialized","onViewerOwlReady","onThumbnailViewOwlReady"],onURL_and_AppReady);
+
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.timeEnd('Viewer.loadBook()');
+    }
+}
+
+function parseContainerFile(url){
+      return new Promise(function(resolve, reject){
+      //Samples:
+      //<rootfile full-path="metadata.opf" media-type="application/oebps-package+xml"/>
+      //<rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>
+       getContent(url+"META-INF/container.xml").then(function(container) {
+             var doc= bytesToString(container);
+             doc = doc.substr(doc.indexOf("<"));
+             $xml = $($.parseXML(doc));
+             var opfFile = $xml.find("rootfile").attr("full-path");
+             resolve(opfFile);
+       },function(reason) {
+             console.log(reason);
+             reject(new Error("parseContainerFile fail "+reason));
+       });
+
+      });//new Promise
+
+}
+
+function getfilename(opf) {
+   	   return new Promise(function(resolve, reject){
+           	getContent(opf).then(function(pdf) {
+                  var doc= stringToUTF8String(bytesToString(pdf));  //special case for chinese
+                  doc = doc.substr(doc.indexOf("<"));
+                  $xml = $($.parseXML(doc));
+                  var paths = {};
+                  //TODO: using relative path against opf file
+                  var temp = $xml.find("item#pdf").attr("href");
+                  var n = temp.indexOf("PDF");
+                  paths.pdf = temp.substr(n);
+                  paths.drm = $xml.find("item#drm").attr("href");
+                  resolve(paths);
+           	},function(reason) {
+                  console.log(reason);
+                  reject(new Error("getfilename fail "+reason));
+            });
+
+       });//return new Promise
+}
+
+function  getThumbnailList(opf) {
+        var $this = this;
+        return new Promise(function(resolve, reject){
+        	getContent(opf).then(function(out) {
+	            var doc= bytesToString(out);
+	            doc = doc.substr(doc.indexOf("<"));
+	        	  $xml = $($.parseXML(doc));
+	            var thumbnailNames = [];
+	            $.each($xml.find("item"),function() {
+	                if ($(this).attr("media-type") == "image/jpeg") {
+                       //TODO: using relative path against opf file
+                       var temp = $(this).attr("href");
+                       var n = temp.indexOf("THUMBNAIL");
+                       var thumbnailPath = temp.substr(n);
+                       thumbnailNames.push(downloadlink + thumbnailPath);
+	                }
+	            });
+            	resolve(thumbnailNames);
+        	},function(reason) {
+                console.log(reason);
+                reject(new Error("getThumbnailList fail "+reason));
+          	});
+        });//new Promise
 }
 
 function webUIInitialized() {
@@ -933,6 +1118,55 @@ function queueRenderPage(num) {
     }
 }
 
+//Henry add
+function getContent(url) {
+        return new Promise(function(resolve, reject){
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', url);
+          xhr.onreadystatechange = handler;
+          xhr.responseType = 'arraybuffer';
+          xhr.send();
+
+          function handler() {
+            if (this.readyState === this.DONE) {
+              if (this.status === 200) {
+              	var arrayBuffer = this.response;
+                resolve(new Uint8Array(arrayBuffer));
+              } else {
+                reject(new Error(url + " failed with status: [" + this.status + "]"));
+              }
+            }
+          };
+        });
+  }
+
+//Henry add
+function bytesToString(bytes) {
+  assert(bytes !== null && typeof bytes === 'object' &&
+         bytes.length !== undefined, 'Invalid argument for bytesToString');
+  var length = bytes.length;
+  var MAX_ARGUMENT_COUNT = 8192;
+  if (length < MAX_ARGUMENT_COUNT) {
+    return String.fromCharCode.apply(null, bytes);
+  }
+  var strBuf = [];
+  for (var i = 0; i < length; i += MAX_ARGUMENT_COUNT) {
+    var chunkEnd = Math.min(i + MAX_ARGUMENT_COUNT, length);
+    var chunk = bytes.subarray(i, chunkEnd);
+    strBuf.push(String.fromCharCode.apply(null, chunk));
+  }
+  return strBuf.join('');
+}
+
+function assert(cond, msg) {
+  if (!cond) {
+    error(msg);
+  }
+}
+
+function stringToUTF8String(str) {
+  return decodeURIComponent(escape(str));
+}
 
 
 /* ====================================================================================

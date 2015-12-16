@@ -375,7 +375,7 @@ Viewer.loadBook = function(url, legacy) {
                          $("#book_loading").fadeOut();
                          return;
                       }
-                      window.setInterval(loadDRM,  3*60*1000); //10mins
+                      window.setInterval(loadDRM,  10*60*1000); //10mins
                       pdfFile = url + paths.pdf;
                       renderBook(pdfFile, legacy);
                       //$this.renderBook(url + paths.pdf, r.encrypt_type);

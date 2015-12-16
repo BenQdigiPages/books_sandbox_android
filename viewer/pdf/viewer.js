@@ -14,7 +14,7 @@ var pdfDoc = null,
     savedBookmarks = [],
     originalCSSScale = 0,
     pdfOutlineArray = null,
-    drmFilePath = null,
+    drmFile,
     viewerPageNum = 1,
     carouselPageNum = 1,
     $viewerOwl,
@@ -51,81 +51,17 @@ var customEventsManager =  {
         },
 };
 
-var drmReadLimit  =   {
-
-	_StartTime: 0 ,
-	_EndTime: -1,
-	_Duration: 0,
-	_GracePeriod: 0,
-	_ChapterPrice: '',
-	_ChapterLimit: 'ALL',
-	get StartTime () {
-		return this._StartTime;
-	},
-	set StartTime (starttime) {
-		this._StartTime = starttime;
-	},
-	get EndTime () {
-		return this._EndTime;
-	},
-	set EndTime (endtime) {
-		this._EndTime = endtime;
-	},
-	get Duration () {
-		return this._Duration;
-	},
-	set Duration (duration) {
-		this._Duration = duration;
-	},
-	get GracePeriod () {
-		return this._GracePeriod;
-	},
-	set GracePeriod (graceperiod) {
-		this._GracePeriod = graceperiod;
-	},
-	get ChapterPrice () {
-		return this._ChapterPrice;
-	},
-	set ChapterPrice (chapterprice) {
-		this._ChapterPrice = chapterprice;
-	},
-	get ChapterLimit () {
-		return this._ChapterLimit;
-	},
-	set ChapterLimit (chapterlimit) {
-		this._ChapterLimit = chapterlimit;
-	}
-};
-
-function loadDRM(drmFile) {
+function loadDRM() {
 	console.log("loadDRM");
 	return new Promise(function(resolve, reject){
-	/*
-	var xhttp = new XMLHttpRequest();
-   	xhttp.open('GET', drmFilePath, false);
-  	xhttp.send();
-  	var drmDoc = xhttp.responseXML;
-    */
-   	getContent(drmFile).then(function(drm) {
-          parseDRM(drm);
-          resolve(drm);
-   	},function(reason) {
-          console.log(reason);
-          reject(new Error("loadDRM fail "+reason));
-    });
-    /*
-  	var rootReadLimit = drmDoc.getElementsByTagName("ReadLimit")[0];
-  	var starttime = new Date(rootReadLimit.getElementsByTagName("StartTime")[0].childNodes[0].nodeValue);
-  	var endtime = new Date(rootReadLimit.getElementsByTagName("EndTime")[0].childNodes[0].nodeValue);
-  	drmReadLimit.StartTime = Date.parse(starttime); 	
-  	drmReadLimit.EndTime=Date.parse(endtime);
-  	*/
-  	 //TODO: deal with all the limits
-//  	drmReadLimit.Duration = rootReadLimit.getElementsByTagName("Duration")[0].childNodes[0].nodeValue;
-//  	drmReadLimit.GracePeriod = rootReadLimit.getElementsByTagName("GracePeriod")[0].childNodes[0].nodeValue;
-//  	drmReadLimit.ChapterPrice = rootReadLimit.getElementsByTagName("ChapterPrice")[0].childNodes[0].nodeValue;
-//  	drmReadLimit.ChapterLimit = rootReadLimit.getElementsByTagName("ChapterLimit")[0].childNodes[0].nodeValue;
-    });//new Promise
+   		getContent(drmFile).then(function(drm) {
+          		parseDRM(drm);
+          		resolve(drm);
+   		},function(reason) {
+          		console.log(reason);
+          		reject(new Error("loadDRM fail "+reason));
+          	});
+    	});//new Promise
 }
 
 function parseDRM (drm) {
@@ -158,12 +94,6 @@ function parseDRM (drm) {
 
 //TODO: check all items in ReadLimit
 function canRead() {
-    /*
-	var currentTime = new Date().getTime();
-	if (currentTime >= drmReadLimit.StartTime && (drmReadLimit.EndTime < 0  || currentTime < drmReadLimit.EndTime))
-		return true;
-	return false;
-	*/
     if(!DRM.ReadLimit)
     	return true;
     var s_str = DRM.ReadLimit.StartTime.split("T");
@@ -430,7 +360,6 @@ Viewer.loadBook = function(url, legacy) {
     PDFJS.disableAutoFetch = true;
     //PDFJS.verbosity = PDFJS.VERBOSITY_LEVELS.infos;
 
-    var drmFile;
     var pdfFile;
 
     parseContainerFile(url).then(function(opf) {
@@ -440,13 +369,13 @@ Viewer.loadBook = function(url, legacy) {
              if (paths.drm != null) {
                  //TODO: parse herf to get DRM path
                  drmFile = url+ "DRM/drm.xml";
-                 loadDRM(drmFile).then(function(drm){
+                 loadDRM().then(function(drm){
                      if (!canRead()) {
                          window.alert("此書目前無法閱讀");
                          $("#book_loading").fadeOut();
                          return;
                       }
-                      window.setInterval(loadDRM,  10*60*1000); //10mins
+                      window.setInterval(loadDRM,  3*60*1000); //10mins
                       pdfFile = url + paths.pdf;
                       renderBook(pdfFile, legacy);
                       //$this.renderBook(url + paths.pdf, r.encrypt_type);
@@ -486,20 +415,7 @@ Viewer.loadBook = function(url, legacy) {
     xhttp.open('GET', url + opfFile, false);
     xhttp.send();
     opfDoc = xhttp.responseXML;
-    /*
-    //[Esther]
-    //TODO:pare path from herf
-    if (opfDoc.getElementById("drm") != null) {
-    	drmFilePath = url + "DRM/drm.xml";
-           	updateReadLimit();
-           	window.setInterval(updateReadLimit,  10*60*1000); //10mins
-    }
-    //TODO: deal with all read lmit
-    if (!canRead()){
-    	window.alert("此書無法閱讀");
-    	$("#book_loading").fadeOut();
-    	return;
-   }  	
+      	
    */
     //[Bruce]
     /*

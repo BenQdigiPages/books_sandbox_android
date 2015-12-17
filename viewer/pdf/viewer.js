@@ -1,12 +1,6 @@
 var Viewer = {};
 var pdfDoc = null,
-    prePageNum = 1,
     currentPageNum = 1,
-    pageRendering = false,
-    pageNumPending = null,
-    scale = 1.0,
-    canvas,
-    ctx,
     toolBarVisible = true,
     thumbnailBarVisible = false,
     currentLayoutMode = "single",
@@ -1014,57 +1008,6 @@ function onNextPage() {
     } else {
         currentPageNum++;
         PDFViewerApplication.page++;
-    }
-}
-
-/**
- * Get page info from document, resize canvas accordingly, and render page.
- * @param num Page number.
- */
-function renderPage(num) {
-    //Notify App current page is changed to different page
-    if (prePageNum != num) {
-        prePageNum = num;
-        //chapter not implement
-        App.onChangePage(num, num, num, pdfDoc.numPages);
-    }
-    pageRendering = true;
-    // Using promise to fetch the page
-    pdfDoc.getPage(num).then(function(page) {
-        var viewport = page.getViewport(scale);
-        canvas = document.getElementById('the-canvas');
-        ctx = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        // Render PDF page into canvas context
-        var renderContext = {
-            canvasContext: ctx,
-            viewport: viewport
-        };
-        var renderTask = page.render(renderContext);
-
-        // Wait for rendering to finish
-        renderTask.promise.then(function () {
-            pageRendering = false;
-            if (pageNumPending !== null) {
-                // New page rendering is pending
-                renderPage(pageNumPending);
-                pageNumPending = null;
-            }
-        });
-    });
-}
-
-/**
- * If another page rendering in progress, waits until the rendering is
- * finished. Otherwise, executes rendering immediately.
- */
-function queueRenderPage(num) {
-    if (pageRendering) {
-        pageNumPending = num;
-    } else {
-        renderPage(num);
     }
 }
 

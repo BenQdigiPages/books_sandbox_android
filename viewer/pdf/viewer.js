@@ -39,7 +39,7 @@ var customEventsManager =  {
         "onFirstPageRendered"              : new ViewerObserver(),
         "onViewerOwlReady"                 : new ViewerObserver(),
         "onThumbnailViewOwlReady"          : new ViewerObserver(),
-        "onThumbnailViewOwlReady"          : new ViewerObserver(),
+        "onDelayedPageDIVsReady"           : new ViewerObserver(),
 
         doAfterMultiReady     : function customEventsManager_setMultiReady(mulityReadyArray,readyToDo){
             var mulityReadyPromises = [],

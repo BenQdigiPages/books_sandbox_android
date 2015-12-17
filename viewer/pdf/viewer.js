@@ -783,7 +783,6 @@ Viewer.setLayoutMode = function(mode) {
         updateBookmarkIcon();
     }
 }
-}
 
 ///
 /// Get current position in the ebook

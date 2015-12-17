@@ -39,6 +39,7 @@ var customEventsManager =  {
         "onFirstPageRendered"              : new ViewerObserver(),
         "onViewerOwlReady"                 : new ViewerObserver(),
         "onThumbnailViewOwlReady"          : new ViewerObserver(),
+        "onThumbnailViewOwlReady"          : new ViewerObserver(),
 
         doAfterMultiReady     : function customEventsManager_setMultiReady(mulityReadyArray,readyToDo){
             var mulityReadyPromises = [],
@@ -107,6 +108,7 @@ function canRead() {
 }
 
 function ViewerObserver() {
+    this.isReady = false;
     this.confirmThisIsReady = null;
     this.promise = new Promise(function (resolve) {
         this.confirmThisIsReady = resolve;
@@ -114,6 +116,10 @@ function ViewerObserver() {
     this.doTask = function viewerObserver_doTask(readyToDo){
         this.promise.then(readyToDo);
     };
+    // Update internal state
+    this.promise.then(function(){
+        this.isReady = true;
+    }.bind(this));
 }
 
 function onViewerCarouselInitialized() {
@@ -204,6 +210,7 @@ function onURL_and_AppReady(resultOutput) {
     customEventsManager['onOutlineReady'].doTask(onOutlineReady);
     customEventsManager['onDocumentReady'].doTask(onDocumentReady);
     customEventsManager['onFirstPageRendered'].doTask(onFirstPageRendered);
+    customEventsManager['onDelayedPageDIVsReady'].doTask(onDelayedPageDIVsReady);
 
     /**
      * Asynchronously downloads PDF.
@@ -217,6 +224,14 @@ function onURL_and_AppReady(resultOutput) {
 
     if(DEBUG_CHROME_DEV_TOOL) {
         console.timeEnd('onURL_and_AppReady()');
+    }
+}
+
+function onDelayedPageDIVsReady() {
+    //Phoebe, fix issue #581,#130
+    if ((viewerPageNum > 1) && (viewerPageNum <= pdfDoc.numPages)){
+        currentPageNum = viewerPageNum;
+        PDFViewerApplication.page = currentPageNum;
     }
 }
 
@@ -715,10 +730,6 @@ function updateToolBar(){
 /// @mode: string - either "single", "side_by_side" or "continuous"
 ///
 Viewer.setLayoutMode = function(mode) {
-    if(DEBUG_CHROME_DEV_TOOL) {
-        console.time('Viewer.setLayoutMode()');
-        console.timeStamp('Viewer.setLayoutMode()');
-    }
 
     console.log("Viewer.setLayoutMode=" + mode);
     //TODO: check ChapterLimit
@@ -726,28 +737,52 @@ Viewer.setLayoutMode = function(mode) {
     	window.alert("此書無法閱讀");
     	return;
     } 
-    if (mode !== currentLayoutMode) {
+
+    if (mode === currentLayoutMode) {
+        return;
+    }
+
+    var isReady = customEventsManager['onDelayedPageDIVsReady'].isReady;
+    if (mode === "single") {
+        if(isReady) {
+            setLayoutModeSingle();
+        } else {
+            customEventsManager['onDelayedPageDIVsReady'].doTask(setLayoutModeSingle);
+        }
+    } else if (mode === "side_by_side"){
+        if(isReady) {
+            setLayoutModeSideBySide();
+        } else {
+            customEventsManager['onDelayedPageDIVsReady'].doTask(setLayoutModeSideBySide);
+        }
+    } else {
+        if(isReady) {
+            setLayoutModeSingle();
+        } else {
+            customEventsManager['onDelayedPageDIVsReady'].doTask(setLayoutModeSingle);
+        }
+    }
+
+    function setLayoutModeSingle() {
         currentLayoutMode = mode;
-        if (currentLayoutMode === "single") {
-			console.log("setLayoutMode:single");
-            TwoPageViewMode.disable();
-        }else if (currentLayoutMode === "side_by_side"){
-			console.log("setLayoutMode:side_by_side");
-            TwoPageViewMode.enable();
-        }
-        else {
-            TwoPageViewMode.disable();
-            console.log("Viewer.setLayoutMode: others");
-        }
+        console.log("setLayoutMode:single");
+        TwoPageViewMode.disable();
         //Phoebe add, for update page number
         updateToolBar();
-		//[HW] update bookmark icon
+        //[HW] update bookmark icon
         updateBookmarkIcon();
     }
 
-    if(DEBUG_CHROME_DEV_TOOL) {
-        console.timeEnd('Viewer.setLayoutMode()');
+    function setLayoutModeSideBySide() {
+        currentLayoutMode = mode;
+        console.log("setLayoutMode:side_by_side");
+        TwoPageViewMode.enable();
+        //Phoebe add, for update page number
+        updateToolBar();
+        //[HW] update bookmark icon
+        updateBookmarkIcon();
     }
+}
 }
 
 ///
@@ -6282,16 +6317,12 @@ var PDFViewer = (function pdfViewer() {
 
               // We should set proper scale value(the first two PDFPageView has been set in setInitialView() )
               pageView.update(this._currentScale);
+
+              customEventsManager['onDelayedPageDIVsReady'].confirmThisIsReady();
             }
             $viewerOwl.trigger('refresh.owl.carousel');
 
-          }.bind(this)).then(function(){
-            //Phoebe, fix issue #581,#130
-            if ((viewerPageNum > 1) && (viewerPageNum <= pdfDoc.numPages)){
-              currentPageNum = viewerPageNum;
-              PDFViewerApplication.page = currentPageNum;
-            }
-          });
+          }.bind(this));
         }
 
         /*

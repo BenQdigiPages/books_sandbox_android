@@ -889,7 +889,7 @@ Viewer.toggleBookmark = function(color, page_offset) {
         } else {
             //Remove bookmark in current page.
             var bookmark = null;
-            if ((bookmark = isBookmarkExist()) !== null) {
+            if ((bookmark = isBookmarkExist(currentPageNum)) !== null) {
                 App.onRemoveBookmark(bookmark.uuid);
                 var index = savedBookmarks.indexOf(bookmark);
                 delete savedBookmarks[index];

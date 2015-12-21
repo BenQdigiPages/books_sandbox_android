@@ -145,6 +145,8 @@ function onURL_and_AppReady(resultOutput) {
                 if (TwoPageViewMode.active){
                     currentPageNum = (event.item.index * 2) + 1;
                     carouselPageNum = currentPageNum;
+                    TwoPageViewMode.pageIndex = currentPageNum;
+                    TwoPageViewMode.resetCSSTransformScale();
                 }else {
                     currentPageNum  = event.item.index + 1;
                     carouselPageNum = currentPageNum;
@@ -152,7 +154,9 @@ function onURL_and_AppReady(resultOutput) {
                 }
                 // Update current page number
                 PDFViewerApplication.page = currentPageNum;
-                if (TwoPageViewMode.active === false){
+                if (TwoPageViewMode.active){
+                    TwoPageViewMode.applyCSSTransformScale();
+                } else {
                     PDFViewerApplication.pdfViewer._pages[currentPageNum - 1].applyCSSTransformScale();
                 }
             }
@@ -4807,9 +4811,6 @@ var PDFPageView = (function PDFPageViewClosure() {
         container.appendChild(div);
     }
     // [Bruce] interact.js
-    var tempScale = 0;
-
-    var oriX,oriY;
     var targetName = '#' + div.id;
     interact(targetName)
         .gesturable({
@@ -4817,8 +4818,6 @@ var PDFPageView = (function PDFPageViewClosure() {
                 if(originalCSSScale === 0) {
                     originalCSSScale = 1;
                 }
-                tempScale = this.transformScale;
-
                 // Determining ratio of displayed dimensions to "actual" dimensions
                 var scaleElement = event.target;
 
@@ -4831,25 +4830,33 @@ var PDFPageView = (function PDFPageViewClosure() {
                 var transfromedY = event.y0 + scaleElement.offsetTop - boundingRect.top;
 
                 //**** (2) Restore to the original coordinate system
-                oriX = transfromedX*dimRatio;
-                oriY = transfromedY*dimRatio;
-            }.bind(this),
-            onmove: function (event) {
-                var scaleElement = event.target;
-                tempScale  = Math.max((tempScale * (1 + event.ds)),originalCSSScale);
+                var oriX = transfromedX*dimRatio;
+                var oriY = transfromedY*dimRatio;
 
                 scaleElement.style.MozTransformOrigin =
                 scaleElement.style.webkitTransformOrigin =
                 scaleElement.style.transformOrigin =
                 oriX + 'px' + ' ' + oriY + 'px';
+            },
+            onmove: function (event) {
+                var scaleElement = event.target;
+                var boundingRect = scaleElement.getBoundingClientRect();
+                var currentScale = boundingRect.width / scaleElement.clientWidth;
+
+                var baseScale = currentScale/(event.scale - event.ds);
+                var tempScale  = Math.max(baseScale * event.scale,originalCSSScale);
 
                 scaleElement.style.webkitTransform =
                 scaleElement.style.transform =
                 'scale(' + tempScale + ')';
-            }.bind(this),
+            },
             onend: function (event) {
                 // Store scale
-                PDFViewerApplication.pdfViewer.transformScale = tempScale;
+                var scaleElement = event.target;
+                var boundingRect = scaleElement.getBoundingClientRect();
+                var currentScale = boundingRect.width / scaleElement.clientWidth;
+
+                PDFViewerApplication.pdfViewer.transformScale = currentScale;
             }
         })
         .draggable({
@@ -6387,6 +6394,8 @@ var PDFViewer = (function pdfViewer() {
         return;
       }
 
+      TwoPageViewMode.setTransformScale(newScale);
+
       for (var i = 0, ii = this._pages.length; i < ii; i++) {
         this._pages[i].setTransformScale(newScale);
       }
@@ -7531,6 +7540,11 @@ var TwoPageViewMode = {
   containers: {},
   isPagePlacedOnRightSideInContainer: {},
   previousPageNumber: null,
+  // [Bruce] For interact.js
+  transformScale:  1.0,
+  _currentPageIndex: 0,
+  _lastPageIndex: 1,
+  // End : [Bruce] For interact.js
 
   initialize: function twoPageViewModeInitialize(options) {
     this.container = options.container;
@@ -7566,6 +7580,64 @@ var TwoPageViewMode = {
       } else {
         this.viewer.appendChild(div);
       }
+      // [Bruce] interact.js
+      var targetName = '#' + div.id;
+
+      interact(targetName)
+          .gesturable({
+              onstart: function (event) {
+                  if(originalCSSScale === 0) {
+                      originalCSSScale = 1;
+                  }
+
+                  // Determining ratio of displayed dimensions to "actual" dimensions
+                  var scaleElement = event.target;
+
+                  //************Below is try to get the position of current touch point related to non-transformed div
+                  var boundingRect = scaleElement.getBoundingClientRect();
+                  var dimRatio = scaleElement.clientWidth / boundingRect.width;
+
+                  //**** (1) Get the touch point related to tranformed div
+                  var transfromedX = event.x0 + scaleElement.offsetLeft - boundingRect.left;
+                  var transfromedY = event.y0 + scaleElement.offsetTop - boundingRect.top;
+
+                  //**** (2) Restore to the original coordinate system
+                  var oriX = transfromedX*dimRatio;
+                  var oriY = transfromedY*dimRatio;
+
+                  scaleElement.style.MozTransformOrigin =
+                  scaleElement.style.webkitTransformOrigin =
+                  scaleElement.style.transformOrigin =
+                  oriX + 'px' + ' ' + oriY + 'px';
+              },
+              onmove: function (event) {
+                  var scaleElement = event.target;
+                  var boundingRect = scaleElement.getBoundingClientRect();
+                  var currentScale = boundingRect.width / scaleElement.clientWidth;
+
+                  var baseScale = currentScale/(event.scale - event.ds);
+                  var tempScale  = Math.max(baseScale * event.scale,originalCSSScale);
+
+                  scaleElement.style.webkitTransform =
+                  scaleElement.style.transform =
+                  'scale(' + tempScale + ')';
+              },
+              onend: function (event) {
+                  // Store scale
+                  var scaleElement = event.target;
+                  var boundingRect = scaleElement.getBoundingClientRect();
+                  var currentScale = boundingRect.width / scaleElement.clientWidth;
+
+                  PDFViewerApplication.pdfViewer.transformScale = currentScale;
+              }
+          })
+          .draggable({
+              manualStart: true,
+          })
+          .resizable({
+              enabled: false
+          });
+      //End : [Bruce]
     }
     var pageDiv, index;
     for (var i = 1; i <= this.numPages; i++) {
@@ -7578,6 +7650,10 @@ var TwoPageViewMode = {
       } else { // Odd page number.
         this.isPagePlacedOnRightSideInContainer[i] = false;
       }
+      // [Bruce] interact.js
+      interact('#' + pageDiv.id)
+          .gesturable(false);
+      // End : [Bruce] interact.js
     }
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
         $viewerOwl.trigger('to.owl.carousel', [(Math.floor((currentPageNum+1)/2))-1,300,true]);
@@ -7601,7 +7677,10 @@ var TwoPageViewMode = {
         } else {
 			this.viewer.appendChild(pageDiv);
         }
-
+        // [Bruce] interact.js
+        interact('#' + pageDiv.id)
+            .gesturable(true);
+        // End : [Bruce] interact.js
     }
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
         $viewerOwl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
@@ -7705,6 +7784,50 @@ var TwoPageViewMode = {
     return lastPage;
   },
 
+  // [Bruce] Used for interact.js
+  setTransformScale: function TwoPageViewMode_setTransformScale(scale) {
+    if (scale  !== undefined && isNaN(scale) === false )  {
+        this.transformScale = scale;
+    } 
+  },
+
+  applyCSSTransformScale: function TwoPageViewMode_applyCSSTransformScale() {
+    var div = this.containers[this._currentPageIndex];
+
+    div.style.webkitTransform =
+    div.style.transform =
+    'scale(' + this.transformScale + ')';
+  },
+
+  resetCSSTransformScale: function TwoPageViewMode_resetCSSTransformScale() {
+    var div = this.containers[this._lastPageIndex];
+    if (div  === undefined)  {
+        return;
+    }
+
+    div.style.webkitTransform =
+    div.style.transform =
+    'scale(1)';
+  },
+
+  set pageIndex(value) {
+    if (value  === undefined || isNaN(value) === true )  {
+        return;
+    }
+
+    if (this._currentPageIndex  === undefined || isNaN(this._currentPageIndex) === true )  {
+        this._lastPageIndex = value;
+    } else {
+        this._lastPageIndex = this._currentPageIndex;
+    }
+
+    this._currentPageIndex = value;
+  },
+
+  get pageIndex() {
+    return this._currentPageIndex;
+  },
+  // End : [Bruce]
   /**
    * Enables the user to set the state of Two Page View Mode through
    * the hash parameter '#twoPageView=value'.

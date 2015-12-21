@@ -181,7 +181,7 @@ function onURL_and_AppReady(resultOutput) {
                 currentPageNum = currentPageNum - 1;
               }
               document.getElementById('current_page_now').textContent = currentPageNum;
-              document.getElementById('current_page_next').textContent = ((currentPageNum+1)< pdfDoc.numPages)? (currentPageNum+1):("   ");
+              document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("   ");
             } else {
               $('.number_twopage').hide();
               $('.number').show();
@@ -709,7 +709,7 @@ function updateToolBar(){
                 currentPageNum = currentPageNum -1;
               }
               document.getElementById('current_page_now').textContent = currentPageNum;
-              document.getElementById('current_page_next').textContent = ((currentPageNum+1)< pdfDoc.numPages)? (currentPageNum+1):("   ");
+              document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("   ");
         } else {
               $('.number_twopage').hide();
               $('.number').show();
@@ -9747,7 +9747,7 @@ window.addEventListener('pagechange', function pagechange(evt) {
             page = page -1;
         }
         document.getElementById('current_page_now').textContent = page;
-        document.getElementById('current_page_next').textContent = ((page+1)< pdfDoc.numPages)? (page+1):("   ");
+        document.getElementById('current_page_next').textContent = ((page+1)<= pdfDoc.numPages)? (page+1):("   ");
       } else {        
         document.getElementById('current_page').textContent = page;
       }

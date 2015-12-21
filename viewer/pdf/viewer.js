@@ -7653,6 +7653,7 @@ var TwoPageViewMode = {
       // [Bruce] interact.js
       interact('#' + pageDiv.id)
           .gesturable(false);
+      PDFViewerApplication.pdfViewer.getPageView(i - 1).resetCSSTransformScale();
       // End : [Bruce] interact.js
     }
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {

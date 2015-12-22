@@ -1860,7 +1860,7 @@ var NetworkManager = (function NetworkManagerClosure() {
         });
       } else if (pendingRequest.onProgressiveData) {
         pendingRequest.onDone(null);
-      } else {
+      } else if (chunk){
         if (PDFJS.Range_debug) console.log("onStateChange onDone() begin:" + begin  + ", xhrStatus: " + xhrStatus + ", legacy: " + this.legacy);
         if (this.legacy) {
           if (chunk === null) {
@@ -1888,6 +1888,8 @@ var NetworkManager = (function NetworkManagerClosure() {
             chunk: chunk
           });
         }
+      }else if (pendingRequest.onError) {
+             pendingRequest.onError(xhr.status);
       }
     },
 
@@ -34535,7 +34537,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
 
           var fullRequestXhr = networkManager.getRequestXhr(fullRequestXhrId);
           if (!source.legacy && fullRequestXhr.getResponseHeader('Accept-Ranges') !== 'bytes') {
-            console.log('onHeadersReceived() Accept-Ranges != bytes');
+            warn('onHeadersReceived() Accept-Ranges != bytes');
             return;
           }
 
@@ -34548,6 +34550,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           var length = fullRequestXhr.getResponseHeader('Content-Length');
           length = parseInt(length, 10);
           if (!isInt(length)) {
+            warn('Content-Length check fail');
             return;
           }
           source.length = length;
@@ -34555,6 +34558,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
             // The file size is smaller than the size of two chunks, so it does
             // not make any sense to abort the request and retry with a range
             // request.
+            console.log('File size < 2 chunksize: '+ length +', no need range request');
             return;
           }
 

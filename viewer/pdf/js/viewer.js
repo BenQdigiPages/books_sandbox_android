@@ -215,7 +215,7 @@ function onURL_and_AppReady(resultOutput) {
      * Asynchronously downloads PDF.
      */
     // Open
-    console.log("PDFViewerApplication open url");
+    console.log("PDFViewerApplication open url: "+ url);
     PDFViewerApplication.open(url, 0 , null , null , null , legacy);
 
     //Request bookmarks from app when book is loaded.
@@ -8589,9 +8589,8 @@ var PDFViewerApplication = {
   },
 
   get loadingBar() {
-    var bar = new ProgressBar('#loadingBar', {});
-
-    return PDFJS.shadow(this, 'loadingBar', bar);
+    //var bar = new ProgressBar('#loadingBar', {}); //Henry remove
+    //return PDFJS.shadow(this, 'loadingBar', bar);
   },
 
   get supportedMouseWheelZoomModifierKeys() {
@@ -8847,32 +8846,33 @@ var PDFViewerApplication = {
   },
 
   progress: function pdfViewProgress(level) {
-    var percent = Math.round(level * 100);
+    // var percent = Math.round(level * 100);
     // When we transition from full request to range requests, it's possible
     // that we discard some of the loaded data. This can cause the loading
     // bar to move backwards. So prevent this by only updating the bar if it
     // increases.
-    if (percent > this.loadingBar.percent || isNaN(percent)) {
-      this.loadingBar.percent = percent;
+    //if (percent > this.loadingBar.percent || isNaN(percent)) {  //Henry remove
+    //  this.loadingBar.percent = percent;
 
       // When disableAutoFetch is enabled, it's not uncommon for the entire file
       // to never be fetched (depends on e.g. the file structure). In this case
       // the loading bar will not be completely filled, nor will it be hidden.
       // To prevent displaying a partially filled loading bar permanently, we
       // hide it when no data has been loaded during a certain amount of time.
+      /*  Henry remove
       if (PDFJS.disableAutoFetch && percent) {
         if (this.disableAutoFetchLoadingBarTimeout) {
           clearTimeout(this.disableAutoFetchLoadingBarTimeout);
           this.disableAutoFetchLoadingBarTimeout = null;
         }
-        this.loadingBar.show();
+        //this.loadingBar.show();
 
         this.disableAutoFetchLoadingBarTimeout = setTimeout(function () {
-          this.loadingBar.hide();
+          //this.loadingBar.hide();
           this.disableAutoFetchLoadingBarTimeout = null;
         }.bind(this), DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT);
       }
-    }
+    }*/
   },
 
   load: function pdfViewLoad(pdfDocument, scale) {
@@ -8899,7 +8899,7 @@ var PDFViewerApplication = {
 
     var downloadedPromise = pdfDocument.getDownloadInfo().then(function() {
       self.downloadComplete = true;
-      self.loadingBar.hide();
+      //self.loadingBar.hide();
     });
 
     //[Bruce][TempDisable]

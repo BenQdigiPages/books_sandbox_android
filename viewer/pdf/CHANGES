@@ -1,3 +1,10 @@
+Changes with Android PDF viewer v0.9.01.04
+
+  *) upgrade pdf.js to v1.2.109
+  *) Intro page for trial book in draft version
+  *) import font-awesome js package
+  *) Change pdf viewer file architect
+
 Changes with Android PDF viewer v0.9.01.03
 
   *) Change way to get xml files, using byte receive

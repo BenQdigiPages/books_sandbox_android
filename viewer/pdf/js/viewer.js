@@ -615,20 +615,20 @@ function updateBookmarkIcon() {
     $("#bookmark_left")[0].className = "bookmark ";
     if (TwoPageViewMode.active) {
         for(var i in savedBookmarks) {
-            if (savedBookmarks[i].cfi === currentPageNum) {
+            if (savedBookmarks[i].cfi == currentPageNum) {
                 color = savedBookmarks[i].color;
                 $("#bookmark_left")[0].className = "bookmark " + color;
             }
         }
         for(var i in savedBookmarks) {
-            if (savedBookmarks[i].cfi === currentPageNum + 1) {
+            if (savedBookmarks[i].cfi == currentPageNum + 1) {
                 color = savedBookmarks[i].color;
                 $("#bookmark")[0].className = "bookmark " + color;
             }
         }
     } else {
         for(var i in savedBookmarks) {
-            if (savedBookmarks[i].cfi === currentPageNum) {
+            if (savedBookmarks[i].cfi == currentPageNum) {
                 color = savedBookmarks[i].color;
                 $("#bookmark")[0].className = "bookmark " + color;
             }
@@ -855,7 +855,24 @@ Viewer.toggleBookmark = function(color, page_offset) {
 
 function RequestBookmarksCallback(bookmarks) {
     console.log("RequestBookmarksCallback:" + JSON.stringify(bookmarks));
-    savedBookmarks = bookmarks;
+    var r = (typeof bookmarks =="string")?JSON.parse(ref):bookmarks;
+    for(var i in r) {
+        var v = r[i];
+        if(v.book_format === "pdf") {
+            switch(v.type) {
+                case "bookmark":
+                    tempBookmark = {
+                        "uuid": v.uuid,
+                        "title": "",
+                        "cfi": v.cfi,
+                        "chapter": v.chapter,
+                        "color": v.color
+                    };
+                    savedBookmarks.push(tempBookmark);
+                    break;
+            }
+        }
+    }
 }
 
 function AddBookmarkCallBack(uuid) {
@@ -872,7 +889,7 @@ function AddBookmarkCallBack(uuid) {
 ///
 function isBookmarkExist() {
     for(var i in savedBookmarks) {
-        if (savedBookmarks[i].cfi === currentPageNum) {
+        if (savedBookmarks[i].cfi == currentPageNum) {
             return savedBookmarks[i];
         }
     }
@@ -883,7 +900,7 @@ function isBookmarkExist() {
 function isBookmarkExist(cfi) {
     console.log("isBookmarkExist() cfi: " + cfi);
     for(var i in savedBookmarks) {
-        if (savedBookmarks[i].cfi === cfi) {
+        if (savedBookmarks[i].cfi == cfi) {
             return savedBookmarks[i];
         }
     }

@@ -1,23 +1,29 @@
 <!doctype html>
 <html>
-
 <head>
     <meta charset="UTF-8">
     <link rel="icon" href="data:;base64,=">  <!-- Add it can skip request favoicon.ico -->
-    <link rel="stylesheet" href="viewer.css"/>
-    <link rel="stylesheet" href="owlcarousel/owl.carousel.css">
-    <link rel="stylesheet" href="owlcarousel/owl.theme.default.min.css">
-    <!-- Use latest PDF.js package build from Github -->
-    <script src="compatibility.js"></script>
-    <script src="pdf.js"></script>
+    <!-- import css files -->
+    <link rel="stylesheet" href="css/viewer.css"/>
+    <link rel="stylesheet" href="dist/owlcarousel/owl.carousel.css">
+    <link rel="stylesheet" href="dist/owlcarousel/owl.theme.default.min.css">
+    <link rel="stylesheet" href="dist/fontawesome/css/font-awesome.min.css"> <!-- v4.5.0 -->
+    <link rel="resource" type="application/l10n" href="dist/pdfjs/locale/locale.properties"/>
+
+    <!-- import js files -->
+    <!-- Please Use latest PDF.js package build from Github -->
+    <script src="dist/pdfjs/compatibility.js"></script>
+    <script src="dist/pdfjs/l10n.js"></script>
+    <script src="dist/pdfjs/build/pdf.js"></script>
+    <script src="dist/pdfjs/debugger.js"></script>
 
     <!-- Part of viewer.js from PDF.js package need merge into our viewer.js -->
-    <script src="viewer.js"></script>
+    <script src="js/viewer.js"></script>
 
     <!-- NOTE : jquery and owl.carousel must be put in the bottom of <head></head> -->
-    <script src="jquery-2.1.4.min.js"></script>
-    <script src="owlcarousel/owl.carousel.min.js"></script>
-    <script src="interact.min.js"></script>
+    <script src="dist/jquery/jquery-2.1.4.min.js"></script>
+    <script src="dist/owlcarousel/owl.carousel.min.js"></script>
+    <script src="dist/interact/interact.min.js"></script>
     <script>
         $(document).ready(function(){
             $viewerOwl = $('#viewer').owlCarousel({
@@ -64,6 +70,33 @@
         <label id="thumbnailbar" class="thumbnailbtn">
         </label>
     </footer>
-  <div id="dev_version">v0.9.01.03</div>
+<!-- Intro Page -->
+<div class="big_popup" id="popup4">
+    <div class="main">
+        <div class="popup_book">
+            <a target="_blank" class="popupLink" href="#"><img class="popImg"></a>
+            <h3 class="bookTitle">為未來而教 葉丙成的 bts 教育新思維</h3>
+            作者：<span class="inline creator">葉丙成</span> <br>
+            出版社：<span class="inline publisher">天下雜誌</span><br>
+            出版日期：<span class="inline pubdate">2015/05/06</span><br>
+            ISBN：<span class="inline identifier">9789863980568</span><br>
+            檔案格式：<span class="inline format">PDF</span><br>
+            版本：<span class="inline edition">2.0</span>
+            <br clear="both">
+            <br clear="both">
+            <a target="_blank" class="popupLink go" href="#">前往書籍介紹</a>
+            <br clear="both">
+            <br clear="both">
+				<span class="btn">
+					<img src="img/twitter.png">
+					<img src="img/facebook.png">
+					<img src="img/google.png">
+                    <img src="img/line.png">
+				</span>
+        </div>
+    </div>
+    <i class="fa fa-times close" onclick="$('#popup4').hide();"></i>
+</div>
+  <div id="dev_version">v0.9.01.04</div>
 </body>
 </html>

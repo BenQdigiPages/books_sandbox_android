@@ -411,6 +411,17 @@ public class ViewerBridge {
         eval("Viewer.enableTrialPage" + "(" + book_info.toString() + ")", null);
     }
 
+    ///
+    /// Get relayout page from cfi.
+    ///
+    /// @cfi: string - epub cfi
+    /// @page: int - page of cfi
+    ///
+
+    public void getPageFromCfi(String cfi, ValueCallback<Integer> callback) {
+        eval("Viewer.getPageFromCfi(\"" + cfi + "\")", callback);
+    }
+
     public class JavascriptCallback {
         @JavascriptInterface
         public void onDispatchResult(int token, final String result) {

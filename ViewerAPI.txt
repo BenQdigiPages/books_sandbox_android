@@ -191,6 +191,16 @@ Viewer.searchText(keyword)
 ///
 Viewer.enableTrialPage(book_info)
 
+
+///
+/// Get relayout page from cfi.
+///
+/// @cfi: string - epub cfi
+/// @page: int - page of cfi
+///
+
+Viewer.getPageFromCfi(cfi) -> page
+
 -----------------------------------------------------------------------------
 
 Application export the following functions to javascript:

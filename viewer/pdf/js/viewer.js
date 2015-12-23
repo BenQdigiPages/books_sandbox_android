@@ -6,6 +6,7 @@ var pdfDoc = null,
     currentLayoutMode = "single",
     tmpBookmark = null,
     savedBookmarks = [],
+    toc = [], //[HW]
     originalCSSScale = 0,
     pdfOutlineArray = null,
     drmFile,
@@ -323,6 +324,10 @@ function onOutlineReady(outline) {
     var tocarray = new Array();
 
     for (var i = 0, len = pdfOutlineArray.length; i < len; i++) {
+        //[HW]
+        var label = pdfOutlineArray[i].outline.title;
+        var dest = pdfOutlineArray[i].outline.dest;
+        PDFViewerApplication.pdfLinkService.getTocLink(dest, label);
         tocarray.push(
             {
                 title:pdfOutlineArray[i].outline.title,
@@ -914,17 +919,31 @@ function UpdateBookmark(cfi, color) {
         App.onUpdateBookmark(bookmark);
     } else {
         //send tmp bookmark to app for getting uuid.
+        var chapter = findTOCLabel(cfi);
         tmpBookmark = {
             "uuid": "",
             "title": "",
             "cfi": cfi,
-            "chapter": cfi,
+            "chapter": chapter,
             "color": color
         };
         App.onAddBookmark(tmpBookmark,"AddBookmarkCallBack");
     }
 }
 
+function findTOCLabel(idx) { //[HW]
+    var r = null;
+    for(var i in toc) {
+        var item = toc[i];
+        if (!r) {
+            r = item;
+        }
+        if (idx >= item.page) {
+            r = item;
+        }
+    }
+    return r.label;
+}
 ///
 /// Search text and mark the found text, the search is case-insensitive
 /// viewer should call App.onSearchFound in response
@@ -2749,6 +2768,51 @@ var PDFLinkService = (function () {
               page: pageNumber
             });
           }
+        } else {
+          self.pdfDocument.getPageIndex(destRef).then(function (pageIndex) {
+            var pageNum = pageIndex + 1;
+            var cacheKey = destRef.num + ' ' + destRef.gen + ' R';
+            self._pagesRefCache[cacheKey] = pageNum;
+            goToDestination(destRef);
+          });
+        }
+      };
+
+      var destinationPromise;
+      if (typeof dest === 'string') {
+        destString = dest;
+        destinationPromise = this.pdfDocument.getDestination(dest);
+      } else {
+        destinationPromise = Promise.resolve(dest);
+      }
+      destinationPromise.then(function(destination) {
+        dest = destination;
+        if (!(destination instanceof Array)) {
+          return; // invalid destination
+        }
+        goToDestination(destination[0]);
+      });
+    },
+
+    getTocLink: function PDFLinkService_getTocLink(dest, label) { //[HW]
+      var destString = '';
+      var self = this;
+
+      var goToDestination = function(destRef) {
+        // dest array looks like that: <page-ref> </XYZ|FitXXX> <args..>
+        var pageNumber = destRef instanceof Object ?
+          self._pagesRefCache[destRef.num + ' ' + destRef.gen + ' R'] :
+          (destRef + 1);
+        if (pageNumber) {
+          if (pageNumber > self.pagesCount) {
+            pageNumber = self.pagesCount;
+          }
+          var content = {
+            'label': label,
+            'page': pageNumber
+          };
+          toc.push(content);
+          return pageNumber;
         } else {
           self.pdfDocument.getPageIndex(destRef).then(function (pageIndex) {
             var pageNum = pageIndex + 1;

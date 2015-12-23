@@ -824,14 +824,15 @@ Viewer.gotoPosition = function(cfi) {
     var regex = /^[0-9]*$/;
     //PDF doesn't support cfi, check if cfi is page number.
     if (regex.test(cfi)) {
-        viewerPageNum = parseInt(cfi);
-        //if (pageNum < 0 || pageNum > pdfDoc.numPages) {
-        //    return;
-        //}
-        // Update PDFApplication
-        //currentPageNum = pageNum;
-        //PDFViewerApplication.page = currentPageNum;
-
+        var isReady = customEventsManager['onDelayedPageDIVsReady'].isReady;
+        if (isReady) {
+            if ((cfi > 1) && (cfi <= pdfDoc.numPages)){
+                currentPageNum = cfi;
+                PDFViewerApplication.page = currentPageNum;
+            }
+        } else {
+            viewerPageNum = parseInt(cfi);
+        }
     }
 
     if(DEBUG_CHROME_DEV_TOOL) {

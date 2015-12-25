@@ -73,9 +73,9 @@ function parseDRM (drm) {
                            var v2 = v.childNodes[i];
                             if(!v2.localName==false) {
                                  var value = v2.childNodes.length?v2.childNodes[0].data:null;
-                                 if (value == "true")
+                                 if (value == "Y")
                                  	data[v2.localName] = true;
-                                 else if (value == "false")
+                                 else if (value == "N")
                                  	data[v2.localName] = false;
                                  else
                                  	data[v2.localName] = value;

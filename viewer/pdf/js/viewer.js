@@ -614,6 +614,9 @@ function onURL_and_AppReady(resultOutput) {
 }
 
 function onDelayedPageDIVsReady() {
+    // NOTE : Must do before any action
+    PageAnimation.onAppReady();
+
     //Phoebe, fix issue #581,#130
     if ((viewerPageNum > 1) && (viewerPageNum <= pdfDoc.numPages)){
         currentPageNum = viewerPageNum;

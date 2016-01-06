@@ -48,6 +48,395 @@ var customEventsManager =  {
         },
 };
 
+var PageAnimation =  {
+        // Used for carousel index
+        get currentCarouselIndex() {
+            return (this._currentCarouselIndex | 0);
+        },
+        set currentCarouselIndex(val) {
+          if (val === undefined || isNaN(val))  {
+            return;
+          }
+          if (TwoPageViewMode.active){
+              /*  PATTERN : 
+                  _currentCarouselIndex  :   0   1   2   3   4     5  ...
+                  _currentContainerIndex :   1   3   5   7   9     11 ...
+                  pageNumber             : 1 2 3 4 5 6 7 8 9 10 11 12 ...
+              */
+              this._currentCarouselIndex = val;
+              this._currentContainerIndex = val*2 + 1;
+          }else {
+              /*  PATTERN : 
+                  _currentCarouselIndex  : 0 1 2 3 4 5  ...
+                  _currentContainerIndex : 0 1 2 3 4 5  ...
+                  pageNumber             : 1 2 3 4 5 6  ...
+              */
+              this._currentCarouselIndex = val;
+              this._currentContainerIndex = val;
+          }
+        }, 
+
+        getPageDiv     : function PageAnimation_getPageDiv(index){
+            //reset current page scale to 1
+            if (TwoPageViewMode.active){
+                return this.divContainer[index];
+            }else {
+                return this.divContainer[index].div;
+            }
+        },
+
+        onAppReady     : function customPageManager_onAppReady(){
+            this._currentCarouselIndex = 0;
+            this._currentContainerIndex = 0;
+
+            // NOTE : We assume the first mode is single
+            this.divContainer = PDFViewerApplication.pdfViewer._pages;
+            this.stepDelta = 1;
+
+            this.containerUpperBound = PDFViewerApplication.pdfViewer._pages.length - 1;
+            this.containerLowerBound = 0;
+        },
+
+        // Used for page number
+        onBeforePageChange     : function PageAnimation_onBeforePageChange(){
+            //reset current page scale to 1
+            var currentPageDiv = this.getPageDiv(this._currentContainerIndex);
+            PageAnimation.applyTransformWithValue(currentPageDiv,{x:0,y:0,scale:1});
+        },
+        onAfterPageChange     : function PageAnimation_onAfterPageChange(){
+            var currentPageDiv;
+            var rightPageDiv;
+
+            // Left page
+            if(this._currentContainerIndex > this.containerLowerBound) {
+                var leftPageDiv = this.getPageDiv(this._currentContainerIndex - this.stepDelta);
+                interact('#' + leftPageDiv.id)
+                    .gesturable(false)
+                    .draggable(false);
+            }
+
+            // Current page
+            currentPageDiv = this.getPageDiv(this._currentContainerIndex);
+            PageAnimation.applyTransformOriginWithString(currentPageDiv,{x:'50%',y:'50%'});
+
+            //[translate][apply]
+            this.setPageTranslate(currentPageDiv,0,0);
+            this.applyTransform(currentPageDiv);
+
+            interact('#' + currentPageDiv.id)
+                .gesturable(true)
+                .draggable(true);
+
+            // Right page
+            if(this._currentContainerIndex < this.containerUpperBound) {
+                rightPageDiv = this.getPageDiv(this._currentContainerIndex + this.stepDelta);
+                interact('#' + rightPageDiv.id)
+                    .gesturable(false)
+                    .draggable(false);
+            }
+        },
+
+        onTwoPageModeToOnePageMode     : function PageAnimation_onTwoPageModeToOnePageMode(){
+            this._currentContainerIndex = this._currentContainerIndex;
+            this._currentCarouselIndex = this._currentContainerIndex;
+
+            this.divContainer = PDFViewerApplication.pdfViewer._pages;
+            this.stepDelta = 1;
+
+            this.containerUpperBound = PDFViewerApplication.pdfViewer._pages.length - 1;
+            this.containerLowerBound = 0;
+        },
+        onOnePageModeToTwoPageMode     : function PageAnimation_onOnePageModeToTwoPageMode(){
+            this._currentContainerIndex = (this._currentCarouselIndex % 2) === 0 ? (this._currentCarouselIndex + 1) : this._currentCarouselIndex;
+            this._currentCarouselIndex = Math.floor(this._currentCarouselIndex / 2);
+
+            this.divContainer = TwoPageViewMode.containers;
+            this.stepDelta = 2;
+
+            // NOTE : We assume the first mode is single
+            this.containerUpperBound = (this.containerUpperBound % 2) === 0 ? (this.containerUpperBound + 1) : this.containerUpperBound;
+            this.containerLowerBound = 1;
+        },
+
+        EXCEED_LEFT   : 1,   //0001
+        EXCEED_RIGHT  : 1<<1,//0010
+        EXCEED_TOP    : 1<<2,//0100
+        EXCEED_BOTTOM : 1<<3,//1000
+        ALL_MASK : (1 | 1<<1 | 1<<2 | 1<<3),//1111
+
+        PAGE_BOUNDARY : 0.10,
+        PAGE_CHANGE_THRESHOLD : 0.03,
+
+        isExceedLeftOrRightPageBoundary	: function PageAnimation_isExceedLeftOrRightPageBoundary(scaleElement) {
+            var boundingRect = scaleElement.getBoundingClientRect();
+            var leftExceedSpace = Math.abs(boundingRect.left);
+            var originalWidth = scaleElement.offsetWidth;
+            var totalExceedSpace = Math.abs(boundingRect.width - originalWidth);
+
+            // Right > Left
+            if(boundingRect.left > 0) {
+                var rightExceedSpace = totalExceedSpace + leftExceedSpace;
+                if(rightExceedSpace > ((totalExceedSpace / boundingRect.width ) + this.PAGE_BOUNDARY ) * boundingRect.width) {
+                    return this.EXCEED_RIGHT;
+                }
+            // Left > Right
+            } else if (leftExceedSpace > totalExceedSpace){
+                if(leftExceedSpace > ((totalExceedSpace / boundingRect.width ) + this.PAGE_BOUNDARY ) * boundingRect.width) {
+                    return this.EXCEED_LEFT;
+                }
+            }
+            return 0;
+        },
+
+        isExceedTopOrBottomPageBoundary	: function PageAnimation_isExceedTopOrBottomPageBoundary(scaleElement) {
+            var boundingRect = scaleElement.getBoundingClientRect();
+            var topExceedSpace = Math.abs(boundingRect.top);
+            var originalHeight = scaleElement.offsetHeight;
+            var totalExceedSpace = Math.abs(boundingRect.height - originalHeight);
+
+            // Bottom > Top
+            if(boundingRect.top > 0) {
+                var bottomExceedSpace = totalExceedSpace + topExceedSpace;
+                if(bottomExceedSpace > ((totalExceedSpace / boundingRect.height ) + this.PAGE_BOUNDARY ) * boundingRect.height) {
+                    return this.EXCEED_BOTTOM;
+                }
+            // Top > Bottom
+            } else if (topExceedSpace > totalExceedSpace){
+                if(topExceedSpace > ((totalExceedSpace / boundingRect.height ) + this.PAGE_BOUNDARY ) * boundingRect.height) {
+                    return this.EXCEED_TOP;
+                }
+            }
+            return 0;
+        },
+
+        isExceedLeftOrRightPageChangeThreshold	: function PageAnimation_isExceedLeftOrRightPageChangeThreshold(scaleElement) {
+            var boundingRect = scaleElement.getBoundingClientRect();
+            var leftExceedSpace = Math.abs(boundingRect.left);
+            var originalWidth = scaleElement.offsetWidth;
+            var totalExceedSpace = Math.abs(boundingRect.width - originalWidth);
+
+            // Right > Left
+            if(boundingRect.left > 0) {
+                var rightExceedSpace = totalExceedSpace + leftExceedSpace;
+                if(rightExceedSpace > ((totalExceedSpace / boundingRect.width ) + this.PAGE_CHANGE_THRESHOLD ) * boundingRect.width) {
+                    return this.EXCEED_RIGHT;
+                }
+            // Left > Right
+            } else if (leftExceedSpace > totalExceedSpace){
+                if(leftExceedSpace > ((totalExceedSpace / boundingRect.width ) + this.PAGE_CHANGE_THRESHOLD ) * boundingRect.width) {
+                    return this.EXCEED_LEFT;
+                }
+            }
+            return 0;
+        },
+        setPageTranslate: function PageAnimation_setPageTranslate(scaleElement,savedX,savedY) {
+            scaleElement.setAttribute('translate-x', savedX);
+            scaleElement.setAttribute('translate-y', savedY);
+        },
+        getPageTranslate: function PageAnimation_getPageTranslate(scaleElement) {
+            var x = (parseFloat(scaleElement.getAttribute('translate-x')) || 0);
+            var y = (parseFloat(scaleElement.getAttribute('translate-y')) || 0);
+            return {x:x,y:y};
+        },
+        setPageScale: function PageAnimation_setPageScale(scaleElement,scale) {
+            scaleElement.setAttribute('transform-scale', scale);
+        },
+        getPageScale: function PageAnimation_getPageScale(scaleElement) {
+            var scale_string = scaleElement.getAttribute('transform-scale');
+            var scale = parseFloat(scale_string);
+            if(isNaN(scale)) {
+                return 1;
+            } else {
+                return scale;
+            }
+        },
+        applyTransform: function PageAnimation_applyTransform(scaleElement) {
+            var translateValue = this.getPageTranslate(scaleElement);
+            var scale = this.getPageScale(scaleElement);
+
+            scaleElement.style.webkitTransform =
+            scaleElement.style.transform =
+            'translate(' + translateValue.x + 'px, ' + translateValue.y + 'px)' + 'scale(' + scale + ')';
+        },
+        applyTransformWithValue: function PageAnimation_applyTransformWithValue(scaleElement,transformPacket) {
+            var translateValue = this.getPageTranslate(scaleElement);
+            var savedScale = this.getPageScale(scaleElement);
+
+            var x;
+            var y;
+            var scale;
+
+            if(transformPacket.x !== undefined) {
+                x = transformPacket.x;
+            } else {
+                x = translateValue.x;
+            }
+
+            if(transformPacket.y !== undefined) {
+                y = transformPacket.y;
+            } else {
+                y = translateValue.y;
+            }
+
+            if(transformPacket.scale !== undefined) {
+                scale = transformPacket.scale;
+            } else {
+                scale = savedScale;
+            }
+
+            scaleElement.style.webkitTransform =
+            scaleElement.style.transform =
+            'translate(' + x + 'px, ' + y + 'px)' + 'scale(' + scale + ')';
+        },
+        applyTransformOriginWithString: function PageAnimation_applyTransformOriginWithString(scaleElement,transformPacket) {
+            scaleElement.style.MozTransformOrigin =
+            scaleElement.style.webkitTransformOrigin =
+            scaleElement.style.transformOrigin =
+            transformPacket.x + ' ' + transformPacket.y;
+        },
+
+        //[Bruce] interact.js
+        callback_interact_gesturable_onstart: function callback_interact_gesturable_onstart(event) {
+            // Determining ratio of displayed dimensions to "actual" dimensions
+            var scaleElement = event.target;
+
+            //[translate][reset]
+            PageAnimation.applyTransformWithValue(scaleElement,{x:0,y:0});
+
+            //************Below is try to get the position of current touch point related to non-transformed div
+            var boundingRect = scaleElement.getBoundingClientRect();
+            var dimRatio = scaleElement.clientWidth / boundingRect.width;
+            //var scale = boundingRect.width / scaleElement.clientWidth;
+
+            //**** (1) Get the touch point related to tranformed div
+            //var transfromedX = event.x0 + scaleElement.offsetLeft * scale - boundingRect.left;
+            //var transfromedY = event.y0 + scaleElement.offsetTop * scale - boundingRect.top;
+            var transfromedX = event.x0 + scaleElement.offsetLeft - boundingRect.left;
+            var transfromedY = event.y0 + scaleElement.offsetTop - boundingRect.top;
+
+            //**** (2) Restore to the original coordinate system
+            var oriX = transfromedX*dimRatio;
+            var oriY = transfromedY*dimRatio;
+
+            PageAnimation.applyTransformOriginWithString(scaleElement,{x:oriX + 'px',y:oriY + 'px'});
+
+            //[translate][restore]
+            PageAnimation.applyTransform(scaleElement);
+        },
+
+        callback_interact_gesturable_onmove: function callback_interact_gesturable_onmove(event) {
+            var scaleElement = event.target;
+            var boundingRect = scaleElement.getBoundingClientRect();
+            var currentScale = boundingRect.width / scaleElement.clientWidth;
+
+            var baseScale = currentScale/(event.scale - event.ds);
+            var tempScale  = Math.max(baseScale * event.scale,1);
+
+            //[translate/scale][restore]
+            PageAnimation.setPageScale(scaleElement,tempScale);
+            PageAnimation.applyTransform(scaleElement);
+        },
+
+        callback_interact_gesturable_onend: function callback_interact_gesturable_onend(event) {
+            var scaleElement = event.target;
+            var boundingRect = scaleElement.getBoundingClientRect();
+
+            //**********(1) Set this scale to all divs of pages
+            var scale = PageAnimation.getPageScale(scaleElement);
+            var div;
+            if (TwoPageViewMode.active){
+                for (var uid in PageAnimation.divContainer) {
+                    div = PageAnimation.divContainer[uid];
+                    PageAnimation.setPageScale(div,scale);
+                }
+            }else {
+                for (var uid in PageAnimation.divContainer) {
+                    div = PageAnimation.divContainer[uid].div;
+                    PageAnimation.setPageScale(div,scale);
+                }
+            }
+
+            //**********(2) We must capture current left/top immediately
+            //[translate][save]
+            var targetBoundingLeft = boundingRect.left;
+            var targetBoundingTop = boundingRect.top;
+
+            //**********(3) Restore css transform translate
+            // Because we want to base on these left/top and then do correct related with targetBoundingLeft/targetBoundingTop
+            //[translate][reset]
+            PageAnimation.applyTransformWithValue(scaleElement,{x:0,y:0});
+
+            PageAnimation.applyTransformOriginWithString(scaleElement,{x:'',y:''});
+
+            //[translate][caculate]
+            boundingRect = scaleElement.getBoundingClientRect();
+            var boundingLeftFixValue = targetBoundingLeft - boundingRect.left;
+            var boundingTopFixValue = targetBoundingTop - boundingRect.top;
+
+            //**********(4) Apply boundingLeftFixValue/boundingTopFixValue meet targetBoundingLeft/targetBoundingTop
+            //[translate][restore]
+            PageAnimation.setPageTranslate(scaleElement,boundingLeftFixValue,boundingTopFixValue);
+            PageAnimation.applyTransform(scaleElement);
+
+            //**********(5) If the left / right / top / bottom is exceed the boundary , we must correct it .
+            // Check whether it is exceed the boundary
+            var mode = PageAnimation.isExceedLeftOrRightPageBoundary(scaleElement);
+            mode |= PageAnimation.isExceedTopOrBottomPageBoundary(scaleElement);
+            if((mode & PageAnimation.ALL_MASK) !== 0) {
+                boundingRect = scaleElement.getBoundingClientRect();
+                targetBoundingLeft = boundingRect.left;
+                targetBoundingTop = boundingRect.top;
+                if((mode & PageAnimation.EXCEED_LEFT) !== 0) {
+                    targetBoundingLeft = 0 - Math.abs(boundingRect.width - scaleElement.offsetWidth);
+                } else if((mode & PageAnimation.EXCEED_RIGHT) !== 0) {
+                    targetBoundingLeft = 0;
+                } else if((mode & PageAnimation.EXCEED_TOP) !== 0) {
+                    targetBoundingTop = 0 - Math.abs(boundingRect.height - scaleElement.offsetHeight);
+                } else if((mode & PageAnimation.EXCEED_BOTTOM) !== 0) {
+                    targetBoundingTop = 0;
+                }
+                boundingLeftFixValue = targetBoundingLeft - boundingRect.left;
+                boundingTopFixValue = targetBoundingTop - boundingRect.top;
+                PageAnimation.setPageTranslate(scaleElement,boundingLeftFixValue,boundingTopFixValue);
+                PageAnimation.applyTransform(scaleElement);
+            }
+        },
+
+        callback_interact_draggable_onmove: function callback_interact_draggable_onmove(event) {
+            var scaleElement = event.target;
+            var oriValue = PageAnimation.getPageTranslate(scaleElement);
+            // keep the dragged position in the data-x/data-y attributes
+            var x = oriValue.x + event.dx;
+            var y = oriValue.y + event.dy;
+
+            // Try to translate the element
+            PageAnimation.applyTransformWithValue(scaleElement,{x:x,y:y});
+
+            // Check whether it is exceed the boundary
+            var mode = PageAnimation.isExceedLeftOrRightPageBoundary(scaleElement);
+            mode |= PageAnimation.isExceedTopOrBottomPageBoundary(scaleElement);
+            if((mode & PageAnimation.ALL_MASK) !== 0) {
+                PageAnimation.setPageTranslate(scaleElement,oriValue.x,oriValue.y);
+                PageAnimation.applyTransform(scaleElement);
+                return;
+            }
+            PageAnimation.setPageTranslate(scaleElement,x,y);
+            PageAnimation.applyTransform(scaleElement);
+        },
+
+        callback_interact_draggable_onend: function callback_interact_draggable_onend(event) {
+            var scaleElement = event.target;
+            var mode = PageAnimation.isExceedLeftOrRightPageChangeThreshold(scaleElement);
+
+            if((mode & PageAnimation.EXCEED_LEFT) !== 0) {
+                $viewerOwl.trigger('to.owl.carousel', [PageAnimation.currentCarouselIndex + 1,200,true]);
+            } else if((mode & PageAnimation.EXCEED_RIGHT) !== 0) {
+                $viewerOwl.trigger('to.owl.carousel',[PageAnimation.currentCarouselIndex - 1, 200, true]);
+            }
+        },
+        //End : [Bruce]
+};
+
 function loadDRM() {
 	console.log("loadDRM");
 	return new Promise(function(resolve, reject){
@@ -144,28 +533,25 @@ function onURL_and_AppReady(resultOutput) {
     $viewerOwl.on('changed.owl.carousel',
         function callback(event) {
             if (!(TwoPageViewMode.inProcess)){
+                // Must do befroe index is changed
+                PageAnimation.onBeforePageChange();
+                PageAnimation.currentCarouselIndex = event.item.index;
                 if (TwoPageViewMode.active){
                     currentPageNum = (event.item.index * 2) + 1;
                     carouselPageNum = currentPageNum;
-                    TwoPageViewMode.pageIndex = currentPageNum;
-                    TwoPageViewMode.resetCSSTransformScale();
                 }else {
                     currentPageNum  = event.item.index + 1;
                     carouselPageNum = currentPageNum;
-                    PDFViewerApplication.pdfViewer._pages[PDFViewerApplication.page - 1].resetCSSTransformScale();
                 }
                 // Update current page number
                 PDFViewerApplication.page = currentPageNum;
-                if (TwoPageViewMode.active){
-                    TwoPageViewMode.applyCSSTransformScale();
-                } else {
-                    PDFViewerApplication.pdfViewer._pages[currentPageNum - 1].applyCSSTransformScale();
-                }
+                PageAnimation.onAfterPageChange();
             }
     });
 
     //Handle pdf view canvas click event.
-    $('#viewerContainer').click(function() {
+    interact('#viewerContainer')
+      .on('tap', function (event) {
         toolBarVisible = !(toolBarVisible);
         if (toolBarVisible) {
             if (thumbnailBarVisible) {
@@ -233,6 +619,7 @@ function onDelayedPageDIVsReady() {
         currentPageNum = viewerPageNum;
         PDFViewerApplication.page = currentPageNum;
     }
+    PageAnimation.onAppReady();
 }
 
 function onFirstPageRendered() {
@@ -714,6 +1101,10 @@ Viewer.setLayoutMode = function(mode) {
     function setLayoutModeSingle() {
         currentLayoutMode = mode;
         console.log("setLayoutMode:single");
+
+        // NOTE : We must do page number transform before following actions
+        PageAnimation.onTwoPageModeToOnePageMode();
+
         TwoPageViewMode.disable();
         //Phoebe add, for update page number
         updateToolBar();
@@ -724,6 +1115,10 @@ Viewer.setLayoutMode = function(mode) {
     function setLayoutModeSideBySide() {
         currentLayoutMode = mode;
         console.log("setLayoutMode:side_by_side");
+
+        // NOTE : We must do page number transform before following actions
+        PageAnimation.onOnePageModeToTwoPageMode();
+
         TwoPageViewMode.enable();
         //Phoebe add, for update page number
         updateToolBar();
@@ -4924,8 +5319,6 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     this.rotation = 0;
     this.scale = scale || 1.0;
-    // [Bruce] For interact.js
-    this.transformScale = 1.0;
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
@@ -4970,53 +5363,14 @@ var PDFPageView = (function PDFPageViewClosure() {
     var targetName = '#' + div.id;
     interact(targetName)
         .gesturable({
-            onstart: function (event) {
-                if(originalCSSScale === 0) {
-                    originalCSSScale = 1;
-                }
-                // Determining ratio of displayed dimensions to "actual" dimensions
-                var scaleElement = event.target;
-
-                //************Below is try to get the position of current touch point related to non-transformed div
-                var boundingRect = scaleElement.getBoundingClientRect();
-                var dimRatio = scaleElement.clientWidth / boundingRect.width;
-
-                //**** (1) Get the touch point related to tranformed div
-                var transfromedX = event.x0 + scaleElement.offsetLeft - boundingRect.left;
-                var transfromedY = event.y0 + scaleElement.offsetTop - boundingRect.top;
-
-                //**** (2) Restore to the original coordinate system
-                var oriX = transfromedX*dimRatio;
-                var oriY = transfromedY*dimRatio;
-
-                scaleElement.style.MozTransformOrigin =
-                scaleElement.style.webkitTransformOrigin =
-                scaleElement.style.transformOrigin =
-                oriX + 'px' + ' ' + oriY + 'px';
-            },
-            onmove: function (event) {
-                var scaleElement = event.target;
-                var boundingRect = scaleElement.getBoundingClientRect();
-                var currentScale = boundingRect.width / scaleElement.clientWidth;
-
-                var baseScale = currentScale/(event.scale - event.ds);
-                var tempScale  = Math.max(baseScale * event.scale,originalCSSScale);
-
-                scaleElement.style.webkitTransform =
-                scaleElement.style.transform =
-                'scale(' + tempScale + ')';
-            },
-            onend: function (event) {
-                // Store scale
-                var scaleElement = event.target;
-                var boundingRect = scaleElement.getBoundingClientRect();
-                var currentScale = boundingRect.width / scaleElement.clientWidth;
-
-                PDFViewerApplication.pdfViewer.transformScale = currentScale;
-            }
+            onstart: PageAnimation.callback_interact_gesturable_onstart,
+            onmove: PageAnimation.callback_interact_gesturable_onmove,
+            onend: PageAnimation.callback_interact_gesturable_onend,
         })
         .draggable({
-            enabled: false
+            enabled: true,
+            onmove: PageAnimation.callback_interact_draggable_onmove,
+            onend: PageAnimation.callback_interact_draggable_onend,
         })
         .resizable({
             enabled: false
@@ -5088,29 +5442,6 @@ var PDFPageView = (function PDFPageViewClosure() {
       this.loadingIconDiv.className = 'loadingIcon';
       div.appendChild(this.loadingIconDiv);
     },
-
-    // [Bruce] Used for interact.js
-    setTransformScale: function PDFPageView_setTransformScale(scale) {
-      if (scale  !== undefined && isNaN(scale) === false )  {
-          this.transformScale = scale;
-      } 
-    },
-
-    applyCSSTransformScale: function PDFPageView_applyCSSTransformScale() {
-      var div = this.div;
-
-      div.style.webkitTransform =
-      div.style.transform =
-      'scale(' + this.transformScale + ')';
-    },
-
-    resetCSSTransformScale: function PDFPageView_resetCSSTransformScale() {
-      var div = this.div;
-      div.style.webkitTransform =
-      div.style.transform =
-      'scale(1)';
-    },
-    // End : [Bruce]
 
     update: function PDFPageView_update(scale, rotation) {
       this.scale = scale || this.scale;
@@ -6274,26 +6605,6 @@ var PDFViewer = (function pdfViewer() {
       this.scrollPageIntoView(val);
     },
 
-    // [Bruce] interact.js
-    /**
-     * @returns {number}
-     */
-    get transformScale() {
-      return this._transformScale !== UNKNOWN_SCALE ? this._transformScale :
-                                                    DEFAULT_SCALE;
-    },
-
-    /**
-     * @param {number} val - Scale of the pages in percents.
-     */
-    set transformScale(val) {
-      if (isNaN(val))  {
-        throw new Error('Invalid numeric scale');
-      }
-      this._setTransformScaleUpdatePages(val);
-    },
-    // End : [Bruce] interact.js
-
     /**
      * @returns {number}
      */
@@ -6603,23 +6914,6 @@ var PDFViewer = (function pdfViewer() {
       }
       this.container.dispatchEvent(event);
     },
-
-    // [Bruce] for interact.js
-    _setTransformScaleUpdatePages: function pdfViewer_setTransformScaleUpdatePages(
-        newScale) {
-
-      if (isSameScale(this._transformScale, newScale)) {
-        return;
-      }
-
-      TwoPageViewMode.setTransformScale(newScale);
-
-      for (var i = 0, ii = this._pages.length; i < ii; i++) {
-        this._pages[i].setTransformScale(newScale);
-      }
-      this._transformScale = newScale;
-    },
-    // End : [Bruce] for interact.js
 
     _setScaleUpdatePages: function pdfViewer_setScaleUpdatePages(
         newScale, newValue, noScroll, preset) {
@@ -7773,11 +8067,6 @@ var TwoPageViewMode = {
   containers: {},
   isPagePlacedOnRightSideInContainer: {},
   previousPageNumber: null,
-  // [Bruce] For interact.js
-  transformScale:  1.0,
-  _currentPageIndex: 0,
-  _lastPageIndex: 1,
-  // End : [Bruce] For interact.js
 
   initialize: function twoPageViewModeInitialize(options) {
     this.container = options.container;
@@ -7818,54 +8107,14 @@ var TwoPageViewMode = {
 
       interact(targetName)
           .gesturable({
-              onstart: function (event) {
-                  if(originalCSSScale === 0) {
-                      originalCSSScale = 1;
-                  }
-
-                  // Determining ratio of displayed dimensions to "actual" dimensions
-                  var scaleElement = event.target;
-
-                  //************Below is try to get the position of current touch point related to non-transformed div
-                  var boundingRect = scaleElement.getBoundingClientRect();
-                  var dimRatio = scaleElement.clientWidth / boundingRect.width;
-
-                  //**** (1) Get the touch point related to tranformed div
-                  var transfromedX = event.x0 + scaleElement.offsetLeft - boundingRect.left;
-                  var transfromedY = event.y0 + scaleElement.offsetTop - boundingRect.top;
-
-                  //**** (2) Restore to the original coordinate system
-                  var oriX = transfromedX*dimRatio;
-                  var oriY = transfromedY*dimRatio;
-
-                  scaleElement.style.MozTransformOrigin =
-                  scaleElement.style.webkitTransformOrigin =
-                  scaleElement.style.transformOrigin =
-                  oriX + 'px' + ' ' + oriY + 'px';
-              },
-              onmove: function (event) {
-                  var scaleElement = event.target;
-                  var boundingRect = scaleElement.getBoundingClientRect();
-                  var currentScale = boundingRect.width / scaleElement.clientWidth;
-
-                  var baseScale = currentScale/(event.scale - event.ds);
-                  var tempScale  = Math.max(baseScale * event.scale,originalCSSScale);
-
-                  scaleElement.style.webkitTransform =
-                  scaleElement.style.transform =
-                  'scale(' + tempScale + ')';
-              },
-              onend: function (event) {
-                  // Store scale
-                  var scaleElement = event.target;
-                  var boundingRect = scaleElement.getBoundingClientRect();
-                  var currentScale = boundingRect.width / scaleElement.clientWidth;
-
-                  PDFViewerApplication.pdfViewer.transformScale = currentScale;
-              }
+              onstart: PageAnimation.callback_interact_gesturable_onstart,
+              onmove: PageAnimation.callback_interact_gesturable_onmove,
+              onend: PageAnimation.callback_interact_gesturable_onend,
           })
           .draggable({
-              manualStart: true,
+              enabled: true,
+              onmove: PageAnimation.callback_interact_draggable_onmove,
+              onend: PageAnimation.callback_interact_draggable_onend,
           })
           .resizable({
               enabled: false
@@ -7885,8 +8134,8 @@ var TwoPageViewMode = {
       }
       // [Bruce] interact.js
       interact('#' + pageDiv.id)
-          .gesturable(false);
-      PDFViewerApplication.pdfViewer.getPageView(i - 1).resetCSSTransformScale();
+          .gesturable(false)
+          .draggable(false);
       // End : [Bruce] interact.js
     }
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
@@ -7913,7 +8162,8 @@ var TwoPageViewMode = {
         }
         // [Bruce] interact.js
         interact('#' + pageDiv.id)
-            .gesturable(true);
+            .gesturable(true)
+            .draggable(true);
         // End : [Bruce] interact.js
     }
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
@@ -8018,50 +8268,6 @@ var TwoPageViewMode = {
     return lastPage;
   },
 
-  // [Bruce] Used for interact.js
-  setTransformScale: function TwoPageViewMode_setTransformScale(scale) {
-    if (scale  !== undefined && isNaN(scale) === false )  {
-        this.transformScale = scale;
-    } 
-  },
-
-  applyCSSTransformScale: function TwoPageViewMode_applyCSSTransformScale() {
-    var div = this.containers[this._currentPageIndex];
-
-    div.style.webkitTransform =
-    div.style.transform =
-    'scale(' + this.transformScale + ')';
-  },
-
-  resetCSSTransformScale: function TwoPageViewMode_resetCSSTransformScale() {
-    var div = this.containers[this._lastPageIndex];
-    if (div  === undefined)  {
-        return;
-    }
-
-    div.style.webkitTransform =
-    div.style.transform =
-    'scale(1)';
-  },
-
-  set pageIndex(value) {
-    if (value  === undefined || isNaN(value) === true )  {
-        return;
-    }
-
-    if (this._currentPageIndex  === undefined || isNaN(this._currentPageIndex) === true )  {
-        this._lastPageIndex = value;
-    } else {
-        this._lastPageIndex = this._currentPageIndex;
-    }
-
-    this._currentPageIndex = value;
-  },
-
-  get pageIndex() {
-    return this._currentPageIndex;
-  },
-  // End : [Bruce]
   /**
    * Enables the user to set the state of Two Page View Mode through
    * the hash parameter '#twoPageView=value'.

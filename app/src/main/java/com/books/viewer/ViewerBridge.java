@@ -421,6 +421,27 @@ public class ViewerBridge {
     public void getPageFromCfi(String cfi, ValueCallback<Integer> callback) {
         eval("Viewer.getPageFromCfi(\"" + cfi + "\")", callback);
     }
+    
+     ///
+    /// Notify viewer that highlights is modified.
+    ///
+    /// @list_highlights: Json array - an array of object to represent highlights
+    ///
+    public void updateHighlights() {
+        JSONArray list_highlights = new JSONArray();
+        eval("Viewer.updateHighlights" + "(" + list_highlights.toString() + ")", null);
+    }
+
+    ///
+    /// Notify viewer that bookmarks is modified.
+    ///
+    /// @list_bookmarks: Json array - an array of object to represent bookmarks
+    ///
+    public void updateBookmarks() {
+        JSONArray list_bookmarks = new JSONArray();
+
+        eval("Viewer.updateBookmarks" + "(" + list_bookmarks.toString() + ")", null);
+    }
 
     public class JavascriptCallback {
         @JavascriptInterface

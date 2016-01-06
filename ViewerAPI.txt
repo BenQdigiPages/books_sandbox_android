@@ -201,6 +201,20 @@ Viewer.enableTrialPage(book_info)
 
 Viewer.getPageFromCfi(cfi) -> page
 
+///
+/// Notify viewer that highlights is modified.
+///
+/// @list_highlights: Json array - an array of object to represent highlights
+///
+Viewer.updateHighlights(list_highlights) 
+
+///
+/// Notify viewer that bookmarks is modified.
+///
+/// @list_bookmarks: Json array - an array of object to represent bookmarks
+///
+Viewer.updateBookmarks(list_bookmarks) 
+
 -----------------------------------------------------------------------------
 
 Application export the following functions to javascript:

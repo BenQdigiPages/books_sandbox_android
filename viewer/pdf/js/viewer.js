@@ -1340,7 +1340,11 @@ function findTOCLabel(idx) { //[HW]
             r = item;
         }
     }
-    return r.label;
+    if (r && r.label) {
+        return r.label;
+    } else {
+        return idx;
+    }
 }
 ///
 /// Search text and mark the found text, the search is case-insensitive

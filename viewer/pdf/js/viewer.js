@@ -1256,8 +1256,18 @@ Viewer.toggleBookmark = function(color, page_offset) {
     }
 }
 
+///
+/// Notify viewer that bookmarks is modified.
+///
+/// @list_bookmarks: Json array - an array of object to represent bookmarks
+///
+Viewer.updateBookmarks = function(list_bookmarks) {
+    RequestBookmarksCallback(list_bookmarks);
+}
+
 function RequestBookmarksCallback(bookmarks) {
     console.log("RequestBookmarksCallback:" + JSON.stringify(bookmarks));
+    savedBookmarks.length = 0;
     var r = (typeof bookmarks =="string")?JSON.parse(ref):bookmarks;
     for(var i in r) {
         var v = r[i];

@@ -1010,20 +1010,20 @@ function updateBookmarkIcon() {
     $("#bookmark_left")[0].className = "bookmark ";
     if (TwoPageViewMode.active) {
         for(var i in savedBookmarks) {
-            if (savedBookmarks[i].cfi == currentPageNum) {
+            if (savedBookmarks[i].cfi == PDFViewerApplication.page) {
                 color = savedBookmarks[i].color;
                 $("#bookmark_left")[0].className = "bookmark " + color;
             }
         }
         for(var i in savedBookmarks) {
-            if (savedBookmarks[i].cfi == currentPageNum + 1) {
+            if (savedBookmarks[i].cfi == PDFViewerApplication.page + 1) {
                 color = savedBookmarks[i].color;
                 $("#bookmark")[0].className = "bookmark " + color;
             }
         }
     } else {
         for(var i in savedBookmarks) {
-            if (savedBookmarks[i].cfi == currentPageNum) {
+            if (savedBookmarks[i].cfi == PDFViewerApplication.page) {
                 color = savedBookmarks[i].color;
                 $("#bookmark")[0].className = "bookmark " + color;
             }
@@ -10317,8 +10317,8 @@ window.addEventListener('pagechange', function pagechange(evt) {
       PDFViewerApplication.historyPage = evt.previousPageNumber;  //Henry add, for supporting undo
       // Info App
       App.onChangePage(page, page, page, pdfDoc.numPages);
-      updateBookmarkIcon(); //[HW] update Bookmark Icon
     }
+    updateBookmarkIcon(); //[HW] update Bookmark Icon
     // Update thumbnail
     if(thumbnailBarVisible) {
         PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);

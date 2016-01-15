@@ -16,6 +16,9 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.ValueCallback;
 import android.webkit.WebView;
@@ -38,6 +41,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
     private ImageButton mBtnOptions;
     private ImageButton mBtnBookmark;
     private ImageButton mBtnMonkey;
+    private WebView mWebView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +50,6 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         setContentView(R.layout.viewer);
         getActionBar().hide();
 
-        WebView mWebView;
         String url = getIntent().getStringExtra("url");
         boolean is_pdf = getIntent().getBooleanExtra("is_pdf", false);
 
@@ -90,6 +93,8 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
 
         mBridge.loadBook(url, is_pdf);
         mBridge.enableTrialPage(getBookInfoJson());
+
+        initGesture();
     }
 
     private JSONArray mTOC;
@@ -328,5 +333,55 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
                 .setTitle(title)
                 .setMessage(message)
                 .show();
+    }
+
+    private void initGesture() {
+        final GestureDetector.OnGestureListener mGuestureListener = new GestureDetector.SimpleOnGestureListener() {
+            private static final int FLING_MIN_DISTANCE = 100;
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                if (e1.getX() - e2.getX() > FLING_MIN_DISTANCE) {
+                    mBridge.gotoNext();
+                    return true;
+                }
+                if (e1.getX() - e2.getX() < -FLING_MIN_DISTANCE) {
+                    mBridge.gotoPrevious();
+                    return true;
+                }
+                return false;
+            }
+        };
+
+
+        final GestureDetector mGuesture = new GestureDetector(this, mGuestureListener);
+
+        mWebView.setOnTouchListener(new View.OnTouchListener() {
+            private final int EPUB_FOOTER_HEIGHT = 40;
+            private boolean isTriggerGuesture = true;
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch(event.getAction()){
+                    case MotionEvent.ACTION_DOWN:
+                        if (event.getY() >= v.getMeasuredHeight() - EPUB_FOOTER_HEIGHT) {
+                            isTriggerGuesture = false;
+                            return false;
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        if(isTriggerGuesture == false){
+                            isTriggerGuesture = true;
+                            return false;
+                        }
+                        break;
+                    default:
+                        if(isTriggerGuesture == false)
+                            return false;
+                }
+
+                return mGuesture.onTouchEvent(event);
+            }
+        });
     }
 }

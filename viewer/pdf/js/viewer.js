@@ -1367,6 +1367,15 @@ Viewer.searchText = function(keyword) {
     window.alert("Viewer.searchText=" + keyword)
 }
 
+//Henry add, trigger change page from app has better performance
+Viewer.gotoPrevious =function(){
+    onPrevPage();
+}
+
+Viewer.gotoNext = function(){
+    onNextPage();
+}
+
 /**
  * Displays previous page.
  */
@@ -5387,7 +5396,7 @@ var PDFPageView = (function PDFPageViewClosure() {
         .draggable({
             enabled: true,
             onmove: PageAnimation.callback_interact_draggable_onmove,
-            onend: PageAnimation.callback_interact_draggable_onend,
+            //onend: PageAnimation.callback_interact_draggable_onend, //Henry temp disable it becasue performance issue
         })
         .resizable({
             enabled: false
@@ -8131,7 +8140,7 @@ var TwoPageViewMode = {
           .draggable({
               enabled: true,
               onmove: PageAnimation.callback_interact_draggable_onmove,
-              onend: PageAnimation.callback_interact_draggable_onend,
+              //onend: PageAnimation.callback_interact_draggable_onend, //Henry temp disable it becasue performance issue
           })
           .resizable({
               enabled: false

@@ -131,6 +131,16 @@ Viewer.getLayoutMode() -> mode
 Viewer.setLayoutMode(mode)
 
 ///
+/// Goto the previous screen (with one or two pages) in this ebook
+///
+Viewer.gotoPrevious()
+
+///
+/// Goto the next screen (with one or two pages) in this ebook
+///
+Viewer.gotoNext()
+
+///
 /// Get current position in the ebook
 ///
 /// @title: string - chapter title of this position
@@ -399,3 +409,11 @@ App.onGoToBookIntro()
 /// Notify App the book need to be shared, App will popup sharing dialog
 ///
 App.onShareBookInfo()
+
+///
+/// Notify App save and show log.
+///
+/// @tag Used to identify the source of a log message.
+/// @msg The message you would like logged.
+///
+App.onLog(tag, msg)

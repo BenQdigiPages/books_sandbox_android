@@ -315,6 +315,20 @@ public class ViewerBridge {
     }
 
     ///
+    /// Goto the previous screen (with one or two pages) in this ebook
+    ///
+    public void gotoPrevious() {
+        eval("Viewer.gotoPrevious()", null);
+    }
+
+    ///
+    /// Goto the next screen (with one or two pages) in this ebook
+    ///
+    public void gotoNext() {
+        eval("Viewer.gotoNext()", null);
+    }
+
+    ///
     /// Get current position in the ebook
     ///
     /// @chapter: string - an opaque to represent current chapter
@@ -835,6 +849,25 @@ public class ViewerBridge {
                 public void run() {
                     new AlertDialog.Builder(mScene)
                             .setTitle("onShareBookInfo")
+                            .show();
+                }
+            });
+        }
+
+        ///
+        /// Notify App save and show log.
+        ///
+        /// @tag Used to identify the source of a log message.
+        /// @msg The message you would like logged.
+        ///
+        @JavascriptInterface
+        public void onLog(final String tag, final String msg) {
+            Toast.makeText(mContext, (String) "onLog",Toast.LENGTH_LONG).show();
+            mHandler.post(new Runnable() {
+                public void run() {
+                    new AlertDialog.Builder(mScene)
+                            .setTitle("onLog")
+                            .setMessage("tag=" + tag + "\nmsg="+msg)
                             .show();
                 }
             });

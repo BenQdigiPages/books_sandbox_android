@@ -1000,8 +1000,23 @@ Viewer.getLayoutMode = function() {
 ///
 ///@book_info: Json object - related book infomations in trial page
 ///
-Viewer.enableTrialPage = function(book_info) {
+Viewer.enableTrialPage = function(info) {
     isTrial=true;
+    $('#popup4').find('.popImg').attr("src", downloadlink + "book_cover.jpg");
+	$('#popup4').find('.bookTitle').html(info.c_title);
+	$('#popup4').find('.creator').html(info.author);
+	$('#popup4').find('.publisher').html(info.publisher_name);
+	$('#popup4').find('.pubdate').html(info.publish_date);
+	$('#popup4').find('.identifier').html(info.isbn);
+	$('#popup4').find('.format').html(info.book_format);
+	$('#popup4').find('.edition').html(info.cur_version);
+
+    $('#popup4').find('.popupLink').click(function(){
+    	App.onGoToBookIntro();
+    });
+    $('#popup4').find('.share').click(function(){
+    	App.onShareBookInfo();
+    });
 }
 
 //[HW] update Bookmark icon
@@ -1410,6 +1425,15 @@ function onNextPage() {
         //Henry add, for intro page
         if(isTrial){
             $('#popup4').show();
+            //Henry add, hide titlebar and footer when intro page show
+            if (toolBarVisible) {
+                if (thumbnailBarVisible) {
+                   $('#thumbnailView').hide();
+                }
+                $('#footer').hide();
+                toolBarVisible = !(toolBarVisible);
+                App.onToggleToolbar(toolBarVisible);
+            }
           }
         return;
     }

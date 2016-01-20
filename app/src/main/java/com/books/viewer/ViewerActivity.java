@@ -41,6 +41,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
     private ImageButton mBtnOptions;
     private ImageButton mBtnBookmark;
     private ImageButton mBtnMonkey;
+    private View mLoading;
     private WebView mWebView;
 
     @Override
@@ -61,6 +62,14 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         mTitleBar = (RelativeLayout) findViewById(R.id.title_bar);
         mTitle = (TextView) findViewById(R.id.title);
         mWebView = (WebView) findViewById(R.id.webview);
+        mLoading = findViewById(R.id.loading);
+        mLoading.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return true;
+            }
+        });
+
         mBridge = new ViewerBridge(this, mWebView);
 
         mBtnTOC = (ImageButton) findViewById(R.id.btn_toc);
@@ -99,7 +108,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
 
     private JSONArray mTOC;
 
-    private JSONObject getBookInfoJson(){
+    private JSONObject getBookInfoJson() {
         JSONObject json = new JSONObject();
         try {
             json.put("c_title", "accessible_epub_3");
@@ -109,7 +118,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
             json.put("isbn", "9789579684255");
             json.put("book_format", "REFLOWABLE");
             json.put("cur_version", "V001.0001");
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return json;
@@ -125,6 +134,10 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
 
     public void setTitleVisible(boolean visible) {
         mTitleBar.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
+    }
+
+    public void setLoadingVisible(boolean visible) {
+        mLoading.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
     }
 
     private void onClickTOC() {
@@ -183,7 +196,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
 
         popup.add(0, "Background: normal", new Runnable() {
             public void run() {
-                mTextColor =  Color.BLACK;
+                mTextColor = Color.BLACK;
                 mBridge.setTextAppearance(mTextSize, mTextColor);
                 mBridge.setBackgroundColor(Color.WHITE);
             }
@@ -191,7 +204,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
 
         popup.add(0, "Background: reverse", new Runnable() {
             public void run() {
-                mTextColor =  Color.WHITE;
+                mTextColor = Color.WHITE;
                 mBridge.setTextAppearance(mTextSize, mTextColor);
                 mBridge.setBackgroundColor(Color.BLACK);
             }
@@ -199,7 +212,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
 
         popup.add(0, "Background: paper", new Runnable() {
             public void run() {
-                mTextColor =  Color.BLACK;
+                mTextColor = Color.BLACK;
                 mBridge.setTextAppearance(mTextSize, mTextColor);
                 mBridge.setBackgroundImage("file:///android_res/drawable/paper1.jpg");
             }
@@ -298,8 +311,8 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         popup.add(0, "Viewer.getLayoutMode", new Runnable() {
             public void run() {
                 mBridge.getLayoutMode(new ValueCallback<String>() {
-                     public void onReceiveValue(String value) {
-                         alert("Viewer.getLayoutMode", "mode = " + value);
+                    public void onReceiveValue(String value) {
+                        alert("Viewer.getLayoutMode", "mode = " + value);
                     }
                 });
             }
@@ -311,9 +324,9 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
                     public void onReceiveValue(Object[] value) {
                         alert("Viewer.getCurrentPosition",
                                 "chapter = " + value[0]
-                                + "\ncfi = " + value[1]
-                                + "\ncurrent = " + value[2]
-                                + "\ntotal = " + value[3]);
+                                        + "\ncfi = " + value[1]
+                                        + "\ncurrent = " + value[2]
+                                        + "\ntotal = " + value[3]);
                     }
                 });
             }
@@ -359,9 +372,10 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         mWebView.setOnTouchListener(new View.OnTouchListener() {
             private final int EPUB_FOOTER_HEIGHT = 40;
             private boolean isTriggerGuesture = true;
+
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                switch(event.getAction()){
+                switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         if (event.getY() >= v.getMeasuredHeight() - EPUB_FOOTER_HEIGHT) {
                             isTriggerGuesture = false;
@@ -370,13 +384,13 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
                         break;
                     case MotionEvent.ACTION_UP:
                     case MotionEvent.ACTION_CANCEL:
-                        if(isTriggerGuesture == false){
+                        if (isTriggerGuesture == false) {
                             isTriggerGuesture = true;
                             return false;
                         }
                         break;
                     default:
-                        if(isTriggerGuesture == false)
+                        if (isTriggerGuesture == false)
                             return false;
                 }
 

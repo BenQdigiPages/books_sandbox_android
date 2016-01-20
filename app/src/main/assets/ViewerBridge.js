@@ -34,6 +34,18 @@ App.onToggleToolbar = function(visible) {
     _App.onToggleToolbar(visible);
 };
 
+App.onToggleLoading = function(visible) {
+    _App.onToggleLoading(visible);
+}
+
+App.onToggleActionMode = function(visible, color) {
+    _App.onToggleActionMode(visible, color);
+};
+
+App.onToggleThumbnailbar = function(visible) {
+    _App.onToggleThumbnailbar(visible);
+}
+
 App.onRequestHighlights = function(callback) {
     _App.onRequestHighlights(callback);
 };

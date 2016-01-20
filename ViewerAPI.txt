@@ -288,6 +288,28 @@ App.onTrackAction(action, cfi)
 App.onToggleToolbar(visible)
 
 ///
+/// Notify App to show or hide loading
+///
+/// @visible: bool - set visibility of loading
+///
+App.onToggleLoading(visible)
+
+///
+/// Notify App to show or hide action mode
+///
+/// @visible: bool - set visibility of action mode
+/// @selectColor: String - the current highlight color type, either "red", "yellow" or "blue".
+///
+App.onToggleActionMode(visible, selectColor)
+
+///
+/// Notify App that thumbnail bar is show or hide
+///
+/// @visible: bool - visibility of thumbnail bar
+///
+App.onToggleThumbnailbar(visible)
+
+///
 /// Request App to load highlights for this book, App will call callback in response
 /// The callback will receive an array of object to represent highlights
 ///

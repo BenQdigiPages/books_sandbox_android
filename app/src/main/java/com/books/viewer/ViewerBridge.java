@@ -205,7 +205,7 @@ public class ViewerBridge {
     /// @legacy: bool - true if legacy mode is needed
     ///
     public void loadBook(final String url, boolean isPdf) {
-        Log.d(TAG, "loadBook "+ url);
+        Log.d(TAG, "loadBook " + url);
         mBookUri = url;
 
         if (mIsLibraryLoaded && mIsPdf == isPdf) {
@@ -283,7 +283,7 @@ public class ViewerBridge {
         eval("Viewer.getAvailableLayoutModes()", new ValueCallback<JSONArray>() {
             public void onReceiveValue(JSONArray json) {
                 try {
-                    ArrayList<String> list =  new ArrayList<String>();
+                    ArrayList<String> list = new ArrayList<String>();
                     for (int i = 0; i < json.length(); i++) {
                         list.add(json.getString(i));
                     }
@@ -342,7 +342,7 @@ public class ViewerBridge {
         eval("Viewer.getCurrentPosition()", new ValueCallback<JSONArray>() {
             public void onReceiveValue(JSONArray json) {
                 try {
-                    callback.onReceiveValue(new Object[] {
+                    callback.onReceiveValue(new Object[]{
                             json.getString(0),
                             json.getString(1),
                             json.getInt(2),
@@ -435,8 +435,8 @@ public class ViewerBridge {
     public void getPageFromCfi(String cfi, ValueCallback<Integer> callback) {
         eval("Viewer.getPageFromCfi(\"" + cfi + "\")", callback);
     }
-    
-     ///
+
+    ///
     /// Notify viewer that highlights is modified.
     ///
     /// @list_highlights: Json array - an array of object to represent highlights
@@ -480,7 +480,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onChangeTitle(final String title) {
-            Toast.makeText(mContext, (String) "onChangeTitle",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onChangeTitle", Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
                     mScene.setTitle(title);
@@ -495,7 +495,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onChangeTOC(final String toc_json) {
-            Toast.makeText(mContext, (String) "onChangeTOC",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onChangeTOC", Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
                     try {
@@ -520,7 +520,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onChangeView(int offset_x, int offset_y, double scale) {
-            Toast.makeText(mContext, (String) "onChangeView",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onChangeView", Toast.LENGTH_LONG).show();
 
         }
 
@@ -534,7 +534,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onChangePage(String chapter, String cfi, int current, int total) {
-            Toast.makeText(mContext, (String) "onChangePage",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onChangePage", Toast.LENGTH_LONG).show();
             Log.i(TAG, "onChangePage chapter=" + chapter + ", cfi=" + cfi + ", " + current + " / " + total);
         }
 
@@ -546,7 +546,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onTrackAction(String action, String cfi) {
-            Toast.makeText(mContext, (String) "onTrackAction",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onTrackAction", Toast.LENGTH_LONG).show();
             Log.i(TAG, "onTrackAction action=" + action + ", cfi=" + cfi);
         }
 
@@ -557,13 +557,66 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onToggleToolbar(final boolean visible) {
-            Toast.makeText(mContext, (String) "onToggleToolbar",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onToggleToolbar", Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
                     mScene.setTitleVisible(visible);
                 }
             });
         }
+
+        ///
+        /// Notify App to show or hide loading
+        ///
+        /// @visible: bool - set visibility of loading
+        ///
+        @JavascriptInterface
+        public void onToggleLoading(final boolean visible) {
+            Toast.makeText(mContext, (String) "onToggleLoading", Toast.LENGTH_LONG).show();
+            mHandler.post(new Runnable() {
+                public void run() {
+                    mScene.setLoadingVisible(visible);
+                }
+            });
+        }
+
+        ///
+        /// Notify App to show or hide action mode
+        ///
+        /// @visible: bool - set visibility of action mode
+        /// @selectColor: String - the current highlight color type, either "red", "yellow" or "blue".
+        ///
+        @JavascriptInterface
+        public void onToggleActionMode(final boolean visible, final String selectColor) {
+            Toast.makeText(mContext, (String) "onToggleActionMode", Toast.LENGTH_LONG).show();
+            mHandler.post(new Runnable() {
+                public void run() {
+                    new AlertDialog.Builder(mScene)
+                            .setTitle("onToggleActionMode")
+                            .setMessage("visible=" + visible + "\nselectColor" + selectColor)
+                            .show();
+                }
+            });
+        }
+
+        ///
+        /// Notify App that thumbnail bar is show or hide
+        ///
+        /// @visible: bool - visibility of thumbnail bar
+        ///
+        @JavascriptInterface
+        public void onToggleThumbnailbar(final boolean visible) {
+            Toast.makeText(mContext, (String) "onToggleThumbnailbar", Toast.LENGTH_LONG).show();
+            mHandler.post(new Runnable() {
+                public void run() {
+                    new AlertDialog.Builder(mScene)
+                            .setTitle("onToggleThumbnailbar")
+                            .setMessage("visible=" + visible)
+                            .show();
+                }
+            });
+        }
+
 
         // dummy database
         private final HashMap<String, JSONObject> mHighlights = new HashMap<String, JSONObject>();
@@ -580,7 +633,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onRequestHighlights(final String callback) {
-            Toast.makeText(mContext, (String) "onRequestHighlights",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onRequestHighlights", Toast.LENGTH_LONG).show();
 
 
             final JSONArray list = new JSONArray();
@@ -612,7 +665,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onAddHighlight(String highlight_json, final String callback) {
-            Toast.makeText(mContext, (String) "onAddHighlight",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onAddHighlight", Toast.LENGTH_LONG).show();
             try {
                 JSONObject highlight = new JSONObject(highlight_json);
                 final String uuid = UUID.randomUUID().toString();
@@ -639,7 +692,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onUpdateHighlight(String highlight_json) {
-            Toast.makeText(mContext, (String) "onUpdateHighlight",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onUpdateHighlight", Toast.LENGTH_LONG).show();
             try {
                 JSONObject highlight = new JSONObject(highlight_json);
                 String uuid = highlight.getString("uuid");
@@ -659,7 +712,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onRemoveHighlight(String uuid) {
-            Toast.makeText(mContext, (String) "onRemoveHighlight",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onRemoveHighlight", Toast.LENGTH_LONG).show();
             synchronized (mHighlights) {
                 mHighlights.remove(uuid);
             }
@@ -672,7 +725,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onShareHighlight(final String uuid) {
-            Toast.makeText(mContext, (String) "onShareHighlight",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onShareHighlight", Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
                     new AlertDialog.Builder(mScene)
@@ -690,7 +743,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onAnnotateHighlight(final String uuid) {
-            Toast.makeText(mContext, (String) "onAnnotateHighlight",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onAnnotateHighlight", Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
                     new AlertDialog.Builder(mScene)
@@ -716,7 +769,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onRequestBookmarks(final String callback) {
-            Toast.makeText(mContext, (String) "onRequestBookmarks",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onRequestBookmarks", Toast.LENGTH_LONG).show();
             final JSONArray list = new JSONArray();
 
             synchronized (mBookmarks) {
@@ -746,7 +799,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onAddBookmark(String bookmark_json, final String callback) {
-            Toast.makeText(mContext, (String) "onAddBookmark",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onAddBookmark", Toast.LENGTH_LONG).show();
             try {
                 JSONObject bookmark = new JSONObject(bookmark_json);
                 final String uuid = UUID.randomUUID().toString();
@@ -773,7 +826,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onUpdateBookmark(String bookmark_json) {
-            Toast.makeText(mContext, (String) "onUpdateBookmark",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onUpdateBookmark", Toast.LENGTH_LONG).show();
             try {
                 JSONObject bookmark = new JSONObject(bookmark_json);
                 synchronized (mBookmarks) {
@@ -792,7 +845,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onRemoveBookmark(String uuid) {
-            Toast.makeText(mContext, (String) "onRemoveBookmark",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onRemoveBookmark", Toast.LENGTH_LONG).show();
             synchronized (mBookmarks) {
                 mBookmarks.remove(uuid);
             }
@@ -807,7 +860,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onSearchResult(final String keyword, final String result_json) {
-            Toast.makeText(mContext, (String) "onSearchResult",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onSearchResult", Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
                     try {
@@ -862,12 +915,12 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onLog(final String tag, final String msg) {
-            Toast.makeText(mContext, (String) "onLog",Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, (String) "onLog", Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
                     new AlertDialog.Builder(mScene)
                             .setTitle("onLog")
-                            .setMessage("tag=" + tag + "\nmsg="+msg)
+                            .setMessage("tag=" + tag + "\nmsg=" + msg)
                             .show();
                 }
             });
@@ -927,11 +980,10 @@ public class ViewerBridge {
 
                 File basedir = ViewerBridge.mContext.getExternalFilesDir(null);
                 File internalBooksPath = new File(basedir.getPath() + "/assets/");
-                if(internalBooksPath != null && internalBooksPath.isDirectory()) {
+                if (internalBooksPath != null && internalBooksPath.isDirectory()) {
                     File dir = new File(internalBooksPath.getPath() + "/" + path);
                     inputStream = new FileInputStream(dir);
-                }
-                else
+                } else
                     inputStream = mScene.getAssets().open(path);
                 headers.put("Cache-Control", "no-cache");
 
@@ -1003,7 +1055,7 @@ public class ViewerBridge {
         }
 
         private WebResourceResponse createResponse(String mimeType, int status, String reason,
-                Map<String, String> headers, InputStream inputStream) {
+                                                   Map<String, String> headers, InputStream inputStream) {
             if (inputStream == null) {
                 inputStream = new ByteArrayInputStream(new byte[0]);
             }
@@ -1020,7 +1072,7 @@ public class ViewerBridge {
 
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         private WebResourceResponse _createResponse(String mimeType, int status, String reason,
-                Map<String, String> headers, InputStream inputStream) {
+                                                    Map<String, String> headers, InputStream inputStream) {
             return new WebResourceResponse(mimeType, "UTF-8", status, reason, headers, inputStream);
         }
 

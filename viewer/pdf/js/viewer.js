@@ -556,8 +556,7 @@ function onURL_and_AppReady(resultOutput) {
         if (toolBarVisible) {
             if (thumbnailBarVisible) {
                 $('#thumbnailView').show();
-            } else {
-                $('#thumbnailView').hide();
+                App.onToggleThumbnailbar(true);
             }
             $('#footer').show();
             //Henry add, when toolbar raised, page number have to refresh
@@ -582,6 +581,7 @@ function onURL_and_AppReady(resultOutput) {
         } else {
             if (thumbnailBarVisible) {
                 $('#thumbnailView').hide();
+                App.onToggleThumbnailbar(false);
             }
             $('#footer').hide();
             //[HW]
@@ -626,36 +626,12 @@ function onDelayedPageDIVsReady() {
 }
 
 function onFirstPageRendered() {
-    // NOTE : Init screen widgets after firstpage rendered
-    //Set tool bar
-    if (toolBarVisible) {
-        if (thumbnailBarVisible) {
-            $('#thumbnailView').show();
-        } else {
-            $('#thumbnailView').hide();
-        }
-        $('#footer').show();
-        //Phoebe, add for show 2 page numbers at twoPageViewMode
-        if (TwoPageViewMode.active) {
-          $('.number').hide();
-          $('.number_twopage').show(); 
-        } else {
-          $('.number_twopage').hide();
-          $('.number').show();
-        }          
-
-    } else {
-        if (thumbnailBarVisible) {
-            $('#thumbnailView').hide();
-        }
-        $('#footer').hide();
-    }
-    App.onToggleToolbar(toolBarVisible);
     //Phoebe, fix bug#212, invisible toolbar, footer after 3 secs. when first load.
     setTimeout(function(){
         if (toolBarVisible) {
             if (thumbnailBarVisible) {
                $('#thumbnailView').hide();
+               App.onToggleThumbnailbar(false);  //notify APP Thumbnailbar is hidden.
             }
             $('#footer').hide();
             toolBarVisible = !(toolBarVisible);
@@ -937,6 +913,7 @@ function webUIInitialized() {
             } else {
                 $('#thumbnailView').hide();
             }
+            App.onToggleThumbnailbar(thumbnailBarVisible);
     });
     $("#book_loading").fadeOut(); //Henry add
 
@@ -1429,6 +1406,7 @@ function onNextPage() {
             if (toolBarVisible) {
                 if (thumbnailBarVisible) {
                    $('#thumbnailView').hide();
+                   App.onToggleThumbnailbar(false);
                 }
                 $('#footer').hide();
                 toolBarVisible = !(toolBarVisible);

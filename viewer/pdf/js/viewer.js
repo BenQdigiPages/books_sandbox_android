@@ -19,6 +19,7 @@ var DRM = {}; //esther
 var downloadlink; //Henry add
 var opfFile;  //Henry add
 var isTrial = false; //Henry add, for check trial book or not
+var direct_reverse = false;  //Henry add, for book direct reverse
 
 var ua = navigator.userAgent;
 var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
@@ -591,7 +592,10 @@ function onURL_and_AppReady(resultOutput) {
               $('.number').show();
               document.getElementById('current_page').textContent = currentPageNum;
             }
-            document.getElementById('paginate').value = currentPageNum;
+            if(!direct_reverse)
+                document.getElementById('paginate').value = currentPageNum;
+            else
+                document.getElementById('paginate_reverse').value = -currentPageNum;
             //[HW]
             $("#bookmark").css("top",40);
             $("#bookmark_left").css("top",40);
@@ -885,21 +889,31 @@ function webUIInitialized() {
     }
 
     document.getElementById('current_page').textContent = currentPageNum;
-    document.getElementById('paginate').value = currentPageNum;
-    document.getElementById('paginate').max = pdfDoc.numPages;
+    if(!direct_reverse){
+        document.getElementById('paginate').value = currentPageNum;
+        document.getElementById('paginate').max = pdfDoc.numPages;
+    }else{
+        document.getElementById('paginate_reverse').value = -currentPageNum;
+        document.getElementById('paginate_reverse').min = -(pdfDoc.numPages);
+    }
     document.getElementById('total_pages').textContent = pdfDoc.numPages;
     document.getElementById('total_pages_twopage').textContent = pdfDoc.numPages;
     //Henry modify for next/previous page
     $(".arrow_icon1").on('click', function() {
-            onPrevPage();
+            if(!direct_reverse)
+                onPrevPage();
+            else
+                onNextPage();
     });
     $(".arrow_icon2").on('click', function() {
-            onNextPage();
+            if(!direct_reverse)
+                onNextPage();
+            else
+                onPrevPage();
     });
 
     //Henry add, for support undo button
-    document.getElementById('undo').addEventListener('click',
-        function() {
+    $(".undo").on('click', function() {
              //TODO: check ChapterLimit
             if (!canRead()){
     		window.alert("此書無法閱讀");
@@ -921,8 +935,22 @@ function webUIInitialized() {
             PDFViewerApplication.page = page;
     });
 
-    document.getElementById('thumbnailbar').addEventListener('click',
+    document.getElementById('paginate_reverse').addEventListener('change',
         function() {
+            //TODO: check ChapterLimit
+            if (!canRead()){
+    		window.alert("此書無法閱讀");
+    		document.getElementById('paginate_reverse').value = -(PDFViewerApplication.page);
+        	return false;
+            }
+            var page = Math.abs(parseInt(document.getElementById('paginate_reverse').value,10));
+            if (TwoPageViewMode.active && page % 2 == 0)
+                page--;   //Henry add, for support TwoPageViewMode
+            PDFViewerApplication.page = page;
+    });
+
+    //document.getElementById('thumbnailbtn').addEventListener('click',
+    $(".thumbnailbtn").on('click', function() {
             thumbnailBarVisible = !(thumbnailBarVisible);
             if (thumbnailBarVisible) {
                 $('#thumbnailView').show();
@@ -1073,7 +1101,10 @@ function updateToolBar(){
               $('.number').show();
               document.getElementById('current_page').textContent = currentPageNum;
         }
-        document.getElementById('paginate').value = currentPageNum;
+        if(!direct_reverse)
+            document.getElementById('paginate').value = currentPageNum;
+        else
+            document.getElementById('paginate_reverse').value = -currentPageNum;
         //[HW]
         $("#bookmark").css("top",40);
         $("#bookmark_left").css("top",40);
@@ -8683,168 +8714,13 @@ var PDFViewerApplication = {
       linkService: pdfLinkService
     });
     pdfLinkService.setHistory(this.pdfHistory);
-
-    //[Bruce][TempDisable]
     /*
-    this.findController = new PDFFindController({
-      pdfViewer: this.pdfViewer,
-      integratedFind: this.supportsIntegratedFind
-    });
-    this.pdfViewer.setFindController(this.findController);
-
-    this.findBar = new PDFFindBar({
-      bar: document.getElementById('findbar'),
-      toggleButton: document.getElementById('viewFind'),
-      findField: document.getElementById('findInput'),
-      highlightAllCheckbox: document.getElementById('findHighlightAll'),
-      caseSensitiveCheckbox: document.getElementById('findMatchCase'),
-      findMsg: document.getElementById('findMsg'),
-      findResultsCount: document.getElementById('findResultsCount'),
-      findStatusIcon: document.getElementById('findStatusIcon'),
-      findPreviousButton: document.getElementById('findPrevious'),
-      findNextButton: document.getElementById('findNext'),
-      findController: this.findController
-    });
-
-    this.findController.setFindBar(this.findBar);
-
-    HandTool.initialize({
-      container: container,
-      toggleHandTool: document.getElementById('toggleHandTool')
-    });
-
-    this.pdfDocumentProperties = new PDFDocumentProperties({
-      overlayName: 'documentPropertiesOverlay',
-      closeButton: document.getElementById('documentPropertiesClose'),
-      fields: {
-        'fileName': document.getElementById('fileNameField'),
-        'fileSize': document.getElementById('fileSizeField'),
-        'title': document.getElementById('titleField'),
-        'author': document.getElementById('authorField'),
-        'subject': document.getElementById('subjectField'),
-        'keywords': document.getElementById('keywordsField'),
-        'creationDate': document.getElementById('creationDateField'),
-        'modificationDate': document.getElementById('modificationDateField'),
-        'creator': document.getElementById('creatorField'),
-        'producer': document.getElementById('producerField'),
-        'version': document.getElementById('versionField'),
-        'pageCount': document.getElementById('pageCountField')
-      }
-    });
-
     SecondaryToolbar.initialize({
-      toolbar: document.getElementById('secondaryToolbar'),
-      toggleButton: document.getElementById('secondaryToolbarToggle'),
-      presentationModeButton:
-        document.getElementById('secondaryPresentationMode'),
       twoPageViewMode: TwoPageViewMode,
-      openFile: document.getElementById('secondaryOpenFile'),
-      print: document.getElementById('secondaryPrint'),
-      download: document.getElementById('secondaryDownload'),
-      viewBookmark: document.getElementById('secondaryViewBookmark'),
-      firstPage: document.getElementById('firstPage'),
-      lastPage: document.getElementById('lastPage'),
-      pageRotateCw: document.getElementById('pageRotateCw'),
-      pageRotateCcw: document.getElementById('pageRotateCcw'),
       onePageView: document.getElementById('onePageView'),
       twoPageView: document.getElementById('twoPageView'),
-      documentPropertiesButton: document.getElementById('documentProperties')
     });
-
-    if (this.supportsFullscreen) {
-      var toolbar = SecondaryToolbar;
-      this.pdfPresentationMode = new PDFPresentationMode({
-        container: container,
-        viewer: viewer,
-        pdfViewer: this.pdfViewer,
-        pdfThumbnailViewer: this.pdfThumbnailViewer,
-        contextMenuItems: [
-          { element: document.getElementById('contextFirstPage'),
-            handler: toolbar.firstPageClick.bind(toolbar) },
-          { element: document.getElementById('contextLastPage'),
-            handler: toolbar.lastPageClick.bind(toolbar) },
-          { element: document.getElementById('contextPageRotateCw'),
-            handler: toolbar.pageRotateCwClick.bind(toolbar) },
-          { element: document.getElementById('contextPageRotateCcw'),
-            handler: toolbar.pageRotateCcwClick.bind(toolbar) }
-        ]
-      });
-    }
-
-    PasswordPrompt.initialize({
-      overlayName: 'passwordOverlay',
-      passwordField: document.getElementById('password'),
-      passwordText: document.getElementById('passwordText'),
-      passwordSubmit: document.getElementById('passwordSubmit'),
-      passwordCancel: document.getElementById('passwordCancel')
-    });
-
-    var self = this;
-    var initializedPromise = Promise.all([
-      Preferences.get('enableWebGL').then(function resolved(value) {
-        PDFJS.disableWebGL = !value;
-      }),
-      Preferences.get('sidebarViewOnLoad').then(function resolved(value) {
-        self.preferenceSidebarViewOnLoad = value;
-      }),
-      Preferences.get('pdfBugEnabled').then(function resolved(value) {
-        self.preferencePdfBugEnabled = value;
-      }),
-      Preferences.get('showPreviousViewOnLoad').then(function resolved(value) {
-        self.preferenceShowPreviousViewOnLoad = value;
-      }),
-      Preferences.get('defaultZoomValue').then(function resolved(value) {
-        self.preferenceDefaultZoomValue = value;
-      }),
-      Preferences.get('disableTextLayer').then(function resolved(value) {
-        if (PDFJS.disableTextLayer === true) {
-          return;
-        }
-        PDFJS.disableTextLayer = value;
-      }),
-      Preferences.get('disableRange').then(function resolved(value) {
-        if (PDFJS.disableRange === true) {
-          return;
-        }
-        PDFJS.disableRange = value;
-      }),
-      Preferences.get('disableStream').then(function resolved(value) {
-        if (PDFJS.disableStream === true) {
-          return;
-        }
-        PDFJS.disableStream = value;
-      }),
-      Preferences.get('disableAutoFetch').then(function resolved(value) {
-        PDFJS.disableAutoFetch = value;
-      }),
-      Preferences.get('disableFontFace').then(function resolved(value) {
-        if (PDFJS.disableFontFace === true) {
-          return;
-        }
-        PDFJS.disableFontFace = value;
-      }),
-      Preferences.get('useOnlyCssZoom').then(function resolved(value) {
-        PDFJS.useOnlyCssZoom = value;
-      }),
-        Preferences.get('twoPageViewModeOnLoad').then(function resolved(value) {
-        self.preferencetwoPageViewModeOnLoad = value;
-      })
-        Preferences.get('externalLinkTarget').then(function resolved(value) {
-        if (PDFJS.isExternalLinkTargetSet()) {
-          return;
-        }
-        PDFJS.externalLinkTarget = value;
-      }),
-      // TODO move more preferences and other async stuff here
-    ]).catch(function (reason) { });
     */
-
-    SecondaryToolbar.initialize({
-      twoPageViewMode: TwoPageViewMode,
-      onePageView: document.getElementById('onePageView'),
-      twoPageView: document.getElementById('twoPageView'),
-    });
-
 
     TwoPageViewMode.initialize({
       container: container,
@@ -8862,7 +8738,6 @@ var PDFViewerApplication = {
         PDFJS.twoPageViewModeOnLoad = DEFAULT_PREFERENCES.twoPageViewModeOnLoad;
         resolve();
     });
-    //End : [Bruce][TempDisable]
 
     //[Bruce]
     console.log("(onAppInitialized)")
@@ -8870,6 +8745,52 @@ var PDFViewerApplication = {
 
     if(DEBUG_CHROME_DEV_TOOL) {
         console.timeEnd('PDFViewerApplication.initialize()');
+    }
+
+    //Henry add, to decide book direction
+    if(direct_reverse){
+      $(".undo.arrow_1").hide();
+      $(".undo.arrow_1.reverse").css('display','inline-block');
+      $(".thumbnailbtn").hide();
+      $(".thumbnailbtn.reverse").css('display','inline-block');
+      $("#paginate").hide();
+      $("#paginate_reverse").show();
+    }
+
+    if(!direct_reverse){
+        $viewerOwl = $('#viewer').owlCarousel({
+            mouseDrag: false,
+            touchDrag: false,
+            items: 1,
+            margin: 0,
+            onInitialized: onViewerCarouselInitialized,
+        });
+        $viewThumbnailOwl = $('#thumbnailView').owlCarousel({
+            stagePadding:50,
+            items: 8,
+            autoWidth:true,
+            center:true,
+            lazyLoad: true,
+            onInitialized: onThumbnailViewCarouselInitialized,
+        });
+    }else{
+        $viewerOwl = $('#viewer').owlCarousel({
+            mouseDrag: false,
+            touchDrag: false,
+            items: 1,
+            margin: 0,
+            rtl:true,
+            onInitialized: onViewerCarouselInitialized,
+        });
+        $viewThumbnailOwl = $('#thumbnailView').owlCarousel({
+            stagePadding:50,
+            items: 8,
+            autoWidth:true,
+            lazyLoad: true,
+            rtl:true,
+            center:true,
+            onInitialized: onThumbnailViewCarouselInitialized,
+        });
     }
 
     return initializedPromise.then(function () {
@@ -10219,7 +10140,7 @@ window.addEventListener('resize', function webViewerResize(evt) {
   updateViewarea();
 
   // Set the 'max-height' CSS property of the secondary toolbar.
-  SecondaryToolbar.setMaxHeight(document.getElementById('viewerContainer'));
+  //SecondaryToolbar.setMaxHeight(document.getElementById('viewerContainer'));
 });
 
 window.addEventListener('hashchange', function webViewerHashchange(evt) {
@@ -10370,7 +10291,10 @@ window.addEventListener('pagechange', function pagechange(evt) {
       } else {        
         document.getElementById('current_page').textContent = page;
       }
-      document.getElementById('paginate').value = page;
+      if(!direct_reverse)
+          document.getElementById('paginate').value = page;
+      else
+          document.getElementById('paginate_reverse').value = -page;
       PDFViewerApplication.historyPage = evt.previousPageNumber;  //Henry add, for supporting undo
       // Info App
       App.onChangePage(page, page, page, pdfDoc.numPages);
@@ -10445,13 +10369,14 @@ function handleMouseWheel(evt) {
 window.addEventListener('DOMMouseScroll', handleMouseWheel);
 window.addEventListener('mousewheel', handleMouseWheel);
 
+/*
 window.addEventListener('click', function click(evt) {
   if (SecondaryToolbar.opened &&
       PDFViewerApplication.pdfViewer.containsElement(evt.target)) {
     SecondaryToolbar.close();
   }
 }, false);
-
+*/
 window.addEventListener('keydown', function keydown(evt) {
   if (OverlayManager.active) {
     return;
@@ -10582,10 +10507,12 @@ window.addEventListener('keydown', function keydown(evt) {
         handled = true;
         break;
       case 27: // esc key
+        /*
         if (SecondaryToolbar.opened) {
           SecondaryToolbar.close();
           handled = true;
         }
+        */
         if (!PDFViewerApplication.supportsIntegratedFind &&
             PDFViewerApplication.findBar.opened) {
           PDFViewerApplication.findBar.close();

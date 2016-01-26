@@ -24,25 +24,6 @@
     <script src="dist/jquery/jquery-2.1.4.min.js"></script>
     <script src="dist/owlcarousel/owl.carousel.min.js"></script>
     <script src="dist/interact/interact.min.js"></script>
-    <script>
-        $(document).ready(function(){
-            $viewerOwl = $('#viewer').owlCarousel({
-                mouseDrag: false,
-                touchDrag: false,
-                items: 1,
-                margin: 0,
-                onInitialized: onViewerCarouselInitialized,
-            });
-            $viewThumbnailOwl = $('#thumbnailView').owlCarousel({
-                stagePadding:50,
-                items: 8,
-                autoWidth:true,
-                center:true,
-                lazyLoad: true,
-                onInitialized: onThumbnailViewCarouselInitialized,
-            });
-        });
-    </script>
 </head>
 
 <body>
@@ -61,16 +42,18 @@
     <div id="thumbnailView" class="owl-carousel" stlye="display:none">
     </div>
     <footer id="footer" class="bar">
-        <a href="#" id="undo" class="arrow_1"></a>
+        <label class="thumbnailbtn reverse"></label>
+        <a href="#" class="undo arrow_1"></a>
             <input id="paginate" type="range" value="1" min="1" step="1" autofocus="true">
+            <input id="paginate_reverse" type="range" value="-1" max="-1" step="1" autofocus="true">
+        <a href="#" class="undo arrow_1 reverse"></a>
         <a class="number">
             <span id="current_page">000</span>/<span id="total_pages">000</span>
         </a>
         <a class="number_twopage">
             <span id="current_page_now">000</span>-<span id="current_page_next">000</span>/<span id="total_pages_twopage">000</span>
         </a>				
-        <label id="thumbnailbar" class="thumbnailbtn">
-        </label>
+        <label class="thumbnailbtn"></label>
     </footer>
 <!-- Intro Page -->
 <div class="big_popup" id="popup4">

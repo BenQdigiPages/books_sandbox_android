@@ -1930,16 +1930,15 @@ footer.bar a {
 	vertical-align: middle;
 }
 
-footer.bar a.arrow_1 {
+footer.bar a.undo.arrow_1 {
     width: 30px;  /* Henry modify */
 	background: url(../img/arrow_icon1.png) no-repeat center;
 }
 
-footer.bar a.arrow_2 {
-	width: 5%;
-    margin-left: 2.5px;
-    margin-Right: 2.5px;
+footer.bar a.undo.arrow_1.reverse { /* direct reverse */
+    width: 30px;  /* Henry modify */
 	background: url(../img/arrow_icon2.png) no-repeat center;
+	display: none;
 }
 /* Henry modify, show at sencond line */
 footer.bar a.number {
@@ -1972,12 +1971,24 @@ footer.bar .thumbnailbtn {
     margin: 0 10px;
     vertical-align: middle
  }
+ footer.bar .thumbnailbtn.reverse {
+     width: 30px;
+     height: 32px;
+     background: url(../img/footer-icon1.png) no-repeat center;
+     display: none;
+     cursor: pointer;
+     margin: 0 10px;
+     vertical-align: middle
+  }
 
 footer.bar input[type=range] {
 	width: 60%;  /* Henry modify, make it longer */
 	border: 1px solid white; /* Henry modify */
 }
 
+#paginate_reverse {
+    display: none;
+}
 input[type=range] {
     /*removes default webkit styles*/
     -webkit-appearance: none;

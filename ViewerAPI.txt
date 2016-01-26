@@ -439,3 +439,14 @@ App.onShareBookInfo()
 /// @msg The message you would like logged.
 ///
 App.onLog(tag, msg)
+
+///
+/// Get page direction from App.
+///
+///     function callback(pageDirection)
+///
+/// @callback: string - name of callback function (can be object member function);
+///     do not pass function itself, only name (as string) is needed;
+///     and the function must be accessable from global space
+///
+App.getPageDirection(callback)

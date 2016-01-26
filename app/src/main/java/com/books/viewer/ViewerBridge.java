@@ -925,6 +925,28 @@ public class ViewerBridge {
                 }
             });
         }
+
+        ///
+        /// Get page direction from App.
+        ///
+        ///     function callback(pageDirection)
+        ///
+        /// @callback: string - name of callback function (can be object member function);
+        ///     do not pass function itself, only name (as string) is needed;
+        ///     and the function must be accessable from global space
+        ///
+        @JavascriptInterface
+        public void getPageDirection(final String callback) {
+            Toast.makeText(mContext, (String) "getPageDirection", Toast.LENGTH_LONG).show();
+            mHandler.post(new Runnable() {
+                public void run() {
+                    new AlertDialog.Builder(mScene)
+                            .setTitle("getPageDirection")
+                            .setMessage("callback=" + callback)
+                            .show();
+                }
+            });
+        }
     }
 
     WebViewClient mWebViewClient = new WebViewClient() {

@@ -556,7 +556,8 @@ function onURL_and_AppReady(resultOutput) {
                     carouselPageNum = currentPageNum;
                 }
                 // Update current page number
-                PDFViewerApplication.page = currentPageNum;
+                // Henry remove it, it will make page upadate twice and override history page.
+                //PDFViewerApplication.page = currentPageNum;
                 PageAnimation.onAfterPageChange();
             }
     });
@@ -930,8 +931,6 @@ function webUIInitialized() {
         	return false; 
             } 
             var page = parseInt(document.getElementById('paginate').value,10);
-            if (TwoPageViewMode.active && page % 2 == 0)
-                page--;   //Henry add, for support TwoPageViewMode
             PDFViewerApplication.page = page;
     });
 
@@ -944,8 +943,6 @@ function webUIInitialized() {
         	return false;
             }
             var page = Math.abs(parseInt(document.getElementById('paginate_reverse').value,10));
-            if (TwoPageViewMode.active && page % 2 == 0)
-                page--;   //Henry add, for support TwoPageViewMode
             PDFViewerApplication.page = page;
     });
 
@@ -8838,11 +8835,6 @@ var PDFViewerApplication = {
   //Henry add, for support undo
   undoPage: function pdfUndoPage() {
       this.page = this.historyPage;
-       if (TwoPageViewMode.active){
-           $viewerOwl.trigger('to.owl.carousel', [(Math.floor((this.page+1)/2))-1,300,true]);
-       }else{
-           $viewerOwl.trigger('to.owl.carousel', [this.page-1,300,true]);
-       }
   },
 
   get lastPageNumber() {

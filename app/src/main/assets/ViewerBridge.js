@@ -97,3 +97,7 @@ App.onGoToBookIntro = function() {
 App.onShareBookInfo = function() {
     _App.onShareBookInfo();
 };
+
+App.getPageDirection = function(callback) {
+    _App.getPageDirection(callback);
+};

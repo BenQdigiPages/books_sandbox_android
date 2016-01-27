@@ -62,7 +62,7 @@ var PageAnimation =  {
               /*  PATTERN : 
                   _currentCarouselIndex  :   0    1    2    3    4     5     ...
                   _currentContainerIndex :   1    3    5    7    9     11    ...
-                  pageNumber             :  1 X  2 3  4 5  6 7  8 9   10 11  ...
+                  pageNumber             :  []1  2 3  4 5  6 7  8 9   10 11  ...
               */
               this._currentCarouselIndex = val;
               this._currentContainerIndex = val*2 + 1;
@@ -148,7 +148,7 @@ var PageAnimation =  {
             this.containerLowerBound = 0;
         },
         onOnePageModeToTwoPageMode     : function PageAnimation_onOnePageModeToTwoPageMode(){
-			//[Phoebe]Add for new twoPageViewMode(Page: 1-  23  45  67  89 ...)
+            //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
             if (this._currentCarouselIndex ==0){
                 this._currentContainerIndex = 1;
                 this._currentCarouselIndex = 0;
@@ -544,7 +544,7 @@ function onURL_and_AppReady(resultOutput) {
                 PageAnimation.onBeforePageChange();
                 PageAnimation.currentCarouselIndex = event.item.index;
                 if (TwoPageViewMode.active){
-                    //[Phoebe]Add for new twoPageViewMode(Page: 1-  23  45  67  89 ...)
+                    //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
                     if (event.item.index == 0){
                         currentPageNum = 1;
                     }else {
@@ -577,16 +577,18 @@ function onURL_and_AppReady(resultOutput) {
             if (TwoPageViewMode.active) {
               $('.number').hide();
               $('.number_twopage').show(); 
-              //[Phoebe]Add for new twoPageViewMode(Page: 1-  23  45  67  89 ...)
+              //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
               if (currentPageNum == 1){
-                  document.getElementById('current_page_next').textContent = "   ";
+                  document.getElementById('current_page_now').textContent = "0";
+                  document.getElementById('current_page_next').textContent = "1";
+				  
               }else {
                   if ((currentPageNum % 2)  == 1) {
                       currentPageNum = currentPageNum - 1;
                   }
                   document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("   ");
+                  document.getElementById('current_page_now').textContent = currentPageNum;
               }
-              document.getElementById('current_page_now').textContent = currentPageNum;
 
             } else {
               $('.number_twopage').hide();
@@ -663,7 +665,7 @@ function onFirstPageRendered() {
 
     // Set this page forcefully to let Carousel to start run
     if (TwoPageViewMode.active){
-        $viewerOwl.trigger('to.owl.carousel', [(Math.floor((currentPageNum+1)/2))-1,300,true]);
+        $viewerOwl.trigger('to.owl.carousel', [(Math.floor(currentPageNum/2)),300,true]);
     }else{
         $viewerOwl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
     }
@@ -1082,17 +1084,17 @@ function updateToolBar(){
         if (TwoPageViewMode.active) {
               $('.number').hide();
               $('.number_twopage').show(); 
-              //[Phoebe]Add for new twoPageViewMode(Page: 1-  23  45  67  89 ...)			  
+              //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)			  
               if (currentPageNum == 1){
-                  document.getElementById('current_page_next').textContent = "   "; 
+                  document.getElementById('current_page_now').textContent = "0";
+                  document.getElementById('current_page_next').textContent = "1"; 
               }else {
                   if ((currentPageNum % 2) == 1){
                       currentPageNum = currentPageNum -1;
                   }
                   document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("   ");
+                  document.getElementById('current_page_now').textContent = currentPageNum;
               }
-              document.getElementById('current_page_now').textContent = currentPageNum;
-			  
         } else {
               $('.number_twopage').hide();
               $('.number').show();
@@ -7010,6 +7012,16 @@ var PDFViewer = (function pdfViewer() {
 
       for (var i = 0, ii = this._pages.length; i < ii; i++) {
         this._pages[i].update(newScale);
+        //[Phoebe]Copy the width and height of page 1 to page0
+        if (i == 0 && TwoPageViewMode.active) {
+            var pageEmptyDiv = document.getElementById('pageContainer0');
+            pageEmptyDiv.style.width = Math.floor(this._pages[0].width) + 'px';
+            pageEmptyDiv.style.height = Math.floor(this._pages[0].height) + 'px';
+            pageEmptyDiv.children[0].style.width = Math.floor(this._pages[0].width) + 'px';
+            pageEmptyDiv.children[0].style.height = Math.floor(this._pages[0].height) + 'px';
+            pageEmptyDiv.children[0].children[0].style.width = Math.floor(this._pages[0].width) + 'px';
+            pageEmptyDiv.children[0].children[0].style.height = Math.floor(this._pages[0].height) + 'px';
+        }
       }
       this._currentScale = newScale;
 
@@ -7103,7 +7115,7 @@ var PDFViewer = (function pdfViewer() {
       if(this.isInCarouselMode) {
           if(pageNumber !== carouselPageNum) {
               if (TwoPageViewMode.active){
-                  //[Phoebe]Add for new twoPageViewMode(Page: 1-  23  45  67  89 ...)
+                  //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
                   $viewerOwl.trigger('to.owl.carousel', [(Math.floor(pageNumber/2)),200,true]);
               }else{
                   $viewerOwl.trigger('to.owl.carousel',[pageNumber - 1, 200, true]);
@@ -8144,7 +8156,7 @@ var TWO_PAGE_CONTAINER = 'twoPageContainer';
 
 var TwoPageViewMode = {
   active: false,
-  showCoverPage: true,    //[Phoebe]Add for new twoPageViewMode(Page: 1-  23  45  67  89 ...)
+  showCoverPage: true,    //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
   inProcess : false,
   numPages: 0,
   numTwoPageContainers: 0,
@@ -8210,7 +8222,17 @@ var TwoPageViewMode = {
     for (var i = 1; i <= this.numPages; i++) {
       pageDiv = PDFViewerApplication.pdfViewer.getPageView(i - 1).div;
       index = i + (this.containers[i] ? 0 : (this.showCoverPage ? 1: -1));
-	  pageDiv.style.display = "inline-block";
+      pageDiv.style.display = "inline-block";
+      //[Phoebe]Clone page1 to create fake page0.
+      if (i == 1){
+          var pageDivTmp = (PDFViewerApplication.pdfViewer.getPageView(0).div).cloneNode(true);
+          pageDivTmp.id = 'pageContainer0';
+          this.containers[index].appendChild(pageDivTmp);
+          this.isPagePlacedOnRightSideInContainer[i] = false;
+          interact('#' + pageDivTmp.id)
+              .gesturable(false)
+              .draggable(false);
+      }
       this.containers[index].appendChild(pageDiv);
       if ((i & 1) === 0) { // Even page number.
           this.isPagePlacedOnRightSideInContainer[i] = !this.showCoverPage;
@@ -8218,6 +8240,11 @@ var TwoPageViewMode = {
           this.isPagePlacedOnRightSideInContainer[i] = (this.showCoverPage &&
                                                          i !== 1);
       }
+      //[Phoebe]page 1 should be at right side.
+      if (i ==1){
+          this.isPagePlacedOnRightSideInContainer[i] = true; 
+      }	  
+	  
       // [Bruce] interact.js
       interact('#' + pageDiv.id)
           .gesturable(false)
@@ -8225,7 +8252,7 @@ var TwoPageViewMode = {
       // End : [Bruce] interact.js
     }
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-        //[Phoebe]Add for new twoPageViewMode(Page: 1-  23  45  67  89 ...)        
+        //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)        
         $viewerOwl.trigger('to.owl.carousel', [(Math.floor(currentPageNum/2)),300,true]);
         for (var i = 1; i <= this.numPages; i++) {
             $viewerOwl.trigger('remove.owl.carousel',0);
@@ -8256,6 +8283,7 @@ var TwoPageViewMode = {
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
         $viewerOwl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
     }
+    //[Phoebe]PageContainer0 will be delete below.
     for (var uid in this.containers) {
         if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
             $viewerOwl.trigger('remove.owl.carousel',0);
@@ -8318,7 +8346,7 @@ var TwoPageViewMode = {
 
     if (PDFViewerApplication.pdfViewer.isHorizontalScrollbarEnabled) {
       dest = [null, { name: 'XYZ' }, 0, null, null];
-      //[Phoebe]Add for new twoPageViewMode(Page: 1-  23  45  67  89 ...)	  
+      //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)	  
       if ((id === 1 && this.showCoverPage) || (id === this.numPages &&
                                                 !this.isPagePlacedOnRightSideInContainer[id])) {
           var newPage = PDFViewerApplication.pdfViewer.getPageView(id - 1)
@@ -8388,7 +8416,7 @@ var TwoPageViewMode = {
    * @return {Integer} (See above for explanation of the return values.)
    */
   get hashParams() {
-      //[Phoebe]Add for new twoPageViewMode(Page: 1-  23  45  67  89 ...)
+      //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
       return ((this.active | 0) + (this.active && (this.showCoverPage | 0)));
   }
 };
@@ -10269,17 +10297,17 @@ window.addEventListener('pagechange', function pagechange(evt) {
     if(toolBarVisible) {
       //Phoebe add for show 2 page numbers at twoPageViewMode, bug#214
       if (TwoPageViewMode.active) {
-          //[Phoebe]Add for new twoPageViewMode(Page: 1-  23  45  67  89 ...)
+          //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
           if (page == 1){
-              document.getElementById('current_page_next').textContent = "   ";
+              document.getElementById('current_page_now').textContent = "0";
+              document.getElementById('current_page_next').textContent = "1";
           }else {
               if ((page % 2) == 1){
                   page = page -1;
               }
               document.getElementById('current_page_next').textContent = ((page+1)<= pdfDoc.numPages)? (page+1):("   ");
+              document.getElementById('current_page_now').textContent = page;
           }
-          document.getElementById('current_page_now').textContent = page;
-	  
       } else {        
         document.getElementById('current_page').textContent = page;
       }

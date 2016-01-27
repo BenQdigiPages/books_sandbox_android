@@ -1954,7 +1954,7 @@ footer.bar a.number {
 footer.bar a.number_twopage {
   position: absolute;
   top: 20px;
-  display: block;
+  display: none;
   width: 100%;
   z-index: -1;
   color: #fff;

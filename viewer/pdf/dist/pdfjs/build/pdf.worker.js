@@ -1798,7 +1798,6 @@ var NetworkManager = (function NetworkManagerClosure() {
       var pendingRequest = this.pendingRequests[xhrId];
       if (!pendingRequest) {
         // Maybe abortRequest was called...
-        console.log("onStateChange  Maybe abortRequest was called...");
         return;
       }
 
@@ -34573,6 +34572,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
             // server should not be returning that it can support range
             // requests.
             networkManager.abortRequest(fullRequestXhrId);
+            console.log("abortRequest was called..., then do range requests");
           }
 
           try {

@@ -638,6 +638,8 @@ function UIComponentHandler() {
                 // Henry remove it, it will make page upadate twice and override history page.
                 //PDFViewerApplication.page = currentPageNum;
                 PageAnimation.onAfterPageChange();
+                //[Phoebe]Fix issue #717 Action:LEAVE_PAGE
+                App.onTrackAction("LEAVE_PAGE", currentPageNum.toString());
             }
     });
 
@@ -680,6 +682,9 @@ function UIComponentHandler() {
             //[HW]
             $("#bookmark").css("top",40);
             $("#bookmark_left").css("top",40);
+            //[Phoebe]Fix issue #717 Action:CLICK_POPUP_MENU
+            App.onTrackAction("CLICK_POPUP_MENU",currentPageNum.toString());
+
         } else {
             if (thumbnailBarVisible) {
                 $('#thumbnailView').hide();
@@ -735,6 +740,9 @@ function UIComponentHandler() {
         	return false;
             }
             var page = parseInt(document.getElementById('paginate').value,10);
+            //[Phoebe]Fix issue #717 Action:PROGRESSBAR_JUMP_PAGE
+            App.onTrackAction("PROGRESSBAR_JUMP_PAGE",page.toString());
+
             PDFViewerApplication.page = page;
     });
 
@@ -747,6 +755,8 @@ function UIComponentHandler() {
         	return false;
             }
             var page = Math.abs(parseInt(document.getElementById('paginate_reverse').value,10));
+            //[Phoebe]Fix issue #717 Action:PROGRESSBAR_JUMP_PAGE
+            App.onTrackAction("PROGRESSBAR_JUMP_PAGE",page.toString());
             PDFViewerApplication.page = page;
     });
 
@@ -1128,6 +1138,9 @@ function updateToolBar(){
         //[HW]
         $("#bookmark").css("top",40);
         $("#bookmark_left").css("top",40);
+		
+        //[Phoebe]Fix issue #717 Action:CLICK_POPUP_MENU
+        App.onTrackAction("CLICK_POPUP_MENU",currentPageNum.toString());
     }
 }
 

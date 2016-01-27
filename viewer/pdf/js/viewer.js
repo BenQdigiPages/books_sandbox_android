@@ -20,6 +20,8 @@ var downloadlink; //Henry add
 var opfFile;  //Henry add
 var isTrial = false; //Henry add, for check trial book or not
 var direct_reverse = false;  //Henry add, for book direct reverse
+var PAGE_DIRECTION_LEFT = 0;
+var PAGE_DIRECTION_RIGHT = 1;
 
 var ua = navigator.userAgent;
 var isIOSDevice = /iP(hone|od|ad)/g.test(ua);
@@ -37,6 +39,7 @@ var customEventsManager =  {
         "onViewerOwlReady"                 : new ViewerObserver(),
         "onThumbnailViewOwlReady"          : new ViewerObserver(),
         "onDelayedPageDIVsReady"           : new ViewerObserver(),
+        "onPageDirectionReady"             : new ViewerObserver(),
 
         doAfterMultiReady     : function customEventsManager_setMultiReady(mulityReadyArray,readyToDo){
             var mulityReadyPromises = [],
@@ -535,86 +538,6 @@ function onURL_and_AppReady(resultOutput) {
         console.timeStamp('onURL_and_AppReady()');
     }
 
-    //initOwl
-    // Listen to owl events:
-    $viewerOwl.on('changed.owl.carousel',
-        function callback(event) {
-            if (!(TwoPageViewMode.inProcess)){
-                // Must do befroe index is changed
-                PageAnimation.onBeforePageChange();
-                PageAnimation.currentCarouselIndex = event.item.index;
-                if (TwoPageViewMode.active){
-                    //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
-                    if (event.item.index == 0){
-                        currentPageNum = 1;
-                    }else {
-                        currentPageNum = (event.item.index * 2);
-                    }
-                    carouselPageNum = currentPageNum;
-                }else {
-                    currentPageNum  = event.item.index + 1;
-                    carouselPageNum = currentPageNum;
-                }
-                // Update current page number
-                // Henry remove it, it will make page upadate twice and override history page.
-                //PDFViewerApplication.page = currentPageNum;
-                PageAnimation.onAfterPageChange();
-            }
-    });
-
-    //Handle pdf view canvas click event.
-    interact('#viewerContainer')
-      .on('tap', function (event) {
-        toolBarVisible = !(toolBarVisible);
-        if (toolBarVisible) {
-            if (thumbnailBarVisible) {
-                $('#thumbnailView').show();
-                App.onToggleThumbnailbar(true);
-            }
-            $('#footer').show();
-            //Henry add, when toolbar raised, page number have to refresh
-            //Phoebe add for show 2 page numbers at twoPageViewMode, bug#214
-            if (TwoPageViewMode.active) {
-              $('.number').hide();
-              $('.number_twopage').show(); 
-              //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
-              if (currentPageNum == 1){
-                  document.getElementById('current_page_now').textContent = "0";
-                  document.getElementById('current_page_next').textContent = "1";
-				  
-              }else {
-                  if ((currentPageNum % 2)  == 1) {
-                      currentPageNum = currentPageNum - 1;
-                  }
-                  document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("   ");
-                  document.getElementById('current_page_now').textContent = currentPageNum;
-              }
-
-            } else {
-              $('.number_twopage').hide();
-              $('.number').show();
-              document.getElementById('current_page').textContent = currentPageNum;
-            }
-            if(!direct_reverse)
-                document.getElementById('paginate').value = currentPageNum;
-            else
-                document.getElementById('paginate_reverse').value = -currentPageNum;
-            //[HW]
-            $("#bookmark").css("top",40);
-            $("#bookmark_left").css("top",40);
-        } else {
-            if (thumbnailBarVisible) {
-                $('#thumbnailView').hide();
-                App.onToggleThumbnailbar(false);
-            }
-            $('#footer').hide();
-            //[HW]
-            $("#bookmark").css("top",0);
-            $("#bookmark_left").css("top",0);
-        }
-        App.onToggleToolbar(toolBarVisible);
-    });
-
     //Set listener before open file
     customEventsManager["onMetadataReady"].doTask(onMetadataReady);
     customEventsManager['onOutlineReady'].doTask(onOutlineReady);
@@ -630,7 +553,7 @@ function onURL_and_AppReady(resultOutput) {
     PDFViewerApplication.open(url, 0 , null , null , null , legacy);
 
     //Request bookmarks from app when book is loaded.
-    App.onRequestBookmarks("RequestBookmarksCallback")
+    App.onRequestBookmarks("RequestBookmarksCallback");
 
     if(DEBUG_CHROME_DEV_TOOL) {
         console.timeEnd('onURL_and_AppReady()');
@@ -681,10 +604,170 @@ function onFirstPageRendered() {
 
 function onDocumentReady(pdfDocument) {
     console.log("(onDocumentReady)");
+    $("#book_loading").fadeOut(); //Henry add
     pdfDoc = pdfDocument;
-    webUIInitialized();
+    UIComponentHandler();  //Henry add
 }
 
+function UIComponentHandler() {
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.time('UIComponentHandler()');
+        console.timeStamp('UIComponentHandler()');
+    }
+    //initOwl
+    // Listen to owl events:
+    $viewerOwl.on('changed.owl.carousel',
+        function callback(event) {
+            if (!(TwoPageViewMode.inProcess)){
+                // Must do befroe index is changed
+                PageAnimation.onBeforePageChange();
+                PageAnimation.currentCarouselIndex = event.item.index;
+                if (TwoPageViewMode.active){
+                    //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
+                    if (event.item.index == 0){
+                        currentPageNum = 1;
+                    }else {
+                        currentPageNum = (event.item.index * 2);
+                    }
+                    carouselPageNum = currentPageNum;
+                }else {
+                    currentPageNum  = event.item.index + 1;
+                    carouselPageNum = currentPageNum;
+                }
+                // Update current page number
+                // Henry remove it, it will make page upadate twice and override history page.
+                //PDFViewerApplication.page = currentPageNum;
+                PageAnimation.onAfterPageChange();
+            }
+    });
+
+    //Handle pdf view canvas click event.
+    interact('#viewerContainer')
+      .on('tap', function (event) {
+        toolBarVisible = !(toolBarVisible);
+        if (toolBarVisible) {
+            if (thumbnailBarVisible) {
+                $('#thumbnailView').show();
+                App.onToggleThumbnailbar(true);
+            }
+            $('#footer').show();
+            //Henry add, when toolbar raised, page number have to refresh
+            //Phoebe add for show 2 page numbers at twoPageViewMode, bug#214
+            if (TwoPageViewMode.active) {
+              $('.number').hide();
+              $('.number_twopage').show();
+              //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
+              if (currentPageNum == 1){
+                  document.getElementById('current_page_now').textContent = "0";
+                  document.getElementById('current_page_next').textContent = "1";
+              }else {
+                  if ((currentPageNum % 2)  == 1) {
+                      currentPageNum = currentPageNum - 1;
+                  }
+                  document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("   ");
+                  document.getElementById('current_page_now').textContent = currentPageNum;
+              }
+
+            } else {
+              $('.number_twopage').hide();
+              $('.number').show();
+              document.getElementById('current_page').textContent = currentPageNum;
+            }
+            if(!direct_reverse)
+                document.getElementById('paginate').value = currentPageNum;
+            else
+                document.getElementById('paginate_reverse').value = -currentPageNum;
+            //[HW]
+            $("#bookmark").css("top",40);
+            $("#bookmark_left").css("top",40);
+        } else {
+            if (thumbnailBarVisible) {
+                $('#thumbnailView').hide();
+                App.onToggleThumbnailbar(false);
+            }
+            $('#footer').hide();
+            //[HW]
+            $("#bookmark").css("top",0);
+            $("#bookmark_left").css("top",0);
+        }
+        App.onToggleToolbar(toolBarVisible);
+    });
+
+    document.getElementById('current_page').textContent = currentPageNum;
+    if(!direct_reverse){
+        document.getElementById('paginate').value = currentPageNum;
+        document.getElementById('paginate').max = pdfDoc.numPages;
+    }else{
+        document.getElementById('paginate_reverse').value = -currentPageNum;
+        document.getElementById('paginate_reverse').min = -(pdfDoc.numPages);
+    }
+    document.getElementById('total_pages').textContent = pdfDoc.numPages;
+    document.getElementById('total_pages_twopage').textContent = pdfDoc.numPages;
+    //Henry modify for next/previous page
+    $(".arrow_icon1").on('click', function() {
+            if(!direct_reverse)
+                onPrevPage();
+            else
+                onNextPage();
+    });
+    $(".arrow_icon2").on('click', function() {
+            if(!direct_reverse)
+                onNextPage();
+            else
+                onPrevPage();
+    });
+
+    //Henry add, for support undo button
+    $(".undo").on('click', function() {
+             //TODO: check ChapterLimit
+            if (!canRead()){
+    		window.alert("此書無法閱讀");
+    		return;
+            }
+            PDFViewerApplication.undoPage();
+    });
+    document.getElementById('paginate').addEventListener('change',
+        function() {
+            //TODO: check ChapterLimit
+            if (!canRead()){
+    		window.alert("此書無法閱讀");
+    		document.getElementById('paginate').value = PDFViewerApplication.page;
+        	return false;
+            }
+            var page = parseInt(document.getElementById('paginate').value,10);
+            PDFViewerApplication.page = page;
+    });
+
+    document.getElementById('paginate_reverse').addEventListener('change',
+        function() {
+            //TODO: check ChapterLimit
+            if (!canRead()){
+    		window.alert("此書無法閱讀");
+    		document.getElementById('paginate_reverse').value = -(PDFViewerApplication.page);
+        	return false;
+            }
+            var page = Math.abs(parseInt(document.getElementById('paginate_reverse').value,10));
+            PDFViewerApplication.page = page;
+    });
+
+    //document.getElementById('thumbnailbtn').addEventListener('click',
+    $(".thumbnailbtn").on('click', function() {
+            thumbnailBarVisible = !(thumbnailBarVisible);
+            if (thumbnailBarVisible) {
+                $('#thumbnailView').show();
+                PDFViewerApplication.refreshThumbnailViewer();
+            } else {
+                $('#thumbnailView').hide();
+            }
+            App.onToggleThumbnailbar(thumbnailBarVisible);
+    });
+
+    console.log("(UIComponentHandler)");
+
+    if(DEBUG_CHROME_DEV_TOOL) {
+        console.timeEnd('UIComponentHandler()');
+    }
+}
 //callback title
 function onMetadataReady(data) {
     var info = data.info, metadata = data.metadata;
@@ -883,87 +966,6 @@ function getThumbnailList(opf) {
                 reject(new Error("getThumbnailList fail "+reason));
           	});
         });//new Promise
-}
-
-function webUIInitialized() {
-    if(DEBUG_CHROME_DEV_TOOL) {
-        console.time('webUIInitialized()');
-        console.timeStamp('webUIInitialized()');
-    }
-
-    document.getElementById('current_page').textContent = currentPageNum;
-    if(!direct_reverse){
-        document.getElementById('paginate').value = currentPageNum;
-        document.getElementById('paginate').max = pdfDoc.numPages;
-    }else{
-        document.getElementById('paginate_reverse').value = -currentPageNum;
-        document.getElementById('paginate_reverse').min = -(pdfDoc.numPages);
-    }
-    document.getElementById('total_pages').textContent = pdfDoc.numPages;
-    document.getElementById('total_pages_twopage').textContent = pdfDoc.numPages;
-    //Henry modify for next/previous page
-    $(".arrow_icon1").on('click', function() {
-            if(!direct_reverse)
-                onPrevPage();
-            else
-                onNextPage();
-    });
-    $(".arrow_icon2").on('click', function() {
-            if(!direct_reverse)
-                onNextPage();
-            else
-                onPrevPage();
-    });
-
-    //Henry add, for support undo button
-    $(".undo").on('click', function() {
-             //TODO: check ChapterLimit
-            if (!canRead()){
-    		window.alert("此書無法閱讀");
-    		return;
-            } 
-            PDFViewerApplication.undoPage();
-    });
-    document.getElementById('paginate').addEventListener('change',
-        function() {
-            //TODO: check ChapterLimit
-            if (!canRead()){
-    		window.alert("此書無法閱讀");
-    		document.getElementById('paginate').value = PDFViewerApplication.page;
-        	return false; 
-            } 
-            var page = parseInt(document.getElementById('paginate').value,10);
-            PDFViewerApplication.page = page;
-    });
-
-    document.getElementById('paginate_reverse').addEventListener('change',
-        function() {
-            //TODO: check ChapterLimit
-            if (!canRead()){
-    		window.alert("此書無法閱讀");
-    		document.getElementById('paginate_reverse').value = -(PDFViewerApplication.page);
-        	return false;
-            }
-            var page = Math.abs(parseInt(document.getElementById('paginate_reverse').value,10));
-            PDFViewerApplication.page = page;
-    });
-
-    //document.getElementById('thumbnailbtn').addEventListener('click',
-    $(".thumbnailbtn").on('click', function() {
-            thumbnailBarVisible = !(thumbnailBarVisible);
-            if (thumbnailBarVisible) {
-                $('#thumbnailView').show();
-                PDFViewerApplication.refreshThumbnailViewer();
-            } else {
-                $('#thumbnailView').hide();
-            }
-            App.onToggleThumbnailbar(thumbnailBarVisible);
-    });
-    $("#book_loading").fadeOut(); //Henry add
-
-    if(DEBUG_CHROME_DEV_TOOL) {
-        console.timeEnd('webUIInitialized()');
-    }
 }
 
 ///
@@ -8791,52 +8793,6 @@ var PDFViewerApplication = {
         console.timeEnd('PDFViewerApplication.initialize()');
     }
 
-    //Henry add, to decide book direction
-    if(direct_reverse){
-      $(".undo.arrow_1").hide();
-      $(".undo.arrow_1.reverse").css('display','inline-block');
-      $(".thumbnailbtn").hide();
-      $(".thumbnailbtn.reverse").css('display','inline-block');
-      $("#paginate").hide();
-      $("#paginate_reverse").show();
-    }
-
-    if(!direct_reverse){
-        $viewerOwl = $('#viewer').owlCarousel({
-            mouseDrag: false,
-            touchDrag: false,
-            items: 1,
-            margin: 0,
-            onInitialized: onViewerCarouselInitialized,
-        });
-        $viewThumbnailOwl = $('#thumbnailView').owlCarousel({
-            stagePadding:50,
-            items: 8,
-            autoWidth:true,
-            center:true,
-            lazyLoad: true,
-            onInitialized: onThumbnailViewCarouselInitialized,
-        });
-    }else{
-        $viewerOwl = $('#viewer').owlCarousel({
-            mouseDrag: false,
-            touchDrag: false,
-            items: 1,
-            margin: 0,
-            rtl:true,
-            onInitialized: onViewerCarouselInitialized,
-        });
-        $viewThumbnailOwl = $('#thumbnailView').owlCarousel({
-            stagePadding:50,
-            items: 8,
-            autoWidth:true,
-            lazyLoad: true,
-            rtl:true,
-            center:true,
-            onInitialized: onThumbnailViewCarouselInitialized,
-        });
-    }
-
     return initializedPromise.then(function () {
       PDFViewerApplication.initialized = true;
     });
@@ -9779,241 +9735,70 @@ window.PDFView = PDFViewerApplication; // obsolete name, using it as an alias
 
 
 function webViewerLoad(evt) {
-  PDFViewerApplication.initialize().then(webViewerInitialized);
+  _App.getPageDirection("pageDirectionCallback"); //workaround, we have to get pageDirection before webViewerInitialized()
+  Promise.all([PDFViewerApplication.initialize(), customEventsManager['onPageDirectionReady'].promise]).then(webViewerInitialized);
+}
+
+function pageDirectionCallback(pageDirection){
+    console.log("pageDirectionCallback: "+ pageDirection);
+    if(pageDirection == PAGE_DIRECTION_RIGHT)
+       direct_reverse=true;
+    customEventsManager["onPageDirectionReady"].confirmThisIsReady();
 }
 
 function webViewerInitialized() {
     var locale = PDFJS.locale || navigator.language;   //Henry add here.
     mozL10n.setLanguage(locale);
 
-  //[Bruce]
-  /*
-  var queryString = document.location.search.substring(1);
-  var params = parseQueryString(queryString);
-  var file = 'file' in params ? params.file : DEFAULT_URL;
+    // Listen for unsupported features to trigger the fallback UI.
+    //PDFJS.UnsupportedManager.listen(PDFViewerApplication.fallback.bind(PDFViewerApplication));
 
-  var fileInput = document.createElement('input');
-  fileInput.id = 'fileInput';
-  fileInput.className = 'fileInput';
-  fileInput.setAttribute('type', 'file');
-  fileInput.oncontextmenu = noContextMenuHandler;
-  document.body.appendChild(fileInput);
-
-  if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
-    document.getElementById('openFile').setAttribute('hidden', 'true');
-    document.getElementById('secondaryOpenFile').setAttribute('hidden', 'true');
-  } else {
-    document.getElementById('fileInput').value = null;
-  }
-
-  var locale = PDFJS.locale || navigator.language;
-
-  if (PDFViewerApplication.preferencePdfBugEnabled) {
-    // Special debugging flags in the hash section of the URL.
-    var hash = document.location.hash.substring(1);
-    var hashParams = parseQueryString(hash);
-
-    if ('disableworker' in hashParams) {
-      PDFJS.disableWorker = (hashParams['disableworker'] === 'true');
+    //Henry add, to decide book direction
+    if(!direct_reverse){
+        $viewerOwl = $('#viewer').owlCarousel({
+            mouseDrag: false,
+            touchDrag: false,
+            items: 1,
+            margin: 0,
+            onInitialized: onViewerCarouselInitialized,
+        });
+        $viewThumbnailOwl = $('#thumbnailView').owlCarousel({
+            stagePadding:50,
+            items: 8,
+            autoWidth:true,
+            center:true,
+            lazyLoad: true,
+            onInitialized: onThumbnailViewCarouselInitialized,
+        });
+    }else{
+        $viewerOwl = $('#viewer').owlCarousel({
+            mouseDrag: false,
+            touchDrag: false,
+            items: 1,
+            margin: 0,
+            rtl:true,
+            onInitialized: onViewerCarouselInitialized,
+        });
+        $viewThumbnailOwl = $('#thumbnailView').owlCarousel({
+            stagePadding:50,
+            items: 8,
+            autoWidth:true,
+            lazyLoad: true,
+            rtl:true,
+            center:true,
+            onInitialized: onThumbnailViewCarouselInitialized,
+        });
     }
-    if ('disablerange' in hashParams) {
-      PDFJS.disableRange = (hashParams['disablerange'] === 'true');
+
+    if(direct_reverse){
+      $(".undo.arrow_1").hide();
+      $(".undo.arrow_1.reverse").css('display','inline-block');
+      $(".thumbnailbtn").hide();
+      $(".thumbnailbtn.reverse").css('display','inline-block');
+      $("#paginate").hide();
+      $("#paginate_reverse").show();
     }
-    if ('disablestream' in hashParams) {
-      PDFJS.disableStream = (hashParams['disablestream'] === 'true');
-    }
-    if ('disableautofetch' in hashParams) {
-      PDFJS.disableAutoFetch = (hashParams['disableautofetch'] === 'true');
-    }
-    if ('disablefontface' in hashParams) {
-      PDFJS.disableFontFace = (hashParams['disablefontface'] === 'true');
-    }
-    if ('disablehistory' in hashParams) {
-      PDFJS.disableHistory = (hashParams['disablehistory'] === 'true');
-    }
-    if ('webgl' in hashParams) {
-      PDFJS.disableWebGL = (hashParams['webgl'] !== 'true');
-    }
-    if ('useonlycsszoom' in hashParams) {
-      PDFJS.useOnlyCssZoom = (hashParams['useonlycsszoom'] === 'true');
-    }
-    if ('verbosity' in hashParams) {
-      PDFJS.verbosity = hashParams['verbosity'] | 0;
-    }
-    if ('ignorecurrentpositiononzoom' in hashParams) {
-      IGNORE_CURRENT_POSITION_ON_ZOOM =
-        (hashParams['ignorecurrentpositiononzoom'] === 'true');
-    }
-    if ('locale' in hashParams) {
-      locale = hashParams['locale'];
-    }
-    if ('textlayer' in hashParams) {
-      switch (hashParams['textlayer']) {
-        case 'off':
-          PDFJS.disableTextLayer = true;
-          break;
-        case 'visible':
-        case 'shadow':
-        case 'hover':
-          var viewer = document.getElementById('viewer');
-          viewer.classList.add('textLayer-' + hashParams['textlayer']);
-          break;
-      }
-    }
-    if ('pdfbug' in hashParams) {
-      PDFJS.pdfBug = true;
-      var pdfBug = hashParams['pdfbug'];
-      var enabled = pdfBug.split(',');
-      PDFBug.enable(enabled);
-      PDFBug.init();
-    }
-  }
-
-  mozL10n.setLanguage(locale);
-
-  if (!PDFViewerApplication.supportsPrinting) {
-    document.getElementById('print').classList.add('hidden');
-    document.getElementById('secondaryPrint').classList.add('hidden');
-  }
-
-  if (!PDFViewerApplication.supportsFullscreen) {
-    document.getElementById('presentationMode').classList.add('hidden');
-    document.getElementById('secondaryPresentationMode').
-      classList.add('hidden');
-  }
-
-  if (PDFViewerApplication.supportsIntegratedFind) {
-    document.getElementById('viewFind').classList.add('hidden');
-  }
-  */
-  //End : [Bruce]
-
-  // Listen for unsupported features to trigger the fallback UI.
-  PDFJS.UnsupportedManager.listen(
-    PDFViewerApplication.fallback.bind(PDFViewerApplication));
-
-  //[Bruce]
-  /*
-  // Suppress context menus for some controls
-  document.getElementById('scaleSelect').oncontextmenu = noContextMenuHandler;
-
-  var mainContainer = document.getElementById('mainContainer');
-  var outerContainer = document.getElementById('outerContainer');
-  mainContainer.addEventListener('transitionend', function(e) {
-    if (e.target === mainContainer) {
-      var event = document.createEvent('UIEvents');
-      event.initUIEvent('resize', false, false, window, 0);
-      window.dispatchEvent(event);
-      outerContainer.classList.remove('sidebarMoving');
-    }
-  }, true);
-
-  document.getElementById('sidebarToggle').addEventListener('click',
-    function() {
-      this.classList.toggle('toggled');
-      outerContainer.classList.add('sidebarMoving');
-      outerContainer.classList.toggle('sidebarOpen');
-      PDFViewerApplication.sidebarOpen =
-        outerContainer.classList.contains('sidebarOpen');
-      if (PDFViewerApplication.sidebarOpen) {
-        PDFViewerApplication.refreshThumbnailViewer();
-      }
-      PDFViewerApplication.forceRendering();
-    });
-
-  document.getElementById('viewThumbnail').addEventListener('click',
-    function() {
-      PDFViewerApplication.switchSidebarView('thumbs');
-    });
-
-  document.getElementById('viewOutline').addEventListener('click',
-    function() {
-      PDFViewerApplication.switchSidebarView('outline');
-    });
-
-  document.getElementById('viewAttachments').addEventListener('click',
-    function() {
-      PDFViewerApplication.switchSidebarView('attachments');
-    });
-
-  document.getElementById('previous').addEventListener('click',
-    function() {
-      //PDFViewerApplication.page--;
-      PDFViewerApplication.previousPage();//phoebe
-    });
-
-  document.getElementById('next').addEventListener('click',
-    function() {
-      //PDFViewerApplication.page++;
-      PDFViewerApplication.nextPage();//phoebe
-    });
-
-  document.getElementById('zoomIn').addEventListener('click',
-    function() {
-      PDFViewerApplication.zoomIn();
-    });
-
-  document.getElementById('zoomOut').addEventListener('click',
-    function() {
-      PDFViewerApplication.zoomOut();
-    });
-
-  document.getElementById('pageNumber').addEventListener('click', function() {
-    this.select();
-  });
-
-  document.getElementById('pageNumber').addEventListener('change', function() {
-    // Handle the user inputting a floating point number.
-    PDFViewerApplication.page = (this.value | 0);
-
-    if (this.value !== (this.value | 0).toString()) {
-      this.value = PDFViewerApplication.page;
-    }
-  });
-
-  document.getElementById('scaleSelect').addEventListener('change',
-    function() {
-      PDFViewerApplication.setScale(this.value, false);
-    });
-
-  document.getElementById('presentationMode').addEventListener('click',
-    SecondaryToolbar.presentationModeClick.bind(SecondaryToolbar));
-
-  document.getElementById('openFile').addEventListener('click',
-    SecondaryToolbar.openFileClick.bind(SecondaryToolbar));
-
-  document.getElementById('print').addEventListener('click',
-    SecondaryToolbar.printClick.bind(SecondaryToolbar));
-
-  document.getElementById('download').addEventListener('click',
-    SecondaryToolbar.downloadClick.bind(SecondaryToolbar));
-
-
-  if (file && file.lastIndexOf('file:', 0) === 0) {
-    // file:-scheme. Load the contents in the main thread because QtWebKit
-    // cannot load file:-URLs in a Web Worker. file:-URLs are usually loaded
-    // very quickly, so there is no need to set up progress event listeners.
-    PDFViewerApplication.setTitleUsingUrl(file);
-    var xhr = new XMLHttpRequest();
-    xhr.onload = function() {
-      PDFViewerApplication.open(new Uint8Array(xhr.response), 0);
-    };
-    try {
-      xhr.open('GET', file);
-      xhr.responseType = 'arraybuffer';
-      xhr.send();
-    } catch (e) {
-      PDFViewerApplication.error(mozL10n.get('loading_error', null,
-        'An error occurred while loading the PDF.'), e);
-    }
-    return;
-  }
-
-  if (file) {
-    PDFViewerApplication.open(file, 0);
-  }
-  */
-  //End : [Bruce]
+    console.log("(webViewerInitialized)");
 }
 
 document.addEventListener('DOMContentLoaded', webViewerLoad, true);

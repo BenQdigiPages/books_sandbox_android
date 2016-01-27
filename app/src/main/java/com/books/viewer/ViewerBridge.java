@@ -940,10 +940,13 @@ public class ViewerBridge {
             Toast.makeText(mContext, (String) "getPageDirection", Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
+                    /*
                     new AlertDialog.Builder(mScene)
                             .setTitle("getPageDirection")
                             .setMessage("callback=" + callback)
                             .show();
+                    */
+                    eval(callback + "(\"" + "0" + "\")", null);
                 }
             });
         }

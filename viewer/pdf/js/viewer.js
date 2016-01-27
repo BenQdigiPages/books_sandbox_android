@@ -1046,18 +1046,37 @@ function updateBookmarkIcon() {
     $("#bookmark_left")[0].className = "bookmark ";
     if (TwoPageViewMode.active) {
         page = PDFViewerApplication.page;
-        if (page % 2 == 0)
-            page = page -1;
-        for(var i in savedBookmarks) {
-            if (savedBookmarks[i].cfi == page) {
-                color = savedBookmarks[i].color;
-                $("#bookmark_left")[0].className = "bookmark " + color;
+        if (direct_reverse) {
+            //... 9 8  7 6  5 4  3 2  1 []
+            if (page % 2 == 1)
+                page = page -1;
+            for(var i in savedBookmarks) {
+                if (savedBookmarks[i].cfi == page + 1) {
+                    color = savedBookmarks[i].color;
+                    $("#bookmark_left")[0].className = "bookmark " + color;
+                }
             }
-        }
-        for(var i in savedBookmarks) {
-            if (savedBookmarks[i].cfi == page + 1) {
-                color = savedBookmarks[i].color;
-                $("#bookmark")[0].className = "bookmark " + color;
+            for(var i in savedBookmarks) {
+                if (savedBookmarks[i].cfi == page) {
+                    color = savedBookmarks[i].color;
+                    $("#bookmark")[0].className = "bookmark " + color;
+                }
+            }
+        } else {
+            //[]1  2 3  4 5  6 7  8 9   10 11  ..
+            if (page % 2 == 1)
+                page = page -1;
+            for(var i in savedBookmarks) {
+                if (savedBookmarks[i].cfi == page) {
+                    color = savedBookmarks[i].color;
+                    $("#bookmark_left")[0].className = "bookmark " + color;
+                }
+            }
+            for(var i in savedBookmarks) {
+                if (savedBookmarks[i].cfi == page + 1) {
+                    color = savedBookmarks[i].color;
+                    $("#bookmark")[0].className = "bookmark " + color;
+                }
             }
         }
     } else {

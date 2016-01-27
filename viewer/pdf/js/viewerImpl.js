@@ -664,6 +664,7 @@ function UIComponentHandler() {
               }else {
                   if ((currentPageNum % 2)  == 1) {
                       currentPageNum = currentPageNum - 1;
+                      PDFViewerApplication.pdfViewer.currentPageNumber = currentPageNum;
                   }
                   document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("   ");
                   document.getElementById('current_page_now').textContent = currentPageNum;
@@ -936,6 +937,7 @@ function updateToolBar(){
               }else {
                   if ((currentPageNum % 2) == 1){
                       currentPageNum = currentPageNum -1;
+                      PDFViewerApplication.pdfViewer.currentPageNumber = currentPageNum;
                   }
                   document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("   ");
                   document.getElementById('current_page_now').textContent = currentPageNum;

@@ -6695,10 +6695,22 @@ var PDFViewer = (function pdfViewer() {
             var pageEmptyDiv = document.getElementById('pageContainer0');
             pageEmptyDiv.style.width = Math.floor(this._pages[0].width) + 'px';
             pageEmptyDiv.style.height = Math.floor(this._pages[0].height) + 'px';
-            pageEmptyDiv.children[0].style.width = Math.floor(this._pages[0].width) + 'px';
-            pageEmptyDiv.children[0].style.height = Math.floor(this._pages[0].height) + 'px';
-            pageEmptyDiv.children[0].children[0].style.width = Math.floor(this._pages[0].width) + 'px';
-            pageEmptyDiv.children[0].children[0].style.height = Math.floor(this._pages[0].height) + 'px';
+            //[Phoebe]Fix the null point error.
+            if (pageEmptyDiv.children[0].children[0]){
+                pageEmptyDiv.children[0].style.width = Math.floor(this._pages[0].width) + 'px';
+                pageEmptyDiv.children[0].style.height = Math.floor(this._pages[0].height) + 'px';
+                pageEmptyDiv.children[0].children[0].style.width = Math.floor(this._pages[0].width) + 'px';
+                pageEmptyDiv.children[0].children[0].style.height = Math.floor(this._pages[0].height) + 'px';
+            }else{
+                if (pageEmptyDiv.firstChild){
+                    pageEmptyDiv.removeChild(pageEmptyDiv.firstChild);
+                    var fakeCanvasWrapper = document.createElement("div");
+                    fakeCanvasWrapper.class = "canvasWrapper";
+                    fakeCanvasWrapper.style.width = Math.floor(this._pages[0].width) + 'px';
+                    fakeCanvasWrapper.style.height = Math.floor(this._pages[0].height) + 'px';
+                    pageEmptyDiv.appendChild(fakeCanvasWrapper);
+                }
+            }
         }
       }
       this._currentScale = newScale;

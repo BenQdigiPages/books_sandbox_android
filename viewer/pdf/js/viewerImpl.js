@@ -1840,7 +1840,7 @@ var DEFAULT_PREFERENCES = {
   sidebarViewOnLoad: 0,
   enableHandToolOnLoad: false,
   twoPageViewModeOnLoad: -1,
-  enableWebGL: true,
+  enableWebGL: false,
   pdfBugEnabled: false,
   disableRange: false,
   disableStream: false,

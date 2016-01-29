@@ -79,6 +79,26 @@ var PageAnimation =  {
           }
         }, 
 
+        get gestureX0() {
+            return (this._gestureX0 | 0);
+        },
+        set gestureX0(val) {
+          if (val === undefined || isNaN(val)) {
+            return;
+          }
+          this._gestureX0 = val;
+        },
+
+        get gestureY0() {
+            return (this._gestureY0 | 0);
+        },
+        set gestureY0(val) {
+          if (val === undefined || isNaN(val))  {
+            return;
+          }
+          this._gestureY0 = val;
+        },
+
         getPageDiv     : function PageAnimation_getPageDiv(index){
             //reset current page scale to 1
             if (TwoPageViewMode.active){
@@ -86,6 +106,9 @@ var PageAnimation =  {
             }else {
                 return this.divContainer[index].div;
             }
+        },
+        getCurrentPageDiv     : function PageAnimation_getCurrentPageDiv(){
+            return this.getPageDiv(this._currentContainerIndex);
         },
 
         onAppReady     : function customPageManager_onAppReady(){
@@ -113,9 +136,6 @@ var PageAnimation =  {
             // Left page
             if(this._currentContainerIndex > this.containerLowerBound) {
                 var leftPageDiv = this.getPageDiv(this._currentContainerIndex - this.stepDelta);
-                interact('#' + leftPageDiv.id)
-                    .gesturable(false)
-                    .draggable(false);
             }
 
             // Current page
@@ -126,16 +146,9 @@ var PageAnimation =  {
             this.setPageTranslate(currentPageDiv,0,0);
             this.applyTransform(currentPageDiv);
 
-            interact('#' + currentPageDiv.id)
-                .gesturable(true)
-                .draggable(true);
-
             // Right page
             if(this._currentContainerIndex < this.containerUpperBound) {
                 rightPageDiv = this.getPageDiv(this._currentContainerIndex + this.stepDelta);
-                interact('#' + rightPageDiv.id)
-                    .gesturable(false)
-                    .draggable(false);
             }
         },
 
@@ -165,6 +178,46 @@ var PageAnimation =  {
             // NOTE : We assume the first mode is single
             this.containerUpperBound = (this.containerUpperBound % 2) === 0 ? (this.containerUpperBound + 1) : this.containerUpperBound;
             this.containerLowerBound = 1;
+        },
+
+        onPrevPage     : function PageAnimation_onPrevPage(){
+            //TODO: check ChapterLimit
+            if (!canRead()){
+               window.alert("此書無法閱讀");
+               return;
+            }
+
+            var previousPage = this._currentContainerIndex - this.stepDelta;
+            if(previousPage < this.containerLowerBound) {
+                return;
+            }
+            $viewerOwl.trigger('to.owl.carousel', [previousPage,200,true]);
+        },
+        onNextPage     : function PageAnimation_onNextPage(){
+            if (!canRead()){
+               window.alert("此書無法閱讀");
+               return;
+            }
+            if (this._currentContainerIndex >= this.containerUpperBound) {
+                //Henry add, for intro page
+                if(isTrial){
+                    $('#popup4').show();
+                    //Henry add, hide titlebar and footer when intro page show
+                    if (toolBarVisible) {
+                        if (thumbnailBarVisible) {
+                           $('#thumbnailView').hide();
+                           App.onToggleThumbnailbar(false);
+                        }
+                        $('#footer').hide();
+                        toolBarVisible = !(toolBarVisible);
+                        App.onToggleToolbar(toolBarVisible);
+                    }
+                  }
+                return;
+            }
+
+            var nextPage = this._currentContainerIndex + this.stepDelta;
+            $viewerOwl.trigger('to.owl.carousel', [nextPage,200,true]);
         },
 
         EXCEED_LEFT   : 1,   //0001
@@ -352,17 +405,8 @@ var PageAnimation =  {
 
             //**********(1) Set this scale to all divs of pages
             var scale = PageAnimation.getPageScale(scaleElement);
-            var div;
-            if (TwoPageViewMode.active){
-                for (var uid in PageAnimation.divContainer) {
-                    div = PageAnimation.divContainer[uid];
-                    PageAnimation.setPageScale(div,scale);
-                }
-            }else {
-                for (var uid in PageAnimation.divContainer) {
-                    div = PageAnimation.divContainer[uid].div;
-                    PageAnimation.setPageScale(div,scale);
-                }
+            for (var uid in PageAnimation.divContainer) {
+                PageAnimation.setPageScale(PageAnimation.getPageDiv(uid),scale);
             }
 
             //**********(2) We must capture current left/top immediately
@@ -438,9 +482,9 @@ var PageAnimation =  {
             var mode = PageAnimation.isExceedLeftOrRightPageChangeThreshold(scaleElement);
 
             if((mode & PageAnimation.EXCEED_LEFT) !== 0) {
-                $viewerOwl.trigger('to.owl.carousel', [PageAnimation.currentCarouselIndex + 1,200,true]);
+                PageAnimation.onNextPage();
             } else if((mode & PageAnimation.EXCEED_RIGHT) !== 0) {
-                $viewerOwl.trigger('to.owl.carousel',[PageAnimation.currentCarouselIndex - 1, 200, true]);
+                PageAnimation.onPrevPage();
             }
         },
         //End : [Bruce]
@@ -568,7 +612,6 @@ function onDelayedPageDIVsReady() {
         currentPageNum = viewerPageNum;
         PDFViewerApplication.page = currentPageNum;
     }
-    PageAnimation.onAppReady();
 }
 
 function onFirstPageRendered() {
@@ -634,8 +677,7 @@ function UIComponentHandler() {
                     carouselPageNum = currentPageNum;
                 }
                 // Update current page number
-                // Henry remove it, it will make page upadate twice and override history page.
-                //PDFViewerApplication.page = currentPageNum;
+                PDFViewerApplication.page = currentPageNum;
                 PageAnimation.onAfterPageChange();
                 //[Phoebe]Fix issue #717 Action:LEAVE_PAGE
                 App.onTrackAction("LEAVE_PAGE", currentPageNum.toString());
@@ -643,8 +685,7 @@ function UIComponentHandler() {
     });
 
     //Handle pdf view canvas click event.
-    interact('#viewerContainer')
-      .on('tap', function (event) {
+    $('#viewerContainer').click(function () {
         toolBarVisible = !(toolBarVisible);
         if (toolBarVisible) {
             if (thumbnailBarVisible) {
@@ -711,15 +752,15 @@ function UIComponentHandler() {
     //Henry modify for next/previous page
     $(".arrow_icon1").on('click', function() {
             if(!direct_reverse)
-                onPrevPage();
+                PageAnimation.onPrevPage();
             else
-                onNextPage();
+                PageAnimation.onNextPage();
     });
     $(".arrow_icon2").on('click', function() {
             if(!direct_reverse)
-                onNextPage();
+                PageAnimation.onNextPage();
             else
-                onPrevPage();
+                PageAnimation.onPrevPage();
     });
 
     //Henry add, for support undo button
@@ -1100,63 +1141,6 @@ function findTOCLabel(idx) { //[HW]
         return r.label;
     } else {
         return idx;
-    }
-}
-
-
-/**
- * Displays previous page.
- */
-function onPrevPage() {
-    //TODO: check ChapterLimit
-    if (!canRead()){
-    	window.alert("此書無法閱讀");
-    	return;
-    }
-    if (currentPageNum <= 1) {
-        return;
-    }
-    if (TwoPageViewMode.active)
-    {
-        TwoPageViewMode.previousPage();
-    } else {
-        currentPageNum--;
-        PDFViewerApplication.page--;
-    }
-}
-
-/**
- * Displays next page.
- */
-function onNextPage() {
-    //TODO: check ChapterLimit
-    if (!canRead()){
-    	window.alert("此書無法閱讀");
-    	return;
-    }
-    if (currentPageNum >= pdfDoc.numPages) {
-        //Henry add, for intro page
-        if(isTrial){
-            $('#popup4').show();
-            //Henry add, hide titlebar and footer when intro page show
-            if (toolBarVisible) {
-                if (thumbnailBarVisible) {
-                   $('#thumbnailView').hide();
-                   App.onToggleThumbnailbar(false);
-                }
-                $('#footer').hide();
-                toolBarVisible = !(toolBarVisible);
-                App.onToggleToolbar(toolBarVisible);
-            }
-          }
-        return;
-    }
-    if (TwoPageViewMode.active)
-    {
-        TwoPageViewMode.nextPage();
-    } else {
-        currentPageNum++;
-        PDFViewerApplication.page++;
     }
 }
 
@@ -5124,22 +5108,16 @@ var PDFPageView = (function PDFPageViewClosure() {
         container.appendChild(div);
     }
     // [Bruce] interact.js
-    var targetName = '#' + div.id;
-    interact(targetName)
-        .gesturable({
-            onstart: PageAnimation.callback_interact_gesturable_onstart,
-            onmove: PageAnimation.callback_interact_gesturable_onmove,
-            onend: PageAnimation.callback_interact_gesturable_onend,
-        })
-        .draggable({
-            enabled: true,
-            onmove: PageAnimation.callback_interact_draggable_onmove,
-            //onend: PageAnimation.callback_interact_draggable_onend, //Henry temp disable it becasue performance issue
-        })
-        .resizable({
-            enabled: false
-        });
-
+    div.addEventListener('touchmove', function(event) {
+        if((PageAnimation.gestureX0 !== undefined && PageAnimation.gestureY0 !== undefined)
+            && (PageAnimation.gestureX0 !== 0 || PageAnimation.gestureY0 !== 0)) {
+            return;
+        }
+        if (event.touches.length > 1) {
+            PageAnimation.gestureX0 = (event.touches[0].pageX + event.touches[1].pageX)/2;
+            PageAnimation.gestureY0 = (event.touches[0].pageY + event.touches[1].pageY)/2;
+        }
+    }, false);
     //End : [Bruce]
   }
 
@@ -7892,22 +7870,17 @@ var TwoPageViewMode = {
         this.viewer.appendChild(div);
       }
       // [Bruce] interact.js
-      var targetName = '#' + div.id;
-
-      interact(targetName)
-          .gesturable({
-              onstart: PageAnimation.callback_interact_gesturable_onstart,
-              onmove: PageAnimation.callback_interact_gesturable_onmove,
-              onend: PageAnimation.callback_interact_gesturable_onend,
-          })
-          .draggable({
-              enabled: true,
-              onmove: PageAnimation.callback_interact_draggable_onmove,
-              //onend: PageAnimation.callback_interact_draggable_onend, //Henry temp disable it becasue performance issue
-          })
-          .resizable({
-              enabled: false
-          });
+      div.addEventListener('touchmove', function(event) {
+          if((PageAnimation.gestureX0 !== undefined && PageAnimation.gestureY0 !== undefined)
+              && (PageAnimation.gestureX0 !== 0 || PageAnimation.gestureY0 !== 0)) {
+              return;
+          }
+          if (event.touches.length > 1) {
+              console.log("touchmove event.touches.length > 1 ");
+              PageAnimation.gestureX0 = (event.touches[0].pageX + event.touches[1].pageX)/2;
+              PageAnimation.gestureY0 = (event.touches[0].pageY + event.touches[1].pageY)/2;
+          }
+      }, false);
       //End : [Bruce]
     }
     var pageDiv, index;
@@ -7921,9 +7894,6 @@ var TwoPageViewMode = {
           pageDivTmp.id = 'pageContainer0';
           this.containers[index].appendChild(pageDivTmp);
           this.isPagePlacedOnRightSideInContainer[i] = false;
-          interact('#' + pageDivTmp.id)
-              .gesturable(false)
-              .draggable(false);
       }
       this.containers[index].appendChild(pageDiv);
       if ((i & 1) === 0) { // Even page number.
@@ -7936,12 +7906,6 @@ var TwoPageViewMode = {
       if (i ==1){
           this.isPagePlacedOnRightSideInContainer[i] = true; 
       }	  
-	  
-      // [Bruce] interact.js
-      interact('#' + pageDiv.id)
-          .gesturable(false)
-          .draggable(false);
-      // End : [Bruce] interact.js
     }
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
         //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)        
@@ -7966,11 +7930,6 @@ var TwoPageViewMode = {
         } else {
 			this.viewer.appendChild(pageDiv);
         }
-        // [Bruce] interact.js
-        interact('#' + pageDiv.id)
-            .gesturable(true)
-            .draggable(true);
-        // End : [Bruce] interact.js
     }
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
         $viewerOwl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);

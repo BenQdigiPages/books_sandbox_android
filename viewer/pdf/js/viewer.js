@@ -356,9 +356,54 @@ Viewer.searchText = function(keyword) {
 
 //Henry add, trigger change page from app has better performance
 Viewer.gotoPrevious =function(){
-    onPrevPage();
+    PageAnimation.onPrevPage();
 }
 
 Viewer.gotoNext = function(){
-    onNextPage();
+    PageAnimation.onNextPage();
 }
+
+// [Bruce] interact.js
+Viewer.gesturableOnStart = function(scale,ds) {
+    var event = {x0:PageAnimation.gestureX0,
+                 y0:PageAnimation.gestureY0,
+                 scale:parseFloat(scale),
+                 ds:parseFloat(ds),
+                 target:PageAnimation.getCurrentPageDiv()};
+    PageAnimation.callback_interact_gesturable_onstart(event);
+}
+
+Viewer.gesturableOnMove = function(scale,ds) {
+    var event = {x0:PageAnimation.gestureX0,
+                 y0:PageAnimation.gestureY0,
+                 scale:parseFloat(scale),
+                 ds:parseFloat(ds),
+                 target:PageAnimation.getCurrentPageDiv()};
+    PageAnimation.callback_interact_gesturable_onmove(event);
+}
+
+Viewer.gesturableOnEnd = function(scale,ds) {
+    var event = {x0:PageAnimation.gestureX0,
+                 y0:PageAnimation.gestureY0,
+                 scale:parseFloat(scale),
+                 ds:parseFloat(ds),
+                 target:PageAnimation.getCurrentPageDiv()};
+    PageAnimation.callback_interact_gesturable_onend(event);
+
+    PageAnimation.gestureX0 = 0;
+    PageAnimation.gestureY0 = 0;
+}
+
+Viewer.draggableOnMove = function(dx,dy) {
+    var event = {dx:parseFloat(dx),
+                 dy:parseFloat(dy),
+                 target:PageAnimation.getCurrentPageDiv()};
+    PageAnimation.callback_interact_draggable_onmove(event);
+}
+
+Viewer.draggableOnEnd = function() {
+    var event = {target:PageAnimation.getCurrentPageDiv()};
+    PageAnimation.callback_interact_draggable_onend(event);
+}
+// End : [Bruce]
+

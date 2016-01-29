@@ -17,6 +17,8 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.GestureDetector;
+import android.view.ScaleGestureDetector;
+import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -43,6 +45,11 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
     private ImageButton mBtnMonkey;
     private View mLoading;
     private WebView mWebView;
+    // [Bruce]
+    private GestureDetector mGuesture;
+    private ScaleGestureDetector mScaleGestureDetector;
+    private ScaleGestureController mScaleGestureController;
+    // End : [Bruce]
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -348,52 +355,74 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
                 .show();
     }
 
+    // [Bruce]
+    private class ScaleGestureController extends ScaleGestureDetector.SimpleOnScaleGestureListener{
+        public boolean isScaling = false;
+        private float previousScaleFactor = 1;
+
+        public ScaleGestureController() {
+            super();
+        }
+
+        @Override
+        public boolean onScaleBegin(ScaleGestureDetector detector) {
+            isScaling = true;
+            float currentScale = detector.getScaleFactor() * previousScaleFactor;
+            float ds = currentScale - previousScaleFactor;
+            mBridge.gesturableOnStart(currentScale,ds);
+            previousScaleFactor = currentScale;
+            return true;
+        }
+
+        @Override
+        public boolean onScale(ScaleGestureDetector detector) {
+            float currentScale = detector.getScaleFactor() * previousScaleFactor;
+            float ds = currentScale - previousScaleFactor;
+            mBridge.gesturableOnMove(currentScale,ds);
+            previousScaleFactor = currentScale;
+            return true;
+        }
+
+        @Override
+        public void onScaleEnd(ScaleGestureDetector detector) {
+            float currentScale = detector.getScaleFactor() * previousScaleFactor;
+            float ds = currentScale - previousScaleFactor;
+            mBridge.gesturableOnEnd(currentScale,ds);
+            previousScaleFactor = 1;
+            isScaling = false;
+        }
+    }
+    // End : [Bruce]
+
     private void initGesture() {
         final GestureDetector.OnGestureListener mGuestureListener = new GestureDetector.SimpleOnGestureListener() {
-            private static final int FLING_MIN_DISTANCE = 100;
+
+            @Override
+            public boolean onScroll(MotionEvent e1, MotionEvent e2,float distanceX,float distanceY) {
+                mBridge.draggableOnMove((-1)*distanceX,(-1)*distanceY);
+                return false;
+            }
 
             @Override
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                if (e1.getX() - e2.getX() > FLING_MIN_DISTANCE) {
-                    mBridge.gotoNext();
-                    return true;
-                }
-                if (e1.getX() - e2.getX() < -FLING_MIN_DISTANCE) {
-                    mBridge.gotoPrevious();
-                    return true;
-                }
+                mBridge.draggableOnEnd();
                 return false;
             }
         };
 
-
-        final GestureDetector mGuesture = new GestureDetector(this, mGuestureListener);
+        mGuesture = new GestureDetector(this, mGuestureListener);
+        mScaleGestureController = new ScaleGestureController();
+        mScaleGestureDetector = new ScaleGestureDetector(this, mScaleGestureController);
 
         mWebView.setOnTouchListener(new View.OnTouchListener() {
-            private final int EPUB_FOOTER_HEIGHT = 40;
-            private boolean isTriggerGuesture = true;
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        if (event.getY() >= v.getMeasuredHeight() - EPUB_FOOTER_HEIGHT) {
-                            isTriggerGuesture = false;
-                            return false;
-                        }
-                        break;
-                    case MotionEvent.ACTION_UP:
-                    case MotionEvent.ACTION_CANCEL:
-                        if (isTriggerGuesture == false) {
-                            isTriggerGuesture = true;
-                            return false;
-                        }
-                        break;
-                    default:
-                        if (isTriggerGuesture == false)
-                            return false;
+                mScaleGestureDetector.onTouchEvent(event);
+                // If it is scaling mode , we will not trigger move event
+                if(mScaleGestureController.isScaling == true) {
+                    return false;
                 }
-
                 return mGuesture.onTouchEvent(event);
             }
         });

@@ -114,6 +114,8 @@ public class ViewerBridge {
         String dir = mScene.getApplicationContext().getDir("database", Context.MODE_PRIVATE).getPath();
         settings.setDatabasePath(dir);
         settings.setDomStorageEnabled(true);
+        settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         //End : [Bruce]
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -456,6 +458,27 @@ public class ViewerBridge {
 
         eval("Viewer.updateBookmarks" + "(" + list_bookmarks.toString() + ")", null);
     }
+
+    // [Bruce]
+    public void gesturableOnStart(float scale,float ds) {
+        eval("Viewer.gesturableOnStart(\"" + scale + "\",\"" + ds + "\")", null);
+    }
+
+    public void gesturableOnMove(float scale,float ds) {
+        eval("Viewer.gesturableOnMove(\"" + scale + "\",\"" + ds + "\")", null);
+    }
+
+    public void gesturableOnEnd(float scale,float ds) {
+        eval("Viewer.gesturableOnEnd(\"" + scale + "\",\"" + ds + "\")", null);
+    }
+
+    public void draggableOnMove(float dx,float dy) {
+        eval("Viewer.draggableOnMove(\"" + dx + "\",\"" + dy + "\")", null);
+    }
+    public void draggableOnEnd() {
+        eval("Viewer.draggableOnEnd(null)", null);
+    }
+    // End : [Bruce]
 
     public class JavascriptCallback {
         @JavascriptInterface

@@ -191,14 +191,15 @@ var PageAnimation =  {
             if(previousPage < this.containerLowerBound) {
                 return;
             }
-            $viewerOwl.trigger('to.owl.carousel', [previousPage,200,true]);
+            $viewerOwl.trigger('to.owl.carousel', [this._currentCarouselIndex - 1,200,true]);
         },
         onNextPage     : function PageAnimation_onNextPage(){
             if (!canRead()){
                window.alert("此書無法閱讀");
                return;
             }
-            if (this._currentContainerIndex >= this.containerUpperBound) {
+            var nextPage = this._currentContainerIndex + this.stepDelta;
+            if (nextPage > this.containerUpperBound) {
                 //Henry add, for intro page
                 if(isTrial){
                     $('#popup4').show();
@@ -216,8 +217,8 @@ var PageAnimation =  {
                 return;
             }
 
-            var nextPage = this._currentContainerIndex + this.stepDelta;
-            $viewerOwl.trigger('to.owl.carousel', [nextPage,200,true]);
+            // NOTE : We should use carousel index to trigger carousel
+            $viewerOwl.trigger('to.owl.carousel', [this._currentCarouselIndex + 1,200,true]);
         },
 
         EXCEED_LEFT   : 1,   //0001

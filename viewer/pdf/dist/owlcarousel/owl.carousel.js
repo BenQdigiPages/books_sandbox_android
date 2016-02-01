@@ -1016,13 +1016,13 @@
 
 		if (settings.loop) {
 			maximum = this._clones.length / 2 + this._items.length - 1;
-		} else if (settings.autoWidth || settings.merge) {
+		}/* else if (settings.autoWidth || settings.merge) {  //Henry remove, we don't want autowidth limit our max look
 			// binary search
 			while (maximum - i > 1) {
 				Math.abs(this._coordinates[j = maximum + i >> 1]) < boundary
 					? i = j : maximum = j;
 			}
-		} else if (settings.center) {
+		}*/else if (settings.center) {
 			maximum = this._items.length - 1;
 		} else {
 			maximum = this._items.length - settings.items;

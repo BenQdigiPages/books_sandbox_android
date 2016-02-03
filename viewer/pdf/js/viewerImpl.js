@@ -701,14 +701,16 @@ function UIComponentHandler() {
               $('.number_twopage').css("display","block");
               //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
               if (currentPageNum == 1){
-                  document.getElementById('current_page_now').textContent = "0";
+                  document.getElementById('current_page_now').textContent = "";
+                  document.getElementById('pages_hyphen').textContent = "";
                   document.getElementById('current_page_next').textContent = "1";
               }else {
                   if ((currentPageNum % 2)  == 1) {
                       currentPageNum = currentPageNum - 1;
                       PDFViewerApplication.pdfViewer.currentPageNumber = currentPageNum;
                   }
-                  document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("   ");
+                  document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("");
+                  document.getElementById('pages_hyphen').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? ("-"):("");
                   document.getElementById('current_page_now').textContent = currentPageNum;
               }
 
@@ -974,14 +976,16 @@ function updateToolBar(){
               $('.number_twopage').css("display","block");
               //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)			  
               if (currentPageNum == 1){
-                  document.getElementById('current_page_now').textContent = "0";
+                  document.getElementById('current_page_now').textContent = "";
+                  document.getElementById('pages_hyphen').textContent = "";
                   document.getElementById('current_page_next').textContent = "1"; 
               }else {
                   if ((currentPageNum % 2) == 1){
                       currentPageNum = currentPageNum -1;
                       PDFViewerApplication.pdfViewer.currentPageNumber = currentPageNum;
                   }
-                  document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("   ");
+                  document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("");
+                  document.getElementById('pages_hyphen').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? ("-"):("");
                   document.getElementById('current_page_now').textContent = currentPageNum;
               }
         } else {
@@ -9734,13 +9738,15 @@ window.addEventListener('pagechange', function pagechange(evt) {
       if (TwoPageViewMode.active) {
           //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
           if (page == 1){
-              document.getElementById('current_page_now').textContent = "0";
+              document.getElementById('current_page_now').textContent = "";
+              document.getElementById('pages_hyphen').textContent = "";
               document.getElementById('current_page_next').textContent = "1";
           }else {
               if ((page % 2) == 1){
                   page = page -1;
               }
-              document.getElementById('current_page_next').textContent = ((page+1)<= pdfDoc.numPages)? (page+1):("   ");
+              document.getElementById('current_page_next').textContent = ((page+1)<= pdfDoc.numPages)? (page+1):("");
+              document.getElementById('pages_hyphen').textContent = ((page+1)<= pdfDoc.numPages)? ("-"):("");
               document.getElementById('current_page_now').textContent = page;
           }
       } else {        

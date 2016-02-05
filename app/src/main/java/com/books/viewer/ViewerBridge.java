@@ -11,7 +11,6 @@
 package com.books.viewer;
 
 import android.annotation.TargetApi;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
@@ -611,15 +610,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onToggleActionMode(final boolean visible, final String selectColor) {
-            Toast.makeText(mContext, (String) "onToggleActionMode", Toast.LENGTH_LONG).show();
-            mHandler.post(new Runnable() {
-                public void run() {
-                    new AlertDialog.Builder(mScene)
-                            .setTitle("onToggleActionMode")
-                            .setMessage("visible=" + visible + "\nselectColor" + selectColor)
-                            .show();
-                }
-            });
+            Toast.makeText(mContext, "onToggleActionMode\nvisible=" + visible + "\nselectColor" + selectColor, Toast.LENGTH_LONG).show();
         }
 
         ///
@@ -629,15 +620,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onToggleThumbnailbar(final boolean visible) {
-            Toast.makeText(mContext, (String) "onToggleThumbnailbar", Toast.LENGTH_LONG).show();
-            mHandler.post(new Runnable() {
-                public void run() {
-                    new AlertDialog.Builder(mScene)
-                            .setTitle("onToggleThumbnailbar")
-                            .setMessage("visible=" + visible)
-                            .show();
-                }
-            });
+            Toast.makeText(mContext, "onToggleThumbnailbar\nvisible=" + visible, Toast.LENGTH_LONG).show();
         }
 
 
@@ -742,21 +725,13 @@ public class ViewerBridge {
         }
 
         ///
-        /// Notify App the given highlight need to be shared, App will popup sharing dialog
+        /// Notify App the given highlight need to be shared, App will popup sharing toast
         ///
         /// @uuid - uuid of the highlight
         ///
         @JavascriptInterface
         public void onShareHighlight(final String uuid) {
-            Toast.makeText(mContext, (String) "onShareHighlight", Toast.LENGTH_LONG).show();
-            mHandler.post(new Runnable() {
-                public void run() {
-                    new AlertDialog.Builder(mScene)
-                            .setTitle("onShareHighlight")
-                            .setMessage("uuid=" + uuid)
-                            .show();
-                }
-            });
+            Toast.makeText(mContext, "onShareHighlight\nuuid=" + uuid, Toast.LENGTH_LONG).show();
         }
 
         ///
@@ -766,15 +741,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onAnnotateHighlight(final String uuid) {
-            Toast.makeText(mContext, (String) "onAnnotateHighlight", Toast.LENGTH_LONG).show();
-            mHandler.post(new Runnable() {
-                public void run() {
-                    new AlertDialog.Builder(mScene)
-                            .setTitle("onAnnotateHighlight")
-                            .setMessage("uuid=" + uuid)
-                            .show();
-                }
-            });
+            Toast.makeText(mContext, "onAnnotateHighlight\nuuid=" + uuid, Toast.LENGTH_LONG).show();
         }
 
         // dummy database
@@ -906,28 +873,14 @@ public class ViewerBridge {
         @JavascriptInterface
         public void onGoToBookIntro() {
             Toast.makeText(mContext, (String) "onGoToBookIntro", Toast.LENGTH_LONG).show();
-            mHandler.post(new Runnable() {
-                public void run() {
-                    new AlertDialog.Builder(mScene)
-                            .setTitle("onGoToBookIntro")
-                            .show();
-                }
-            });
         }
 
         ///
-        /// Notify App the book need to be shared, App will popup sharing dialog
+        /// Notify App the book need to be shared, App will popup sharing toast
         ///
         @JavascriptInterface
         public void onShareBookInfo() {
             Toast.makeText(mContext, (String) "onShareBookInfo", Toast.LENGTH_LONG).show();
-            mHandler.post(new Runnable() {
-                public void run() {
-                    new AlertDialog.Builder(mScene)
-                            .setTitle("onShareBookInfo")
-                            .show();
-                }
-            });
         }
 
         ///
@@ -938,15 +891,7 @@ public class ViewerBridge {
         ///
         @JavascriptInterface
         public void onLog(final String tag, final String msg) {
-            Toast.makeText(mContext, (String) "onLog", Toast.LENGTH_LONG).show();
-            mHandler.post(new Runnable() {
-                public void run() {
-                    new AlertDialog.Builder(mScene)
-                            .setTitle("onLog")
-                            .setMessage("tag=" + tag + "\nmsg=" + msg)
-                            .show();
-                }
-            });
+            Toast.makeText(mContext, (String) "onLog\ntag=" + tag + "\nmsg=" + msg, Toast.LENGTH_LONG).show();
         }
 
         ///
@@ -963,12 +908,6 @@ public class ViewerBridge {
             Toast.makeText(mContext, (String) "getPageDirection", Toast.LENGTH_LONG).show();
             mHandler.post(new Runnable() {
                 public void run() {
-                    /*
-                    new AlertDialog.Builder(mScene)
-                            .setTitle("getPageDirection")
-                            .setMessage("callback=" + callback)
-                            .show();
-                    */
                     eval(callback + "(\"" + "0" + "\")", null);
                 }
             });

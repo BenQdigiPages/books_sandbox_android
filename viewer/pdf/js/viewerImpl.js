@@ -191,6 +191,7 @@ var PageAnimation =  {
             if(previousPage < this.containerLowerBound) {
                 return;
             }
+            hideToolbarAndFooter();
             $viewerOwl.trigger('to.owl.carousel', [this._currentCarouselIndex - 1,200,true]);
         },
         onNextPage     : function PageAnimation_onNextPage(){
@@ -204,19 +205,11 @@ var PageAnimation =  {
                 if(isTrial){
                     $('#popup4').show();
                     //Henry add, hide titlebar and footer when intro page show
-                    if (toolBarVisible) {
-                        if (thumbnailBarVisible) {
-                           $('#thumbnailView').hide();
-                           App.onToggleThumbnailbar(false);
-                        }
-                        $('#footer').hide();
-                        toolBarVisible = !(toolBarVisible);
-                        App.onToggleToolbar(toolBarVisible);
-                    }
-                  }
+                    hideToolbarAndFooter();
+                }
                 return;
             }
-
+            hideToolbarAndFooter();
             // NOTE : We should use carousel index to trigger carousel
             $viewerOwl.trigger('to.owl.carousel', [this._currentCarouselIndex + 1,200,true]);
         },
@@ -618,15 +611,7 @@ function onDelayedPageDIVsReady() {
 function onFirstPageRendered() {
     //Phoebe, fix bug#212, invisible toolbar, footer after 3 secs. when first load.
     setTimeout(function(){
-        if (toolBarVisible) {
-            if (thumbnailBarVisible) {
-               $('#thumbnailView').hide();
-               App.onToggleThumbnailbar(false);  //notify APP Thumbnailbar is hidden.
-            }
-            $('#footer').hide();
-            toolBarVisible = !(toolBarVisible);
-            App.onToggleToolbar(toolBarVisible);
-        }
+       hideToolbarAndFooter();
     }, 3000);
 
     // Set this page forcefully to let Carousel to start run
@@ -820,6 +805,17 @@ function UIComponentHandler() {
 
     if(DEBUG_CHROME_DEV_TOOL) {
         console.timeEnd('UIComponentHandler()');
+    }
+}
+function hideToolbarAndFooter(){
+    if (toolBarVisible) {
+        if (thumbnailBarVisible) {
+           $('#thumbnailView').hide();
+           App.onToggleThumbnailbar(false);  //notify APP Thumbnailbar is hidden.
+        }
+        $('#footer').hide();
+        toolBarVisible = !(toolBarVisible);
+        App.onToggleToolbar(toolBarVisible);
     }
 }
 //callback title

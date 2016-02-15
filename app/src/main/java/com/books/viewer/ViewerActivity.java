@@ -392,6 +392,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         }
     }
     private class GestureController extends GestureDetector.SimpleOnGestureListener{
+        private static final int FLING_MIN_DISTANCE = 100;
         public boolean isFirstScrollEvent = true;
 
         public GestureController() {
@@ -412,7 +413,15 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         @Override
         public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
             isFirstScrollEvent = true;
-            mBridge.draggableOnEnd();
+            //mBridge.draggableOnEnd();
+            if (e1.getX() - e2.getX() > FLING_MIN_DISTANCE) {
+                mBridge.gotoNext();
+                return true;
+            }
+            if (e1.getX() - e2.getX() < -FLING_MIN_DISTANCE) {
+                mBridge.gotoPrevious();
+                return true;
+            }
             return false;
         }
     }
@@ -426,6 +435,8 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         mScaleGestureDetector = new ScaleGestureDetector(this, mScaleGestureController);
 
         mWebView.setOnTouchListener(new View.OnTouchListener() {
+            private final int EPUB_FOOTER_HEIGHT = 40;
+            private boolean isTriggerGuesture = true;
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -434,11 +445,26 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
                 if(mScaleGestureController.isScaling == true) {
                     return false;
                 }
-                if(event.getAction() == MotionEvent.ACTION_UP) {                         
-                    mGestureController.isFirstScrollEvent = true;
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        if (event.getY() >= v.getMeasuredHeight() - EPUB_FOOTER_HEIGHT) {
+                            isTriggerGuesture = false;
+                            return false;
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        mGestureController.isFirstScrollEvent = true;
+                        if (isTriggerGuesture == false) {
+                            isTriggerGuesture = true;
+                            return false;
+                        }
+                        break;
+                    default:
+                        if (isTriggerGuesture == false)
+                            return false;
                 }
-                mGuesture.onTouchEvent(event);
-                return false;
+                return mGuesture.onTouchEvent(event);
             }
         });
     }

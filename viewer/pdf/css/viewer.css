@@ -1931,19 +1931,26 @@ footer.bar a {
 }
 
 footer.bar a.undo.arrow_1 {
-    width: 30px;  /* Henry modify */
-	background: url(../img/arrow_icon1.png) no-repeat center;
+    width: 24px;  /* Henry modify */
+	background: url(../img/undo_prepage_48.png) no-repeat center;
 }
-
+footer.bar a.undo.arrow_1.press {
+	width: 24px;
+	background: url(../img/undo_prepage_press_48.png) no-repeat center;
+}
 footer.bar a.undo.arrow_1.reverse { /* direct reverse */
-    width: 30px;  /* Henry modify */
-	background: url(../img/arrow_icon2.png) no-repeat center;
+    width: 24px;  /* Henry modify */
+	background: url(../img/undo_prepage_r_48.png) no-repeat center;
 	display: none;
+}
+footer.bar a.undo.arrow_1.reverse.press {
+	width: 24px;
+	background: url(../img/undo_prepage_r_press_48.png) no-repeat center;
 }
 /* Henry modify, show at sencond line */
 footer.bar a.number {
 	position: absolute;
-	top: 20px;
+	top: 22px;
 	display: block;
 	width: 100%;
 	z-index: -1;
@@ -1953,7 +1960,7 @@ footer.bar a.number {
 /* Phoebe add for show 2 page numbers at twoPageViewMode, bug#214 */
 footer.bar a.number_twopage {
   position: absolute;
-  top: 20px;
+  top: 22px;
   display: none;
   width: 100%;
   z-index: -1;
@@ -1997,7 +2004,6 @@ input[type=range]::-webkit-slider-runnable-track {
     height: 5px;
     background: #ddd;
     border: none;
-    margin-top: 1px;
     border-radius: 3px;
 }
 input[type=range]::-webkit-slider-thumb {
@@ -2007,7 +2013,7 @@ input[type=range]::-webkit-slider-thumb {
     width: 20px;
     border-radius: 50%;
     background: #BF8045;
-    margin-top: -7px;
+    margin-top: -8px;
     cursor: pointer;
 }
 input[type=range]:focus {

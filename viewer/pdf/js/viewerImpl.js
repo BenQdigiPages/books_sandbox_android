@@ -758,32 +758,40 @@ function UIComponentHandler() {
     		window.alert("此書無法閱讀");
     		return;
             }
-            PDFViewerApplication.undoPage();
+            PDFViewerApplication.undoPage(PDFViewerApplication.page);
     });
-    document.getElementById('paginate').addEventListener('change',
-        function() {
+    $(".undo").on('touchstart', function(e) {
+         $(".undo").addClass("press");
+    });
+    $(".undo").on('touchend', function(e) {
+         $(".undo").removeClass("press");
+    });
+
+    //To handle paginate bar here
+    $('#paginate, #paginate_reverse').on('touchstart',function(){
+        PDFViewerApplication.historyPage = PDFViewerApplication.page;
+    });
+    $('#paginate').on('input', function(event) {
             //TODO: check ChapterLimit
             if (!canRead()){
     		window.alert("此書無法閱讀");
     		document.getElementById('paginate').value = PDFViewerApplication.page;
         	return false;
             }
-            var page = parseInt(document.getElementById('paginate').value,10);
+            var page = parseInt(event.target.value,10);
             //[Phoebe]Fix issue #717 Action:PROGRESSBAR_JUMP_PAGE
             App.onTrackAction("PROGRESSBAR_JUMP_PAGE",page.toString());
 
             PDFViewerApplication.page = page;
     });
-
-    document.getElementById('paginate_reverse').addEventListener('change',
-        function() {
+    $('#paginate_reverse').on('input', function(event) {
             //TODO: check ChapterLimit
             if (!canRead()){
     		window.alert("此書無法閱讀");
     		document.getElementById('paginate_reverse').value = -(PDFViewerApplication.page);
         	return false;
             }
-            var page = Math.abs(parseInt(document.getElementById('paginate_reverse').value,10));
+            var page = Math.abs(parseInt(event.target.value,10));
             //[Phoebe]Fix issue #717 Action:PROGRESSBAR_JUMP_PAGE
             App.onTrackAction("PROGRESSBAR_JUMP_PAGE",page.toString());
             PDFViewerApplication.page = page;
@@ -8467,8 +8475,9 @@ var PDFViewerApplication = {
     }
   },
   //Henry add, for support undo
-  undoPage: function pdfUndoPage() {
+  undoPage: function pdfUndoPage(current_page) {
       this.page = this.historyPage;
+      this.historyPage= current_page;
   },
 
   get lastPageNumber() {
@@ -9752,7 +9761,6 @@ window.addEventListener('pagechange', function pagechange(evt) {
           document.getElementById('paginate').value = page;
       else
           document.getElementById('paginate_reverse').value = -page;
-      PDFViewerApplication.historyPage = evt.previousPageNumber;  //Henry add, for supporting undo
       // Info App
       App.onChangePage(page, page, page, pdfDoc.numPages);
     }

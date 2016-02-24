@@ -751,6 +751,20 @@ function UIComponentHandler() {
                 PageAnimation.onPrevPage();
     });
 
+    $('.arrow_icon1').on('touchstart touchend',function(e){
+        if(e.type == "touchstart")
+           $('.arrow_icon1').addClass("press");
+        else
+           $('.arrow_icon1').removeClass("press");
+    });
+
+    $('.arrow_icon2').on('touchstart touchend',function(e){
+        if(e.type == "touchstart")
+           $('.arrow_icon2').addClass("press");
+        else
+           $('.arrow_icon2').removeClass("press");
+    });
+
     //Henry add, for support undo button
     $(".undo").on('click', function() {
              //TODO: check ChapterLimit

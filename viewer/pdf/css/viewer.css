@@ -179,7 +179,7 @@ html[dir='rtl'] .innerCenter {
 /* Henry add */
 .arrow_icon1,
 .arrow_icon2 {
-	width: 20px;
+	width: 30%;
 	position: fixed;
 	height: 100%;
 	display: block;
@@ -193,15 +193,15 @@ html[dir='rtl'] .innerCenter {
 	z-index: 2;
 }
 .arrow_icon1 {
-	background: url(../img/arrow_icon1.png) no-repeat center;
+	background: url(../img/arrow_icon1.png) no-repeat left;
 	left: 0;
 }
 .arrow_icon2 {
-	background: url(../img/arrow_icon2.png) no-repeat center;
+	background: url(../img/arrow_icon2.png) no-repeat right;
 	right: 0;
 }
-.arrow_icon1:hover,
-.arrow_icon2:hover {
+.arrow_icon1.press,
+.arrow_icon2.press {
 	filter:alpha(opacity=100);
 	-moz-opacity:1.0;
 	opacity:1.0;

@@ -163,6 +163,10 @@ var PageAnimation =  {
             this.containerLowerBound = 0;
         },
         onOnePageModeToTwoPageMode     : function PageAnimation_onOnePageModeToTwoPageMode(){
+            //reset current page scale to 1 before change to TwoPageMode
+            var currentPageDiv = this.getPageDiv(this._currentContainerIndex);
+            PageAnimation.applyTransformWithValue(currentPageDiv,{x:0,y:0,scale:1});
+
             //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
             if (this._currentCarouselIndex ==0){
                 this._currentContainerIndex = 1;

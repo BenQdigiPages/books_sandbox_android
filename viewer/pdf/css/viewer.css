@@ -183,13 +183,7 @@ html[dir='rtl'] .innerCenter {
 	position: fixed;
 	height: 100%;
 	display: block;
-	filter:alpha(opacity=0);
-	-moz-opacity:0.0;
 	opacity:0.0;
-	transition: all 0.3s ease-in-out;
-	-moz-transition: all 0.3s ease-in-out;
-	-webkit-transition: all 0.3s ease-in-out;
-	-o-transition: all 0.3s ease-in-out;
 	z-index: 2;
 }
 .arrow_icon1 {
@@ -199,13 +193,6 @@ html[dir='rtl'] .innerCenter {
 .arrow_icon2 {
 	background: url(../img/arrow_icon2.png) no-repeat right;
 	right: 0;
-}
-.arrow_icon1.press,
-.arrow_icon2.press {
-	filter:alpha(opacity=100);
-	-moz-opacity:1.0;
-	opacity:1.0;
-	background-color: rgba(255,255,255,0.8);
 }
 
 #sidebarContainer {
@@ -1926,25 +1913,25 @@ footer.bar {
 footer.bar a {
 	display: inline-block;
 	height: 32px;
-	margin: 0 10px;
 	vertical-align: middle;
+	background-size: 100% !important; /* Henry add */
 }
 
 footer.bar a.undo.arrow_1 {
-    width: 24px;  /* Henry modify */
+    width: 40px;  /* Henry modify */
 	background: url(../img/undo_prepage_48.png) no-repeat center;
 }
 footer.bar a.undo.arrow_1.press {
-	width: 24px;
+	width: 40px;
 	background: url(../img/undo_prepage_press_48.png) no-repeat center;
 }
 footer.bar a.undo.arrow_1.reverse { /* direct reverse */
-    width: 24px;  /* Henry modify */
+    width: 40px;  /* Henry modify */
 	background: url(../img/undo_prepage_r_48.png) no-repeat center;
 	display: none;
 }
 footer.bar a.undo.arrow_1.reverse.press {
-	width: 24px;
+	width: 40px;
 	background: url(../img/undo_prepage_r_press_48.png) no-repeat center;
 }
 /* Henry modify, show at sencond line */

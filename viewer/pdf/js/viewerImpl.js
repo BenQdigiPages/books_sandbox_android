@@ -738,31 +738,30 @@ function UIComponentHandler() {
     document.getElementById('total_pages').textContent = pdfDoc.numPages;
     document.getElementById('total_pages_twopage').textContent = pdfDoc.numPages;
     //Henry modify for next/previous page
-    $(".arrow_icon1").on('click', function() {
+    $('.arrow_icon1').on('touchstart',function(e){
+           $(".arrow_icon1").css('transition','');
+           $(".arrow_icon1").css('opacity',1);
+           
             if(!direct_reverse)
                 PageAnimation.onPrevPage();
             else
                 PageAnimation.onNextPage();
+
+           $(".arrow_icon1").css('transition','opacity 0.5s');
+           $(".arrow_icon1").css('opacity',0);
     });
-    $(".arrow_icon2").on('click', function() {
+
+    $('.arrow_icon2').on('touchstart',function(e){
+           $(".arrow_icon2").css('transition','');
+           $(".arrow_icon2").css('opacity',1);
+           
             if(!direct_reverse)
                 PageAnimation.onNextPage();
             else
                 PageAnimation.onPrevPage();
-    });
 
-    $('.arrow_icon1').on('touchstart touchend',function(e){
-        if(e.type == "touchstart")
-           $('.arrow_icon1').addClass("press");
-        else
-           $('.arrow_icon1').removeClass("press");
-    });
-
-    $('.arrow_icon2').on('touchstart touchend',function(e){
-        if(e.type == "touchstart")
-           $('.arrow_icon2').addClass("press");
-        else
-           $('.arrow_icon2').removeClass("press");
+           $(".arrow_icon2").css('transition','opacity 0.5s');
+           $(".arrow_icon2").css('opacity',0);
     });
 
     //Henry add, for support undo button

@@ -252,7 +252,7 @@ Viewer.gotoPosition = function(cfi) {
     if (regex.test(cfi)) {
         var isReady = customEventsManager['onDelayedPageDIVsReady'].isReady;
         if (isReady) {
-            if ((cfi > 1) && (cfi <= pdfDoc.numPages)){
+            if ((cfi > 0) && (cfi <= pdfDoc.numPages)){
                 currentPageNum = cfi;
                 PDFViewerApplication.page = currentPageNum;
             }

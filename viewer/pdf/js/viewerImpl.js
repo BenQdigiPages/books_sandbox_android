@@ -9778,9 +9778,9 @@ window.addEventListener('pagechange', function pagechange(evt) {
           document.getElementById('paginate').value = page;
       else
           document.getElementById('paginate_reverse').value = -page;
-      // Info App
-      App.onChangePage(page, page, page, pdfDoc.numPages);
     }
+    // Info App
+    App.onChangePage(page, page, page, pdfDoc.numPages);
     updateBookmarkIcon(); //[HW] update Bookmark Icon
     // Update thumbnail
     if(thumbnailBarVisible) {

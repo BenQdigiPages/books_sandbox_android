@@ -32,6 +32,7 @@ body {
   background-color: #404040;
   background-image: url(images/texture.png);
   */
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
 }
 
 body,

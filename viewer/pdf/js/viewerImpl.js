@@ -742,7 +742,7 @@ function UIComponentHandler() {
     document.getElementById('total_pages').textContent = pdfDoc.numPages;
     document.getElementById('total_pages_twopage').textContent = pdfDoc.numPages;
     //Henry modify for next/previous page
-    $('.arrow_icon1').on('touchstart',function(e){
+    $('.arrow_icon1').on('click',function(e){
            $(".arrow_icon1").css('transition','');
            $(".arrow_icon1").css('opacity',1);
            
@@ -755,7 +755,7 @@ function UIComponentHandler() {
            $(".arrow_icon1").css('opacity',0);
     });
 
-    $('.arrow_icon2').on('touchstart',function(e){
+    $('.arrow_icon2').on('click',function(e){
            $(".arrow_icon2").css('transition','');
            $(".arrow_icon2").css('opacity',1);
            

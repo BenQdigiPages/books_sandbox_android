@@ -101,3 +101,19 @@ App.onShareBookInfo = function() {
 App.getPageDirection = function(callback) {
     _App.getPageDirection(callback);
 };
+
+App.onLog = function(tag, msg) {
+    _App.onLog(tag, msg);
+};
+
+App.setControlEnable = function(enable) {
+    _App.setControlEnable(enable);
+};
+
+App.onToggleTouchEnable = function(enable) {
+    _App.onToggleTouchEnable(enable);
+};
+
+App.showPageDircetionTip = function(pageDirection) {
+    _App.showPageDircetionTip(pageDirection);
+};

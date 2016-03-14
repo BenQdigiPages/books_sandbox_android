@@ -912,6 +912,36 @@ public class ViewerBridge {
                 }
             });
         }
+
+        ///
+        /// Set App controll funcation enable or disable.
+        ///
+        /// @enable - true or false.
+        ///
+        @JavascriptInterface
+        public void setControlEnable(final boolean enable) {
+            Toast.makeText(mContext, "setControlEnable enable=" + enable, Toast.LENGTH_LONG).show();
+        }
+
+        ///
+        /// Notify App that touch listener is enable or disable
+        ///
+        /// @enable: bool - enable of touch listener
+        ///
+        @JavascriptInterface
+        public void onToggleTouchEnable(final boolean enable) {
+            Toast.makeText(mContext, "onToggleTouchEnable enable=" + enable, Toast.LENGTH_LONG).show();
+        }
+
+        ///
+        /// Notify App show page dircetion tip.
+        ///
+        /// @pageDirection: int - Set the page dircetion, 0(Left) or 1(Right).
+        ///
+        @JavascriptInterface
+        public void showPageDircetionTip(final int pageDirection) {
+            Toast.makeText(mContext, "showPageDircetionTip pageDirection=" + pageDirection, Toast.LENGTH_LONG).show();
+        }
     }
 
     WebViewClient mWebViewClient = new WebViewClient() {

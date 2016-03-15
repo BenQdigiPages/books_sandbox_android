@@ -210,6 +210,8 @@ var PageAnimation =  {
                     $('#popup4').show();
                     //Henry add, hide titlebar and footer when intro page show
                     hideToolbarAndFooter();
+                    // When into trail page , we will disable the function of page change by sliding.
+                    App.onToggleTouchEnable(false);
                 }
                 return;
             }
@@ -824,6 +826,12 @@ function UIComponentHandler() {
                 $('#thumbnailView').hide();
             }
             App.onToggleThumbnailbar(thumbnailBarVisible);
+    });
+
+    // When trial page is closed
+    $(".fa.fa-times.close").on('click', function () { 
+        $('#popup4').hide();
+        App.onToggleTouchEnable(true);
     });
 
     console.log("(UIComponentHandler)");

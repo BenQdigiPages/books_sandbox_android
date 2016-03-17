@@ -6,11 +6,9 @@ var pdfDoc = null,
     tmpBookmark = null,
     savedBookmarks = [],
     toc = [], //[HW]
-    originalCSSScale = 0,
     pdfOutlineArray = null,
     drmFile,
     viewerPageNum = 1,
-    carouselPageNum = 1,
     $viewerOwl,
     $viewThumbnailOwl;
 var DEBUG_CHROME_DEV_TOOL = true;
@@ -68,6 +66,7 @@ var PageAnimation =  {
               */
               this._currentCarouselIndex = val;
               this._currentContainerIndex = val*2 + 1;
+              this._currentPageNum = this._currentCarouselIndex*2;
           }else {
               /*  PATTERN : 
                   _currentCarouselIndex  : 0 1 2 3 4 5  ...
@@ -76,8 +75,16 @@ var PageAnimation =  {
               */
               this._currentCarouselIndex = val;
               this._currentContainerIndex = val;
+              this._currentPageNum = this._currentCarouselIndex + 1;
           }
         }, 
+
+        get currentPageNum() {
+            return this._currentPageNum;
+        },
+        set currentPageNum(val) {
+            // Dont allow set from here , do nothing
+        },
 
         get gestureX0() {
             return (this._gestureX0 | 0);
@@ -604,6 +611,7 @@ function onURL_and_AppReady(resultOutput) {
 }
 
 function onDelayedPageDIVsReady() {
+    console.log('onDelayedPageDIVsReady()');
     // NOTE : Must do before any action
     PageAnimation.onAppReady();
 
@@ -615,6 +623,7 @@ function onDelayedPageDIVsReady() {
 }
 
 function onFirstPageRendered() {
+    console.log('onFirstPageRendered()');
     //Phoebe, fix bug#212, invisible toolbar, footer after 3 secs. when first load.
     setTimeout(function(){
        hideToolbarAndFooter();
@@ -664,10 +673,8 @@ function UIComponentHandler() {
                     }else {
                         currentPageNum = (event.item.index * 2);
                     }
-                    carouselPageNum = currentPageNum;
                 }else {
                     currentPageNum  = event.item.index + 1;
-                    carouselPageNum = currentPageNum;
                 }
                 // Update current page number
                 PDFViewerApplication.page = currentPageNum;
@@ -6852,7 +6859,7 @@ var PDFViewer = (function pdfViewer() {
 
       //[Bruce] Carousel mode no need to update page view by ourself
       if(this.isInCarouselMode) {
-          if(pageNumber !== carouselPageNum) {
+          if(pageNumber !== PageAnimation.currentPageNum) {
               if (TwoPageViewMode.active){
                   //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
                   $viewerOwl.trigger('to.owl.carousel', [(Math.floor(pageNumber/2)),200,true]);

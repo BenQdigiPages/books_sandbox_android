@@ -1920,20 +1920,20 @@ footer.bar a {
 
 footer.bar a.undo.arrow_1 {
     width: 40px;  /* Henry modify */
-	background: url(../img/undo_prepage_48.png) no-repeat center;
+    background: url("http://fake.benqguru.com/(RES)/ic_viewer_prepage") no-repeat center;
 }
 footer.bar a.undo.arrow_1.press {
-	width: 40px;
-	background: url(../img/undo_prepage_press_48.png) no-repeat center;
+    width: 40px;
+    background: url("http://fake.benqguru.com/(RES)/ic_viewer_prepage_press") no-repeat center;
 }
 footer.bar a.undo.arrow_1.reverse { /* direct reverse */
     width: 40px;  /* Henry modify */
-	background: url(../img/undo_prepage_r_48.png) no-repeat center;
-	display: none;
+    background: url("http://fake.benqguru.com/(RES)/ic_viewer_prepage_r") no-repeat center;
+    display: none;
 }
 footer.bar a.undo.arrow_1.reverse.press {
-	width: 40px;
-	background: url(../img/undo_prepage_r_press_48.png) no-repeat center;
+    width: 40px;
+    background: url("http://fake.benqguru.com/(RES)/ic_viewer_prepage_r_press") no-repeat center;
 }
 /* Henry modify, show at sencond line */
 footer.bar a.number {
@@ -1960,21 +1960,40 @@ footer.bar a.number_twopage {
 footer.bar .thumbnailbtn {
     width: 30px;
     height: 32px;
-    background: url(../img/footer-icon1.png) no-repeat center;
+    background: url("http://fake.benqguru.com/(RES)/ic_viewer_preview") no-repeat center;
     display: inline-block;
     cursor: pointer;
     margin: 0 10px;
     vertical-align: middle
- }
- footer.bar .thumbnailbtn.reverse {
-     width: 30px;
-     height: 32px;
-     background: url(../img/footer-icon1.png) no-repeat center;
-     display: none;
-     cursor: pointer;
-     margin: 0 10px;
-     vertical-align: middle
-  }
+}
+footer.bar .thumbnailbtn.press {
+    width: 30px;
+    height: 32px;
+    background: url("http://fake.benqguru.com/(RES)/ic_viewer_preview_press") no-repeat center;
+    display: inline-block;
+    cursor: pointer;
+    margin: 0 10px;
+    vertical-align: middle
+}
+
+footer.bar .thumbnailbtn.reverse {
+    width: 30px;
+    height: 32px;
+    background: url("http://fake.benqguru.com/(RES)/ic_viewer_preview") no-repeat center;
+    display: none;
+    cursor: pointer;
+    margin: 0 10px;
+    vertical-align: middle
+}
+footer.bar .thumbnailbtn.reverse.press {
+    width: 30px;
+    height: 32px;
+    background: url("http://fake.benqguru.com/(RES)/ic_viewer_preview_press") no-repeat center;
+    display: none;
+    cursor: pointer;
+    margin: 0 10px;
+    vertical-align: middle
+}
 
 footer.bar input[type=range] {
 	width: 60%;  /* Henry modify, make it longer */
@@ -1999,8 +2018,9 @@ input[type=range]::-webkit-slider-thumb {
     border: 2px solid #fff;
     height: 20px;
     width: 20px;
+    background: url("http://fake.benqguru.com/(RES)/viewer_pagebar_control") no-repeat center;
     border-radius: 50%;
-    background: #BF8045;
+    /*background: #BF8045;*/
     margin-top: -8px;
     cursor: pointer;
 }
@@ -2081,7 +2101,8 @@ input[type=range]:focus::-webkit-slider-runnable-track {
     text-decoration: none;
     line-height: 25px;
     width: 50%;
-    background: #AF8A5E;
+    /*background: #AF8A5E;*/
+    background: url("http://fake.benqguru.com/(RES)/bg_popup_btn") center no-repeat;
     border-radius: 15px;
 	-moz-border-radius: 15px;
 	-webkit-border-radius: 15px;
@@ -2139,7 +2160,8 @@ input[type=range]:focus::-webkit-slider-runnable-track {
     top: 10px;
     display: block;
     color: #fff;
-    background: #AF8A5E;
+    /*background: #AF8A5E;*/
+    background: url("http://fake.benqguru.com/(RES)/ic_popup_cancel") center no-repeat;
     width: 25px;
     line-height: 25px;
     cursor: pointer;

@@ -634,6 +634,7 @@ function onFirstPageRendered() {
         console.log("Fail _getThumbnailList" + reason);
     });
 
+    
 }
 
 function onDocumentReady(pdfDocument) {
@@ -832,6 +833,40 @@ function UIComponentHandler() {
     $(".fa.fa-times.close").on('click', function () { 
         $('#popup4').hide();
         App.onToggleTouchEnable(true);
+    });
+
+    var $parent = $("footer.bar");
+
+    // Deal arrow_1 / press
+    $parent.children("a.undo.arrow_1").on('touchstart', function(e) {
+        $parent.children("a.undo.arrow_1").addClass("press");
+    });
+    $parent.children("a.undo.arrow_1").on('touchend', function(e) {
+        $parent.children("a.undo.arrow_1").removeClass("press");
+    });
+
+    // Deal arrow_1 reverse / press
+    $parent.children("a.undo.arrow_1.reverse").on('touchstart', function(e) {
+        $parent.children("a.undo.arrow_1.reverse").addClass("press");
+    });
+    $parent.children("a.undo.arrow_1.reverse").on('touchend', function(e) {
+        $parent.children("a.undo.arrow_1.reverse").removeClass("press");
+    });
+
+    // Deal thumbnailbtn / press
+    $parent.children(".thumbnailbtn").on('touchstart', function(e) {
+        $parent.children(".thumbnailbtn").addClass("press");
+    });
+    $parent.children(".thumbnailbtn").on('touchend', function(e) {
+        $parent.children(".thumbnailbtn").removeClass("press");
+    });
+
+    // Deal thumbnailbtn reverse / press
+    $parent.children(".thumbnailbtn.reverse").on('touchstart', function(e) {
+        $parent.children(".thumbnailbtn.reverse").addClass("press");
+    });
+    $parent.children(".thumbnailbtn.reverse").on('touchend', function(e) {
+        $parent.children(".thumbnailbtn.reverse").removeClass("press");
     });
 
     console.log("(UIComponentHandler)");

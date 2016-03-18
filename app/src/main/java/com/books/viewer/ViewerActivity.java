@@ -21,7 +21,6 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.webkit.ValueCallback;
-import android.webkit.WebView;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -30,6 +29,7 @@ import com.books.sandbox.R;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.xwalk.core.XWalkView;
 
 public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupListener {
     private static final String TAG = "ViewerActivity";
@@ -42,7 +42,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
     private ImageButton mBtnBookmark;
     private ImageButton mBtnMonkey;
     private View mLoading;
-    private WebView mWebView;
+    private XWalkView mXWalkView;
     // [Bruce]
     private GestureDetector mGuesture;
     private GestureController mGestureController;
@@ -67,7 +67,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
 
         mTitleBar = (RelativeLayout) findViewById(R.id.title_bar);
         mTitle = (TextView) findViewById(R.id.title);
-        mWebView = (WebView) findViewById(R.id.webview);
+        mXWalkView = (XWalkView) findViewById(R.id.webview);
         mLoading = findViewById(R.id.loading);
         mLoading.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -76,7 +76,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
             }
         });
 
-        mBridge = new ViewerBridge(this, mWebView);
+        mBridge = new ViewerBridge(this, mXWalkView);
 
         mBtnTOC = (ImageButton) findViewById(R.id.btn_toc);
         mBtnTOC.setOnClickListener(new View.OnClickListener() {
@@ -434,7 +434,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         mScaleGestureController = new ScaleGestureController();
         mScaleGestureDetector = new ScaleGestureDetector(this, mScaleGestureController);
 
-        mWebView.setOnTouchListener(new View.OnTouchListener() {
+        mXWalkView.setOnTouchListener(new View.OnTouchListener() {
             private final int EPUB_FOOTER_HEIGHT = 40;
             private boolean isTriggerGuesture = true;
 

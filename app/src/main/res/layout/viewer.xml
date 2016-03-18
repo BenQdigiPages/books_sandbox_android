@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     tools:context="com.books.viewer.ViewerActivity">
 
-    <WebView
+    <org.xwalk.core.XWalkView
         android:id="@+id/webview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>

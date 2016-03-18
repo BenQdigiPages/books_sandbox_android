@@ -12,6 +12,7 @@ package com.books.viewer;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
 import android.net.Uri;
@@ -19,21 +20,23 @@ import android.os.Build;
 import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
-import android.webkit.JavascriptInterface;
 import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
-import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.Toast;
+
+import com.books.sandbox.R;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.xwalk.core.JavascriptInterface;
+import org.xwalk.core.XWalkPreferences;
+import org.xwalk.core.XWalkResourceClient;
+import org.xwalk.core.XWalkView;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -53,10 +56,12 @@ public class ViewerBridge {
     private static final boolean USE_NATIVE_API = true;
     private static final boolean IS_LEGACY = !USE_NATIVE_API || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
 
-    // This is for sandbox only, sandbox has direct mapping from ROOT_URI to ROOT_DIR
-    private static File ROOT_DIR;
-    public static final Uri ROOT_URI = Uri.parse("http://fake.benqguru.com/books/");
-    public static final Uri ASSETS_URI = ROOT_URI.buildUpon().path("/(ASSETS)/").build();
+    // This is for sandbox only, sandbox has direct mapping from BOOK_URI to BOOT_DIR
+    private static File BOOT_DIR;
+    public static final String ROOT_PATH = "http://fake.benqguru.com";
+    public static final Uri BOOK_URI = Uri.parse(ROOT_PATH+"/books/");
+    public static final Uri ASSETS_URI =  Uri.parse(ROOT_PATH + "/(ASSETS)/");
+    public static final Uri RES_URI =  Uri.parse(ROOT_PATH + "/(RES)/");
 
     public static final String LAYOUT_SINGLE = "single";
     public static final String LAYOUT_SIDE_BY_SIDE = "side_by_side";
@@ -65,7 +70,7 @@ public class ViewerBridge {
     public static Context mContext;
 
     private ViewerActivity mScene;
-    private WebView mWebView;
+    private XWalkView mXWalkView;
     private Handler mHandler = new Handler();
 
     private String mBookUri;
@@ -76,6 +81,20 @@ public class ViewerBridge {
     private int mEvalToken = 1;
     private final HashMap<Integer, ValueCallback<String>> mEvalCallbacks = new HashMap<Integer, ValueCallback<String>>();
 
+    private final HashMap<String, Integer> mResourceMap = new HashMap<String, Integer>();
+    {
+        mResourceMap.put("viewer_pagebar_control", R.drawable.viewer_pagebar_control);
+        mResourceMap.put("ic_viewer_prepage", R.drawable.ic_viewer_prepage);
+        mResourceMap.put("ic_viewer_prepage_press", R.drawable.ic_viewer_prepage_press);
+        mResourceMap.put("ic_viewer_prepage_r", R.drawable.ic_viewer_prepage_r);
+        mResourceMap.put("ic_viewer_prepage_r_press", R.drawable.ic_viewer_prepage_r_press);
+        mResourceMap.put("ic_viewer_preview", R.drawable.ic_viewer_preview);
+        mResourceMap.put("ic_viewer_preview_press", R.drawable.ic_viewer_preview_press);
+        mResourceMap.put("ic_popup_cancel", R.drawable.ic_popup_cancel);
+        mResourceMap.put("bg_popup_btn", R.drawable.bg_popup_btn);
+        mResourceMap.put("pager1", R.drawable.paper1);
+    }
+
     public static void getBaseDir(Context context) {
 
         mContext = context;
@@ -83,56 +102,57 @@ public class ViewerBridge {
 
     public static File getRootDir(Context context) {
 
-        if (ROOT_DIR != null) return ROOT_DIR;
+        if (BOOT_DIR != null) return BOOT_DIR;
 
         File dir = context.getExternalFilesDir("books");
         dir.mkdirs();
         if (dir.exists()) {
-            ROOT_DIR = dir;
+            BOOT_DIR = dir;
             return dir;
         }
 
         dir = new File(context.getFilesDir(), "books");
         dir.mkdirs();
-        ROOT_DIR = dir;
+        BOOT_DIR = dir;
         return dir;
     }
 
-    public ViewerBridge(ViewerActivity scene, WebView webView) {
+    public ViewerBridge(ViewerActivity scene, XWalkView webView) {
         JavascriptCallback javascriptInterface = new JavascriptCallback();
         WebChromeClient webChromeClient = new WebChromeClient();
         mScene = scene;
-        mWebView = webView;
+        mXWalkView = webView;
 
-        WebSettings settings = mWebView.getSettings();
-        settings.setAppCacheEnabled(false);
-        settings.setJavaScriptEnabled(true);
-        settings.setJavaScriptCanOpenWindowsAutomatically(true);
-        //[Bruce] Enable webView Database to let javascript access the localStorage
-        settings.setDatabaseEnabled(true);
-        String dir = mScene.getApplicationContext().getDir("database", Context.MODE_PRIVATE).getPath();
-        settings.setDatabasePath(dir);
-        settings.setDomStorageEnabled(true);
-        settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
-        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
-        //End : [Bruce]
+        XWalkPreferences.setValue(XWalkPreferences.JAVASCRIPT_CAN_OPEN_WINDOW, true);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+//        WebSettings settings = mXWalkView.getSettings();
+//        settings.setAppCacheEnabled(false);
+//        settings.setJavaScriptEnabled(true);
+//        settings.setJavaScriptCanOpenWindowsAutomatically(true);
+//        //[Bruce] Enable webView Database to let javascript access the localStorage
+//        settings.setDatabaseEnabled(true);
+//        String dir = mScene.getApplicationContext().getDir("database", Context.MODE_PRIVATE).getPath();
+//        settings.setDatabasePath(dir);
+//        settings.setDomStorageEnabled(true);
+//        settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
+//        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+//        //End : [Bruce]
+
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             if (0 != (mScene.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE)) {
-                mWebView.setWebContentsDebuggingEnabled(true);
+                XWalkPreferences.setValue(XWalkPreferences.REMOTE_DEBUGGING, true);
             }
-        }
+//        }
 
-        mWebView.addJavascriptInterface(javascriptInterface, "_App");
-        mWebView.setWebViewClient(mWebViewClient);
-        mWebView.setWebChromeClient(webChromeClient);
+        mXWalkView.addJavascriptInterface(javascriptInterface, "_App");
+        mXWalkView.setResourceClient(new QXWalkResourceClient(mXWalkView));
     }
 
     private void loadUrl(String url, Runnable callback) {
         synchronized (mLoadUrlCallbacks) {
             mLoadUrlCallbacks.put(url, callback);
         }
-        mWebView.loadUrl(url);
+        mXWalkView.load(url, null);
     }
 
     private String loadAssetAsString(String name) {
@@ -158,7 +178,7 @@ public class ViewerBridge {
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
     private void _eval(String script, ValueCallback<String> callback) {
-        mWebView.evaluateJavascript(script, callback);
+        mXWalkView.evaluateJavascript(script, callback);
     }
 
     public <T> void eval(String script, final ValueCallback<T> handler) {
@@ -178,18 +198,16 @@ public class ViewerBridge {
             };
         }
 
-        if (USE_NATIVE_API && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            _eval(script, callback);
-        } else if (callback != null) {
+        if (callback != null) {
             int token;
             synchronized (mEvalCallbacks) {
                 token = mEvalToken++;
                 mEvalCallbacks.put(token, callback);
             }
             script = "JSON.stringify(" + script + ")";
-            mWebView.loadUrl("javascript:App.onDispatchResult(" + token + ", " + script + ")");
+            mXWalkView.evaluateJavascript("App.onDispatchResult(" + token + ", " + script + ")", null);
         } else {
-            mWebView.loadUrl("javascript:" + script);
+            mXWalkView.evaluateJavascript(script, callback);
         }
     }
 
@@ -944,19 +962,53 @@ public class ViewerBridge {
         }
     }
 
-    WebViewClient mWebViewClient = new WebViewClient() {
-        @Override
-        public void onPageFinished(WebView view, String uri) {
-            super.onPageFinished(view, uri);
+    private class QXWalkResourceClient extends XWalkResourceClient {
 
+        public QXWalkResourceClient(XWalkView view) {
+            super(view);
+        }
+
+        @Override
+        public void onLoadStarted(XWalkView view, String url) {
+            super.onLoadStarted(view, url);
+        }
+
+        @Override
+        public void onLoadFinished(XWalkView view, String url) {
+            super.onLoadFinished(view, url);
+            view.getNavigationHistory().clear();
             final Runnable callback;
             synchronized (mLoadUrlCallbacks) {
-                callback = mLoadUrlCallbacks.remove(uri);
+                callback = mLoadUrlCallbacks.remove(url);
             }
 
             if (callback != null) {
                 mHandler.post(callback);
             }
+        }
+
+        @Override
+        public boolean shouldOverrideUrlLoading(XWalkView view, String url) {
+            Log.v(TAG, "onLoadStarted url=" + url);
+            if(url != null) {
+                if (url.startsWith(ROOT_PATH)) {
+                    return super.shouldOverrideUrlLoading(view, url);
+                } else if (url.startsWith("http://")) {
+                    view.getContext().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public WebResourceResponse shouldInterceptLoadRequest(XWalkView view, String url) {
+            Uri uri = Uri.parse(url);
+            String range = null;
+            if (uri.isHierarchical()) {
+                range = uri.getQueryParameter("_Range_");
+            }
+            return shouldInterceptRequest(view, uri, range);
         }
 
         private boolean isRelativeUri(Uri prefixUri, Uri uri) {
@@ -987,7 +1039,7 @@ public class ViewerBridge {
             }
         }
 
-        private WebResourceResponse loadAssetUri(WebView view, Uri uri, String range) {
+        private WebResourceResponse loadAssetUri(XWalkView view, Uri uri, String range) {
             HashMap<String, String> headers = new HashMap<String, String>();
             String mimeType = getMimeType(uri);
 
@@ -1011,12 +1063,37 @@ public class ViewerBridge {
             }
         }
 
-        private WebResourceResponse loadBookUri(WebView view, Uri uri, String range) {
+        private WebResourceResponse loadResUri(XWalkView view, Uri uri, String range) {
             HashMap<String, String> headers = new HashMap<String, String>();
             String mimeType = getMimeType(uri);
 
             try {
-                String path = uri.getPath().substring(ROOT_URI.getPath().length());
+                String fileName = uri.getPath().substring(RES_URI.getPath().length());
+                InputStream inputStream;
+
+                File basedir = ViewerBridge.mContext.getExternalFilesDir(null);
+                File internalBooksPath = new File(basedir.getPath() + "/res/");
+                if (internalBooksPath != null && internalBooksPath.isDirectory()) {
+                    File dir = new File(internalBooksPath.getPath() + "/" + fileName);
+                    inputStream = new FileInputStream(dir);
+                } else
+                    inputStream = mScene.getResources().openRawResource(mResourceMap.get(fileName));
+                inputStream = new BufferedInputStream(inputStream); //Jacky
+                headers.put("Cache-Control", "no-cache");
+
+                return createResponse(mimeType, 200, "OK", headers, inputStream);
+            } catch (Exception e) {
+                Log.w(TAG, "fail to read asset", e);
+                return createResponse(mimeType, 404, "Not found", headers, null);
+            }
+        }
+
+        private WebResourceResponse loadBookUri(XWalkView view, Uri uri, String range) {
+            HashMap<String, String> headers = new HashMap<String, String>();
+            String mimeType = getMimeType(uri);
+
+            try {
+                String path = uri.getPath().substring(BOOK_URI.getPath().length());
                 File file = new File(getRootDir(mScene), path);
 
                 if (!file.canRead()) {
@@ -1093,42 +1170,22 @@ public class ViewerBridge {
             return new WebResourceResponse(mimeType, "UTF-8", status, reason, headers, inputStream);
         }
 
-        private WebResourceResponse shouldInterceptRequest(WebView view, Uri uri, String range) {
+        private WebResourceResponse shouldInterceptRequest(XWalkView view, Uri uri, String range) {
             if (isRelativeUri(ASSETS_URI, uri)) {
                 return loadAssetUri(view, uri, range);
             }
 
-            if (isRelativeUri(ROOT_URI, uri)) {
+            if (isRelativeUri(RES_URI, uri)) {
+                return loadResUri(view, uri, range);
+            }
+
+            if (isRelativeUri(BOOK_URI, uri)) {
                 return loadBookUri(view, uri, range);
             }
 
             return null;
         }
 
-        @Override
-        public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-            Uri uri = Uri.parse(url);
-            String range = null;
-            if (uri.isHierarchical()) {
-                range = uri.getQueryParameter("_Range_");
-            }
-            return shouldInterceptRequest(view, uri, range);
-        }
-
-        @Override
-        @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-            if (IS_LEGACY) {
-                return super.shouldInterceptRequest(view, request);
-            } else {
-                return shouldInterceptRequest(view, request.getUrl(), request.getRequestHeaders().get("Range"));
-            }
-        }
-
-        @Override
-        public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-            Log.e(TAG, "onReceivedError : description=" + description + ", failingUrl=" + failingUrl);
-        }
     };
 
 }

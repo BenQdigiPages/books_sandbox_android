@@ -140,7 +140,7 @@ public class MainActivity extends Activity {
     }
 
     private void selectBook(String name) {
-        String url = ViewerBridge.ROOT_URI.toString() + name + "/";
+        String url = ViewerBridge.BOOK_URI.toString() + name + "/";
         File dir = new File(ViewerBridge.getRootDir(this), name);
         dir.mkdirs();
 

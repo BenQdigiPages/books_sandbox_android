@@ -60,9 +60,11 @@ var PageAnimation =  {
           }
           if (TwoPageViewMode.active){
               /*  PATTERN : 
-                  _currentCarouselIndex  :   0    1    2    3    4     5     ...
-                  _currentContainerIndex :   1    3    5    7    9     11    ...
-                  pageNumber             :  []1  2 3  4 5  6 7  8 9   10 11  ...
+                  _currentCarouselIndex                 :   0    1    2    3    4     5     ...
+                  _currentContainerIndex                :   1    3    5    7    9     11    ...
+                  pageNumber                            :  []1  2 3  4 5  6 7  8 9   10 11  ...
+                  _currentCarouselIndex(single page)    :    0  1 2  3 4  5 6  7 8    9 10  ...
+                  _currentContainerIndex(single page)   :    0  1 2  3 4  5 6  7 8    9 10  ... 
               */
               this._currentCarouselIndex = val;
               this._currentContainerIndex = val*2 + 1;
@@ -121,6 +123,11 @@ var PageAnimation =  {
         onAppReady     : function customPageManager_onAppReady(){
             this._currentCarouselIndex = 0;
             this._currentContainerIndex = 0;
+            if (TwoPageViewMode.active){
+                this._currentPageNum = this._currentCarouselIndex*2;
+            } else {
+                this._currentPageNum = this._currentCarouselIndex + 1;
+            }
 
             // NOTE : We assume the first mode is single
             this.divContainer = PDFViewerApplication.pdfViewer._pages;
@@ -187,7 +194,7 @@ var PageAnimation =  {
             this.stepDelta = 2;
 
             // NOTE : We assume the first mode is single
-            this.containerUpperBound = (this.containerUpperBound % 2) === 0 ? (this.containerUpperBound + 1) : this.containerUpperBound;
+            this.containerUpperBound = (this.containerUpperBound % 2) === 0 ? (this.containerUpperBound + 1) : (this.containerUpperBound + 2);
             this.containerLowerBound = 1;
         },
 

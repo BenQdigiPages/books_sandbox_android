@@ -125,10 +125,18 @@ Viewer.enableTrialPage = function(info) {
     isTrial=true;
     $('#popup4').find('.popImg').attr("src", downloadlink + "book_cover.jpg");
 	$('#popup4').find('.bookTitle').html(info.c_title);
-	$('#popup4').find('.creator').html(info.author);
+        if(info.author === undefined || info.author === "") {
+	    $('#popup4').find('.creator').hide();
+        } else {
+	    $('#popup4').find('.creator').html(info.author);
+        }
 	$('#popup4').find('.publisher').html(info.publisher_name);
 	$('#popup4').find('.pubdate').html(info.publish_date);
-	$('#popup4').find('.identifier').html(info.isbn);
+        if(info.isbn === undefined || info.isbn === "") {
+	    $('#popup4').find('.identifier').hide();
+        } else {
+	    $('#popup4').find('.identifier').html(info.isbn);
+        }
 	$('#popup4').find('.format').html(info.book_format);
 	$('#popup4').find('.edition').html(info.cur_version);
 

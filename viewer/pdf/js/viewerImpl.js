@@ -1,5 +1,4 @@
-var pdfDoc = null,
-    currentPageNum = 1,
+var currentPageNum = 1,
     toolBarVisible = true,
     thumbnailBarVisible = false,
     currentLayoutMode = "single",
@@ -88,6 +87,14 @@ var PageAnimation =  {
             // Dont allow set from here , do nothing
         },
 
+        get totalPageNum() {
+            return this._totalPageLength;
+        },
+        set totalPageNum(val) {
+            this.containerUpperBound = val - 1;
+            this._totalPageLength = val;
+        },
+
         get gestureX0() {
             return (this._gestureX0 | 0);
         },
@@ -173,7 +180,7 @@ var PageAnimation =  {
             this.divContainer = PDFViewerApplication.pdfViewer._pages;
             this.stepDelta = 1;
 
-            this.containerUpperBound = PDFViewerApplication.pdfViewer._pages.length - 1;
+            this.containerUpperBound = this._totalPageLength - 1;
             this.containerLowerBound = 0;
         },
         onOnePageModeToTwoPageMode     : function PageAnimation_onOnePageModeToTwoPageMode(){
@@ -657,6 +664,7 @@ function onDocumentReady(pdfDocument) {
     console.log("(onDocumentReady)");
     $("#book_loading").fadeOut(); //Henry add
     pdfDoc = pdfDocument;
+    PageAnimation.totalPageNum = pdfDoc.numPages;
     UIComponentHandler();  //Henry add
 }
 
@@ -715,8 +723,8 @@ function UIComponentHandler() {
                       currentPageNum = currentPageNum - 1;
                       PDFViewerApplication.pdfViewer.currentPageNumber = currentPageNum;
                   }
-                  document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("");
-                  document.getElementById('pages_hyphen').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? ("-"):("");
+                  document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= PageAnimation.totalPageNum)? (currentPageNum+1):("");
+                  document.getElementById('pages_hyphen').textContent = ((currentPageNum+1)<= PageAnimation.totalPageNum)? ("-"):("");
                   document.getElementById('current_page_now').textContent = currentPageNum;
               }
 
@@ -751,13 +759,13 @@ function UIComponentHandler() {
     document.getElementById('current_page').textContent = currentPageNum;
     if(!direct_reverse){
         document.getElementById('paginate').value = currentPageNum;
-        document.getElementById('paginate').max = pdfDoc.numPages;
+        document.getElementById('paginate').max = PageAnimation.totalPageNum;
     }else{
         document.getElementById('paginate_reverse').value = -currentPageNum;
-        document.getElementById('paginate_reverse').min = -(pdfDoc.numPages);
+        document.getElementById('paginate_reverse').min = -(PageAnimation.totalPageNum);
     }
-    document.getElementById('total_pages').textContent = pdfDoc.numPages;
-    document.getElementById('total_pages_twopage').textContent = pdfDoc.numPages;
+    document.getElementById('total_pages').textContent = PageAnimation.totalPageNum;
+    document.getElementById('total_pages_twopage').textContent = PageAnimation.totalPageNum;
     //Henry modify for next/previous page
     $('.arrow_icon1').on('click',function(e){
            $(".arrow_icon1").css('transition','');
@@ -1062,8 +1070,8 @@ function updateToolBar(){
                       currentPageNum = currentPageNum -1;
                       PDFViewerApplication.pdfViewer.currentPageNumber = currentPageNum;
                   }
-                  document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? (currentPageNum+1):("");
-                  document.getElementById('pages_hyphen').textContent = ((currentPageNum+1)<= pdfDoc.numPages)? ("-"):("");
+                  document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= PageAnimation.totalPageNum)? (currentPageNum+1):("");
+                  document.getElementById('pages_hyphen').textContent = ((currentPageNum+1)<= PageAnimation.totalPageNum)? ("-"):("");
                   document.getElementById('current_page_now').textContent = currentPageNum;
               }
         } else {
@@ -9824,8 +9832,8 @@ window.addEventListener('pagechange', function pagechange(evt) {
               if ((page % 2) == 1){
                   page = page -1;
               }
-              document.getElementById('current_page_next').textContent = ((page+1)<= pdfDoc.numPages)? (page+1):("");
-              document.getElementById('pages_hyphen').textContent = ((page+1)<= pdfDoc.numPages)? ("-"):("");
+              document.getElementById('current_page_next').textContent = ((page+1)<= PageAnimation.totalPageNum)? (page+1):("");
+              document.getElementById('pages_hyphen').textContent = ((page+1)<= PageAnimation.totalPageNum)? ("-"):("");
               document.getElementById('current_page_now').textContent = page;
           }
       } else {        
@@ -9837,7 +9845,7 @@ window.addEventListener('pagechange', function pagechange(evt) {
           document.getElementById('paginate_reverse').value = -page;
     }
     // Info App
-    App.onChangePage(page, page, page, pdfDoc.numPages);
+    App.onChangePage(page, page, page, PageAnimation.totalPageNum);
     updateBookmarkIcon(); //[HW] update Bookmark Icon
     // Update thumbnail
     if(thumbnailBarVisible) {

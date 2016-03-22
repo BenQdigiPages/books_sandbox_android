@@ -225,7 +225,7 @@ Viewer.setLayoutMode = function(mode) {
 /// @total_pages: int - total number of pages
 ///
 Viewer.getCurrentPosition = function() {
-    return ["", currentPageNum, currentPageNum, pdfDoc.numPages]
+    return ["", currentPageNum, currentPageNum, PageAnimation.totalPageNum]
 }
 
 ///
@@ -260,7 +260,7 @@ Viewer.gotoPosition = function(cfi) {
     if (regex.test(cfi)) {
         var isReady = customEventsManager['onDelayedPageDIVsReady'].isReady;
         if (isReady) {
-            if ((cfi > 0) && (cfi <= pdfDoc.numPages)){
+            if ((cfi > 0) && (cfi <= PageAnimation.totalPageNum)){
                 currentPageNum = cfi;
                 PDFViewerApplication.page = currentPageNum;
             }

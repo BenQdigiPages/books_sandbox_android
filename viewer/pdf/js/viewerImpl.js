@@ -130,11 +130,7 @@ var PageAnimation =  {
         onAppReady     : function customPageManager_onAppReady(){
             this._currentCarouselIndex = 0;
             this._currentContainerIndex = 0;
-            if (TwoPageViewMode.active){
-                this._currentPageNum = this._currentCarouselIndex*2;
-            } else {
-                this._currentPageNum = this._currentCarouselIndex + 1;
-            }
+            this._currentPageNum = 1;
 
             // NOTE : We assume the first mode is single
             this.divContainer = PDFViewerApplication.pdfViewer._pages;
@@ -146,6 +142,9 @@ var PageAnimation =  {
 
         // Used for page number
         onBeforePageChange     : function PageAnimation_onBeforePageChange(){
+            //[Phoebe]Fix issue #717 Action:LEAVE_PAGE
+            App.onTrackAction("LEAVE_PAGE", this._currentPageNum.toString());
+
             //reset current page scale to 1
             var currentPageDiv = this.getPageDiv(this._currentContainerIndex);
             PageAnimation.applyTransformWithValue(currentPageDiv,{x:0,y:0,scale:1});
@@ -174,7 +173,7 @@ var PageAnimation =  {
         },
 
         onTwoPageModeToOnePageMode     : function PageAnimation_onTwoPageModeToOnePageMode(){
-            this._currentContainerIndex = this._currentContainerIndex -1;
+            this._currentContainerIndex = this._currentContainerIndex - 2;
             this._currentCarouselIndex = this._currentContainerIndex;
 
             this.divContainer = PDFViewerApplication.pdfViewer._pages;
@@ -189,13 +188,18 @@ var PageAnimation =  {
             PageAnimation.applyTransformWithValue(currentPageDiv,{x:0,y:0,scale:1});
 
             //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
-            if (this._currentCarouselIndex ==0){
+            var previousCarouselIndex = this._currentCarouselIndex;
+            var currentCarouselIndex;
+            if (previousCarouselIndex ==0){
+                currentCarouselIndex = 0;
                 this._currentContainerIndex = 1;
-                this._currentCarouselIndex = 0;
+                this._currentPageNum = 1;
             }else{
-                this._currentContainerIndex = (this._currentCarouselIndex % 2) === 0 ? (this._currentCarouselIndex + 1) : (this._currentCarouselIndex + 2);
-                this._currentCarouselIndex = Math.ceil(this._currentCarouselIndex / 2);
+                this._currentContainerIndex = (previousCarouselIndex % 2) === 0 ? (previousCarouselIndex + 1) : (previousCarouselIndex + 2);
+                currentCarouselIndex = Math.ceil(previousCarouselIndex / 2);
+                this._currentPageNum = currentCarouselIndex*2;
             }
+            this._currentCarouselIndex = currentCarouselIndex;
             
             this.divContainer = TwoPageViewMode.containers;
             this.stepDelta = 2;
@@ -678,8 +682,6 @@ function onURL_and_AppReady(resultOutput) {
 
 function onDelayedPageDIVsReady() {
     console.log('onDelayedPageDIVsReady()');
-    // NOTE : Must do before any action
-  
 
     //Phoebe, fix issue #581,#130
     PageAnimation.gotoPage({pageNum:viewerPageNum});
@@ -739,8 +741,6 @@ function UIComponentHandler() {
                 // Update current page number
                 PDFViewerApplication.page = currentPageNum;
                 PageAnimation.onAfterPageChange();
-                //[Phoebe]Fix issue #717 Action:LEAVE_PAGE
-                App.onTrackAction("LEAVE_PAGE", currentPageNum.toString());
             }
     });
 

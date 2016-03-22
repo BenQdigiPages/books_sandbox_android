@@ -602,6 +602,9 @@ function onURL_and_AppReady(resultOutput) {
         console.timeStamp('onURL_and_AppReady()');
     }
 
+    // Init PageAnimation
+    PageAnimation.onAppReady();
+
     //Set listener before open file
     customEventsManager["onMetadataReady"].doTask(onMetadataReady);
     customEventsManager['onOutlineReady'].doTask(onOutlineReady);
@@ -627,10 +630,10 @@ function onURL_and_AppReady(resultOutput) {
 function onDelayedPageDIVsReady() {
     console.log('onDelayedPageDIVsReady()');
     // NOTE : Must do before any action
-    PageAnimation.onAppReady();
+  
 
     //Phoebe, fix issue #581,#130
-    if ((viewerPageNum > 1) && (viewerPageNum <= pdfDoc.numPages)){
+    if ((viewerPageNum > 1) && (viewerPageNum <= PageAnimation.totalPageNum)){
         currentPageNum = viewerPageNum;
         PDFViewerApplication.page = currentPageNum;
     }

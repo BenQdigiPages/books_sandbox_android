@@ -241,6 +241,55 @@ var PageAnimation =  {
             $viewerOwl.trigger('to.owl.carousel', [this._currentCarouselIndex + 1,200,true]);
         },
 
+        gotoPage     : function PageAnimation_gotoPage(targetPageProp){
+            if (!canRead()){
+               window.alert("此書無法閱讀");
+               return;
+            }
+            var targetCarouselIndex = this._currentCarouselIndex;
+            var targetContainerIndex;
+            var isTwoPageMode = TwoPageViewMode.active;
+
+            /*  PATTERN : 
+                _currentCarouselIndex                 :   0    1    2    3    4     5     ...
+                _currentContainerIndex                :   1    3    5    7    9     11    ...
+                pageNumber                            :  []1  2 3  4 5  6 7  8 9   10 11  ...
+                _currentCarouselIndex(single page)    :    0  1 2  3 4  5 6  7 8    9 10  ...
+                _currentContainerIndex(single page)   :    0  1 2  3 4  5 6  7 8    9 10  ... 
+            */
+            if(targetPageProp.pageNum !== undefined ) {
+                if(isTwoPageMode) {
+                    targetCarouselIndex = Math.floor(targetPageProp.pageNum / 2);
+                    targetContainerIndex = targetCarouselIndex*2 + 1;
+                } else {
+                    targetCarouselIndex = targetPageProp.pageNum - 1;
+                    targetContainerIndex = targetCarouselIndex;
+                }
+                // Check value
+                if(targetContainerIndex < this.containerLowerBound ||
+                    targetContainerIndex > this.containerUpperBound) {
+                    return;
+                }
+            }else if(targetPageProp.carouselIndex !== undefined ){
+                if(isTwoPageMode) {
+                    if(targetPageProp.isIncomingTwoPageMode) {
+                        targetCarouselIndex = targetPageProp.carouselIndex;
+                    } else {
+                        targetCarouselIndex = Math.ceil(targetPageProp.carouselIndex / 2);
+                    }
+                } else {
+                    if(targetPageProp.isIncomingTwoPageMode) {
+                        //TODO
+                    } else {
+                        targetCarouselIndex = targetPageProp.carouselIndex;
+                    }
+                }
+            }
+            hideToolbarAndFooter();
+            // NOTE : We should use carousel index to trigger carousel
+            $viewerOwl.trigger('to.owl.carousel', [targetCarouselIndex,200,true]);
+        },
+
         EXCEED_LEFT   : 1,   //0001
         EXCEED_RIGHT  : 1<<1,//0010
         EXCEED_TOP    : 1<<2,//0100
@@ -633,10 +682,7 @@ function onDelayedPageDIVsReady() {
   
 
     //Phoebe, fix issue #581,#130
-    if ((viewerPageNum > 1) && (viewerPageNum <= PageAnimation.totalPageNum)){
-        currentPageNum = viewerPageNum;
-        PDFViewerApplication.page = currentPageNum;
-    }
+    PageAnimation.gotoPage({pageNum:viewerPageNum});
 }
 
 function onFirstPageRendered() {
@@ -647,11 +693,7 @@ function onFirstPageRendered() {
     }, 3000);
 
     // Set this page forcefully to let Carousel to start run
-    if (TwoPageViewMode.active){
-        $viewerOwl.trigger('to.owl.carousel', [(Math.floor(currentPageNum/2)),300,true]);
-    }else{
-        $viewerOwl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
-    }
+    PageAnimation.gotoPage({pageNum:PageAnimation.currentPageNum});
 
     //Henry add here
     getThumbnailList(opfFile).then(function(thumbnailNames) {
@@ -827,7 +869,7 @@ function UIComponentHandler() {
             //[Phoebe]Fix issue #717 Action:PROGRESSBAR_JUMP_PAGE
             App.onTrackAction("PROGRESSBAR_JUMP_PAGE",page.toString());
 
-            PDFViewerApplication.page = page;
+            PageAnimation.gotoPage({pageNum:page});
     });
     $('#paginate_reverse').on('input', function(event) {
             //TODO: check ChapterLimit
@@ -839,7 +881,7 @@ function UIComponentHandler() {
             var page = Math.abs(parseInt(event.target.value,10));
             //[Phoebe]Fix issue #717 Action:PROGRESSBAR_JUMP_PAGE
             App.onTrackAction("PROGRESSBAR_JUMP_PAGE",page.toString());
-            PDFViewerApplication.page = page;
+            PageAnimation.gotoPage({pageNum:page});
     });
 
     //document.getElementById('thumbnailbtn').addEventListener('click',
@@ -6410,11 +6452,7 @@ var PDFViewer = (function pdfViewer() {
 
       if (!canRead()){
     	window.alert("此書無法閱讀");
-    	if (TwoPageViewMode.active){
-            $viewerOwl.trigger('to.owl.carousel', [(Math.floor((this.currentPageNumber+1)/2))-1,200,true]);
-        }else{
-            $viewerOwl.trigger('to.owl.carousel',[this.currentPageNumber - 1, 200, true]);
-        }
+        PageAnimation.gotoPage({pageNum:PageAnimation.currentPageNum});
     	return;
       }
 
@@ -6878,18 +6916,7 @@ var PDFViewer = (function pdfViewer() {
       //[Bruce] Carousel mode no need to update page view by ourself
       if(this.isInCarouselMode) {
           if(pageNumber !== PageAnimation.currentPageNum) {
-              if (TwoPageViewMode.active){
-                  //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
-                  $viewerOwl.trigger('to.owl.carousel', [(Math.floor(pageNumber/2)),200,true]);
-              }else{
-                  $viewerOwl.trigger('to.owl.carousel',[pageNumber - 1, 200, true]);
-              }
-          }
-
-          // Do this because navigateTo() will not set pagenumber and call this function directly
-          if (this._currentPageNumber !== pageView.id) {
-              // Avoid breaking getVisiblePages in presentation mode.
-              this.currentPageNumber = pageView.id;
+              PageAnimation.gotoPage({pageNum:pageNumber});
           }
           return;
       }
@@ -7835,7 +7862,7 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
     		window.alert("此書無法閱讀");
     		return false;
             } 
-            PDFViewerApplication.page = $(this).index() + 1;
+            PageAnimation.gotoPage({carouselIndex:($(this).index()),isIncomingTwoPageMode:false});
         });
 
         if(DEBUG_CHROME_DEV_TOOL) {
@@ -8001,15 +8028,16 @@ var TwoPageViewMode = {
           this.isPagePlacedOnRightSideInContainer[i] = true; 
       }	  
     }
+    this.active = true;
+    this.inProcess = false;
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
         //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)        
-        $viewerOwl.trigger('to.owl.carousel', [(Math.floor(currentPageNum/2)),300,true]);
         for (var i = 1; i <= this.numPages; i++) {
             $viewerOwl.trigger('remove.owl.carousel',0);
         }
+        // NOTE : This must be called after "this.active = true"
+        PageAnimation.gotoPage({pageNum:PageAnimation.currentPageNum});
     }
-    this.active = true;
-	this.inProcess = false;
   },
 
   _destroyTwoPageView: function twoPageViewMode_destroyTwoPageView() {
@@ -8025,9 +8053,6 @@ var TwoPageViewMode = {
 			this.viewer.appendChild(pageDiv);
         }
     }
-    if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-        $viewerOwl.trigger('to.owl.carousel', [currentPageNum-1,300,true]);
-    }
     //[Phoebe]PageContainer0 will be delete below.
     for (var uid in this.containers) {
         if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
@@ -8039,6 +8064,10 @@ var TwoPageViewMode = {
 
     this._resetParameters();
     this.inProcess = false;
+    if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
+        // NOTE : This must be called after "this._resetParameters()"
+        PageAnimation.gotoPage({pageNum:PageAnimation.currentPageNum});
+    }
   },
 
   _resetParameters: function twoPageViewMode_resetParameters() {
@@ -8561,7 +8590,7 @@ var PDFViewerApplication = {
   },
   //Henry add, for support undo
   undoPage: function pdfUndoPage(current_page) {
-      this.page = this.historyPage;
+      PageAnimation.gotoPage({pageNum:this.historyPage});
       this.historyPage= current_page;
   },
 

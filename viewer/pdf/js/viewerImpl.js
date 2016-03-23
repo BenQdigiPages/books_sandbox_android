@@ -1,5 +1,4 @@
-var currentPageNum = 1,
-    toolBarVisible = true,
+var toolBarVisible = true,
     thumbnailBarVisible = false,
     currentLayoutMode = "single",
     tmpBookmark = null,
@@ -67,7 +66,11 @@ var PageAnimation =  {
               */
               this._currentCarouselIndex = val;
               this._currentContainerIndex = val*2 + 1;
-              this._currentPageNum = this._currentCarouselIndex*2;
+              if (this._currentCarouselIndex == 0){
+                  this._currentPageNum = 1;
+              } else {
+                  this._currentPageNum = this._currentCarouselIndex*2;
+              }
           }else {
               /*  PATTERN : 
                   _currentCarouselIndex  : 0 1 2 3 4 5  ...
@@ -84,6 +87,23 @@ var PageAnimation =  {
             return this._currentPageNum;
         },
         set currentPageNum(val) {
+            // Dont allow set from here , do nothing
+        },
+
+        get nextPageNum() {
+            // Check value
+            if (TwoPageViewMode.active){
+                if(this._currentPageNum === this.containerUpperBound) {
+                    return this._currentPageNum;
+                }
+            } else {
+                if(this._currentContainerIndex === this.containerUpperBound) {
+                    return this._currentPageNum;
+                }
+            }
+            return (this._currentPageNum + 1);
+        },
+        set nextPageNum(val) {
             // Dont allow set from here , do nothing
         },
 
@@ -728,18 +748,8 @@ function UIComponentHandler() {
                 // Must do befroe index is changed
                 PageAnimation.onBeforePageChange();
                 PageAnimation.currentCarouselIndex = event.item.index;
-                if (TwoPageViewMode.active){
-                    //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
-                    if (event.item.index == 0){
-                        currentPageNum = 1;
-                    }else {
-                        currentPageNum = (event.item.index * 2);
-                    }
-                }else {
-                    currentPageNum  = event.item.index + 1;
-                }
                 // Update current page number
-                PDFViewerApplication.page = currentPageNum;
+                PDFViewerApplication.page = PageAnimation.currentPageNum;
                 PageAnimation.onAfterPageChange();
             }
     });
@@ -759,34 +769,30 @@ function UIComponentHandler() {
               $('.number').hide();
               $('.number_twopage').css("display","block");
               //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)
-              if (currentPageNum == 1){
+              if (PageAnimation.currentPageNum == 1){
                   document.getElementById('current_page_now').textContent = "";
                   document.getElementById('pages_hyphen').textContent = "";
                   document.getElementById('current_page_next').textContent = "1";
               }else {
-                  if ((currentPageNum % 2)  == 1) {
-                      currentPageNum = currentPageNum - 1;
-                      PDFViewerApplication.pdfViewer.currentPageNumber = currentPageNum;
-                  }
-                  document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= PageAnimation.totalPageNum)? (currentPageNum+1):("");
-                  document.getElementById('pages_hyphen').textContent = ((currentPageNum+1)<= PageAnimation.totalPageNum)? ("-"):("");
-                  document.getElementById('current_page_now').textContent = currentPageNum;
+                  document.getElementById('current_page_next').textContent = (PageAnimation.currentPageNum === PageAnimation.nextPageNum)? PageAnimation.currentPageNum:PageAnimation.nextPageNum;
+                  document.getElementById('pages_hyphen').textContent = (PageAnimation.currentPageNum === PageAnimation.nextPageNum)? (""):("-");
+                  document.getElementById('current_page_now').textContent = PageAnimation.currentPageNum;
               }
 
             } else {
               $('.number_twopage').hide();
               $('.number').show();
-              document.getElementById('current_page').textContent = currentPageNum;
+              document.getElementById('current_page').textContent = PageAnimation.currentPageNum;
             }
             if(!direct_reverse)
-                document.getElementById('paginate').value = currentPageNum;
+                document.getElementById('paginate').value = PageAnimation.currentPageNum;
             else
-                document.getElementById('paginate_reverse').value = -currentPageNum;
+                document.getElementById('paginate_reverse').value = -PageAnimation.currentPageNum;
             //[HW]
             $("#bookmark").css("top",40);
             $("#bookmark_left").css("top",40);
             //[Phoebe]Fix issue #717 Action:CLICK_POPUP_MENU
-            App.onTrackAction("CLICK_POPUP_MENU",currentPageNum.toString());
+            App.onTrackAction("CLICK_POPUP_MENU",PageAnimation.currentPageNum.toString());
 
         } else {
             if (thumbnailBarVisible) {
@@ -801,12 +807,12 @@ function UIComponentHandler() {
         App.onToggleToolbar(toolBarVisible);
     });
 
-    document.getElementById('current_page').textContent = currentPageNum;
+    document.getElementById('current_page').textContent = PageAnimation.currentPageNum;
     if(!direct_reverse){
-        document.getElementById('paginate').value = currentPageNum;
+        document.getElementById('paginate').value = PageAnimation.currentPageNum;
         document.getElementById('paginate').max = PageAnimation.totalPageNum;
     }else{
-        document.getElementById('paginate_reverse').value = -currentPageNum;
+        document.getElementById('paginate_reverse').value = -PageAnimation.currentPageNum;
         document.getElementById('paginate_reverse').min = -(PageAnimation.totalPageNum);
     }
     document.getElementById('total_pages').textContent = PageAnimation.totalPageNum;
@@ -845,7 +851,7 @@ function UIComponentHandler() {
     		window.alert("此書無法閱讀");
     		return;
             }
-            PDFViewerApplication.undoPage(PDFViewerApplication.page);
+            PDFViewerApplication.undoPage(PageAnimation.currentPageNum);
     });
     $(".undo").on('touchstart', function(e) {
          $(".undo").addClass("press");
@@ -856,13 +862,13 @@ function UIComponentHandler() {
 
     //To handle paginate bar here
     $('#paginate, #paginate_reverse').on('touchstart',function(){
-        PDFViewerApplication.historyPage = PDFViewerApplication.page;
+        PDFViewerApplication.historyPage = PageAnimation.currentPageNum;
     });
     $('#paginate').on('input', function(event) {
             //TODO: check ChapterLimit
             if (!canRead()){
     		window.alert("此書無法閱讀");
-    		document.getElementById('paginate').value = PDFViewerApplication.page;
+    		document.getElementById('paginate').value = PageAnimation.currentPageNum;
         	return false;
             }
             var page = parseInt(event.target.value,10);
@@ -875,7 +881,7 @@ function UIComponentHandler() {
             //TODO: check ChapterLimit
             if (!canRead()){
     		window.alert("此書無法閱讀");
-    		document.getElementById('paginate_reverse').value = -(PDFViewerApplication.page);
+    		document.getElementById('paginate_reverse').value = -(PageAnimation.currentPageNum);
         	return false;
             }
             var page = Math.abs(parseInt(event.target.value,10));
@@ -1106,34 +1112,30 @@ function updateToolBar(){
               $('.number').hide();
               $('.number_twopage').css("display","block");
               //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)			  
-              if (currentPageNum == 1){
+              if (PageAnimation.currentPageNum == 1){
                   document.getElementById('current_page_now').textContent = "";
                   document.getElementById('pages_hyphen').textContent = "";
                   document.getElementById('current_page_next').textContent = "1"; 
               }else {
-                  if ((currentPageNum % 2) == 1){
-                      currentPageNum = currentPageNum -1;
-                      PDFViewerApplication.pdfViewer.currentPageNumber = currentPageNum;
-                  }
-                  document.getElementById('current_page_next').textContent = ((currentPageNum+1)<= PageAnimation.totalPageNum)? (currentPageNum+1):("");
-                  document.getElementById('pages_hyphen').textContent = ((currentPageNum+1)<= PageAnimation.totalPageNum)? ("-"):("");
-                  document.getElementById('current_page_now').textContent = currentPageNum;
+                  document.getElementById('current_page_next').textContent = (PageAnimation.currentPageNum === PageAnimation.nextPageNum)? PageAnimation.currentPageNum:PageAnimation.nextPageNum;
+                  document.getElementById('pages_hyphen').textContent = (PageAnimation.currentPageNum === PageAnimation.nextPageNum)? (""):("-");
+                  document.getElementById('current_page_now').textContent = PageAnimation.currentPageNum;
               }
         } else {
               $('.number_twopage').hide();
               $('.number').show();
-              document.getElementById('current_page').textContent = currentPageNum;
+              document.getElementById('current_page').textContent = PageAnimation.currentPageNum;
         }
         if(!direct_reverse)
-            document.getElementById('paginate').value = currentPageNum;
+            document.getElementById('paginate').value = PageAnimation.currentPageNum;
         else
-            document.getElementById('paginate_reverse').value = -currentPageNum;
+            document.getElementById('paginate_reverse').value = -PageAnimation.currentPageNum;
         //[HW]
         $("#bookmark").css("top",40);
         $("#bookmark_left").css("top",40);
 		
         //[Phoebe]Fix issue #717 Action:CLICK_POPUP_MENU
-        App.onTrackAction("CLICK_POPUP_MENU",currentPageNum.toString());
+        App.onTrackAction("CLICK_POPUP_MENU",PageAnimation.currentPageNum.toString());
     }
 }
 
@@ -1175,7 +1177,7 @@ function AddBookmarkCallBack(uuid) {
 ///
 function isBookmarkExist() {
     for(var i in savedBookmarks) {
-        if (savedBookmarks[i].cfi == currentPageNum) {
+        if (savedBookmarks[i].cfi == PageAnimation.currentPageNum) {
             return savedBookmarks[i];
         }
     }
@@ -1199,35 +1201,30 @@ function updateBookmarkIcon() {
     $("#bookmark")[0].className = "bookmark ";
     $("#bookmark_left")[0].className = "bookmark ";
     if (TwoPageViewMode.active) {
-        page = PDFViewerApplication.page;
         if (direct_reverse) {
             //... 9 8  7 6  5 4  3 2  1 []
-            if (page % 2 == 1)
-                page = page -1;
             for(var i in savedBookmarks) {
-                if (savedBookmarks[i].cfi == page + 1) {
+                if (savedBookmarks[i].cfi == PageAnimation.nextPageNum) {
                     color = savedBookmarks[i].color;
                     $("#bookmark_left")[0].className = "bookmark " + color;
                 }
             }
             for(var i in savedBookmarks) {
-                if (savedBookmarks[i].cfi == page) {
+                if (savedBookmarks[i].cfi == PageAnimation.currentPageNum) {
                     color = savedBookmarks[i].color;
                     $("#bookmark")[0].className = "bookmark " + color;
                 }
             }
         } else {
             //[]1  2 3  4 5  6 7  8 9   10 11  ..
-            if (page % 2 == 1)
-                page = page -1;
             for(var i in savedBookmarks) {
-                if (savedBookmarks[i].cfi == page) {
+                if (savedBookmarks[i].cfi == PageAnimation.currentPageNum) {
                     color = savedBookmarks[i].color;
                     $("#bookmark_left")[0].className = "bookmark " + color;
                 }
             }
             for(var i in savedBookmarks) {
-                if (savedBookmarks[i].cfi == page + 1) {
+                if (savedBookmarks[i].cfi == PageAnimation.nextPageNum) {
                     color = savedBookmarks[i].color;
                     $("#bookmark")[0].className = "bookmark " + color;
                 }
@@ -1235,7 +1232,7 @@ function updateBookmarkIcon() {
         }
     } else {
         for(var i in savedBookmarks) {
-            if (savedBookmarks[i].cfi == PDFViewerApplication.page) {
+            if (savedBookmarks[i].cfi == PageAnimation.currentPageNum) {
                 color = savedBookmarks[i].color;
                 $("#bookmark")[0].className = "bookmark " + color;
             }

@@ -225,7 +225,7 @@ Viewer.setLayoutMode = function(mode) {
 /// @total_pages: int - total number of pages
 ///
 Viewer.getCurrentPosition = function() {
-    return ["", currentPageNum, currentPageNum, PageAnimation.totalPageNum]
+    return ["", PageAnimation.currentPageNum, PageAnimation.currentPageNum, PageAnimation.totalPageNum]
 }
 
 ///
@@ -260,10 +260,7 @@ Viewer.gotoPosition = function(cfi) {
     if (regex.test(cfi)) {
         var isReady = customEventsManager['onDelayedPageDIVsReady'].isReady;
         if (isReady) {
-            if ((cfi > 0) && (cfi <= PageAnimation.totalPageNum)){
-                currentPageNum = cfi;
-                PDFViewerApplication.page = currentPageNum;
-            }
+            PageAnimation.gotoPage({pageNum:cfi});
         } else {
             viewerPageNum = parseInt(cfi);
         }
@@ -296,11 +293,11 @@ Viewer.toggleBookmark = function(color, page_offset) {
     if (TwoPageViewMode.active) {
         if (page_offset == 0) { //left page
             if (color !== null) {
-                UpdateBookmark(currentPageNum, color);
+                UpdateBookmark(PageAnimation.currentPageNum, color);
                 $("#bookmark_left")[0].className = "bookmark " + color;
             } else {
                 var bookmark = null;
-                if ((bookmark = isBookmarkExist(currentPageNum)) !== null) {
+                if ((bookmark = isBookmarkExist(PageAnimation.currentPageNum)) !== null) {
                     App.onRemoveBookmark(bookmark.uuid);
                     var index = savedBookmarks.indexOf(bookmark);
                     delete savedBookmarks[index];
@@ -309,11 +306,11 @@ Viewer.toggleBookmark = function(color, page_offset) {
             }
         } else if (page_offset == 1) { //right page
             if (color !== null) {
-                UpdateBookmark(currentPageNum + 1, color);
+                UpdateBookmark(PageAnimation.currentPageNum + 1, color);
                 $("#bookmark")[0].className = "bookmark " + color;
             } else {
                 var bookmark = null;
-                if ((bookmark = isBookmarkExist(currentPageNum + 1)) !== null) {
+                if ((bookmark = isBookmarkExist(PageAnimation.currentPageNum + 1)) !== null) {
                     App.onRemoveBookmark(bookmark.uuid);
                     var index = savedBookmarks.indexOf(bookmark);
                     delete savedBookmarks[index];
@@ -323,12 +320,12 @@ Viewer.toggleBookmark = function(color, page_offset) {
         }
     } else {
         if (color !== null) {
-            UpdateBookmark(currentPageNum, color);
+            UpdateBookmark(PageAnimation.currentPageNum, color);
             $("#bookmark")[0].className = "bookmark " + color;
         } else {
             //Remove bookmark in current page.
             var bookmark = null;
-            if ((bookmark = isBookmarkExist(currentPageNum)) !== null) {
+            if ((bookmark = isBookmarkExist(PageAnimation.currentPageNum)) !== null) {
                 App.onRemoveBookmark(bookmark.uuid);
                 var index = savedBookmarks.indexOf(bookmark);
                 delete savedBookmarks[index];

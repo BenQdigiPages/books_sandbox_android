@@ -1961,6 +1961,7 @@ footer.bar .thumbnailbtn {
     width: 30px;
     height: 32px;
     background: url("http://fake.benqguru.com/(RES)/ic_viewer_preview") no-repeat center;
+    background-size: contain;
     display: inline-block;
     cursor: pointer;
     margin: 0 10px;
@@ -1970,6 +1971,7 @@ footer.bar .thumbnailbtn.press {
     width: 30px;
     height: 32px;
     background: url("http://fake.benqguru.com/(RES)/ic_viewer_preview_press") no-repeat center;
+    background-size: contain;
     display: inline-block;
     cursor: pointer;
     margin: 0 10px;
@@ -1980,6 +1982,7 @@ footer.bar .thumbnailbtn.reverse {
     width: 30px;
     height: 32px;
     background: url("http://fake.benqguru.com/(RES)/ic_viewer_preview") no-repeat center;
+    background-size: contain;
     display: none;
     cursor: pointer;
     margin: 0 10px;
@@ -1989,6 +1992,7 @@ footer.bar .thumbnailbtn.reverse.press {
     width: 30px;
     height: 32px;
     background: url("http://fake.benqguru.com/(RES)/ic_viewer_preview_press") no-repeat center;
+    background-size: contain;
     display: none;
     cursor: pointer;
     margin: 0 10px;

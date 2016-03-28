@@ -714,6 +714,12 @@ function onFirstPageRendered() {
        hideToolbarAndFooter();
     }, 3000);
 
+    if(direct_reverse) {
+        App.showPageDircetionTip(PAGE_DIRECTION_RIGHT);
+    } else {
+        App.showPageDircetionTip(PAGE_DIRECTION_LEFT);
+    }
+
     // Set this page forcefully to let Carousel to start run
     PageAnimation.gotoPage({pageNum:PageAnimation.currentPageNum});
 

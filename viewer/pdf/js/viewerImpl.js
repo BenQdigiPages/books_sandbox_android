@@ -730,8 +730,7 @@ function onFirstPageRendered() {
 function onDocumentReady(pdfDocument) {
     console.log("(onDocumentReady)");
     $("#book_loading").fadeOut(); //Henry add
-    pdfDoc = pdfDocument;
-    PageAnimation.totalPageNum = pdfDoc.numPages;
+    PageAnimation.totalPageNum = pdfDocument.numPages;
     UIComponentHandler();  //Henry add
 }
 
@@ -9515,7 +9514,7 @@ function webViewerInitialized() {
         });
         $viewThumbnailOwl = $('#thumbnailView').owlCarousel({
             stagePadding:50,
-            items: 8,
+            items: 7,
             autoWidth:true,
             center:true,
             lazyLoad: true,
@@ -9532,7 +9531,7 @@ function webViewerInitialized() {
         });
         $viewThumbnailOwl = $('#thumbnailView').owlCarousel({
             stagePadding:50,
-            items: 8,
+            items: 7,
             autoWidth:true,
             lazyLoad: true,
             rtl:true,

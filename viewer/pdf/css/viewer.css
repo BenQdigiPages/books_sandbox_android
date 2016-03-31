@@ -1129,10 +1129,10 @@ html[dir='rtl'] .verticalToolbarSeparator {
 #thumbnailView {
   display: none;
   position: fixed;
-  height: 140px;
+  height: 130px;
   width: 100%;
   left: 0;
-  bottom: 28px;
+  bottom: 40px; /* NOTE : this is according to footer.bar => height: 40px */
   background:rgba(54, 54, 54, 0.7);
   -webkit-overflow-scrolling: touch;
 }
@@ -1956,6 +1956,10 @@ footer.bar a.number_twopage {
   margin: 0;
 }
 
+footer.bar a.item {
+    height: 130px;
+}
+
 /* Henry modify */
 footer.bar .thumbnailbtn {
     width: 30px;
@@ -2003,6 +2007,7 @@ footer.bar input[type=range] {
 	width: 60%;  /* Henry modify, make it longer */
 	border: 1px solid white; /* Henry modify */
 }
+
 
 #paginate_reverse {
     display: none;

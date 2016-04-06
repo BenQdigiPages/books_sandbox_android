@@ -1921,19 +1921,23 @@ footer.bar a {
 footer.bar a.undo.arrow_1 {
     width: 40px;  /* Henry modify */
     background: url("http://fake.benqguru.com/(RES)/ic_viewer_prepage") no-repeat center;
+    background-size: contain;
 }
 footer.bar a.undo.arrow_1.press {
     width: 40px;
     background: url("http://fake.benqguru.com/(RES)/ic_viewer_prepage_press") no-repeat center;
+    background-size: contain;
 }
 footer.bar a.undo.arrow_1.reverse { /* direct reverse */
     width: 40px;  /* Henry modify */
     background: url("http://fake.benqguru.com/(RES)/ic_viewer_prepage_r") no-repeat center;
+    background-size: contain;
     display: none;
 }
 footer.bar a.undo.arrow_1.reverse.press {
     width: 40px;
     background: url("http://fake.benqguru.com/(RES)/ic_viewer_prepage_r_press") no-repeat center;
+    background-size: contain;
 }
 /* Henry modify, show at sencond line */
 footer.bar a.number {
@@ -2028,6 +2032,7 @@ input[type=range]::-webkit-slider-thumb {
     height: 20px;
     width: 20px;
     background: url("http://fake.benqguru.com/(RES)/viewer_pagebar_control") no-repeat center;
+    background-size: contain;
     border-radius: 50%;
     /*background: #BF8045;*/
     margin-top: -8px;
@@ -2112,6 +2117,7 @@ input[type=range]:focus::-webkit-slider-runnable-track {
     width: 50%;
     /*background: #AF8A5E;*/
     background: url("http://fake.benqguru.com/(RES)/bg_popup_btn") center no-repeat;
+    background-size: contain;
     border-radius: 15px;
 	-moz-border-radius: 15px;
 	-webkit-border-radius: 15px;
@@ -2171,6 +2177,7 @@ input[type=range]:focus::-webkit-slider-runnable-track {
     color: #fff;
     /*background: #AF8A5E;*/
     background: url("http://fake.benqguru.com/(RES)/ic_popup_cancel") center no-repeat;
+    background-size: contain;
     width: 25px;
     line-height: 25px;
     cursor: pointer;

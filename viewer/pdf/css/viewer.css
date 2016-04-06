@@ -2109,28 +2109,20 @@ input[type=range]:focus::-webkit-slider-runnable-track {
     font-size: 14px;
 }
 .popup_book > .go {
-    font-size: 12px;
     display: block;
-    text-align: right;
-    text-decoration: none;
-    line-height: 25px;
-    width: 50%;
+    width: 150px;
+    height: 30px;
     /*background: #AF8A5E;*/
     background: url("http://fake.benqguru.com/(RES)/bg_popup_btn") center no-repeat;
-    background-size: contain;
-    border-radius: 15px;
-	-moz-border-radius: 15px;
-	-webkit-border-radius: 15px;
-	color: #fff;
-	text-align: center;
-	float: left;
+    float: left;
+    background-size: 100%;
 }
 .popup_book > .go:hover {
     text-decoration: none;
 }
 .popup_book > .btn {
-	float: left;
-	margin-top: 0 !important;
+	float: right;
+	margin-top: -5px !important;
 }
 .popup_book >  .btn a {
     margin-top: 5px !important;
@@ -2177,7 +2169,6 @@ input[type=range]:focus::-webkit-slider-runnable-track {
     color: #fff;
     /*background: #AF8A5E;*/
     background: url("http://fake.benqguru.com/(RES)/ic_popup_cancel") center no-repeat;
-    background-size: contain;
     width: 25px;
     line-height: 25px;
     cursor: pointer;
@@ -2187,6 +2178,7 @@ input[type=range]:focus::-webkit-slider-runnable-track {
     -webkit-border-radius: 50%;
     z-index: 999;
     text-align: center;
+    background-size: 150%;
 }
 .big_popup .share {
 	/*display: flex;*/
@@ -2194,13 +2186,12 @@ input[type=range]:focus::-webkit-slider-runnable-track {
 	justify-content: center;
 	float: left;
 	vertical-align: middle;
-	width: 25px;
-    height: 25px;
-	line-height: 25px;
-	border-radius: 25px;
-	-moz-border-radius: 25px;
-	-webkit-border-radius: 25px;
-	margin: 0 50px 0 0;
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	border-radius: 30px;
+	-moz-border-radius: 30px;
+	-webkit-border-radius: 30px;
 	background-color: #aaa;
 	color: #fff;
 	text-align: center;

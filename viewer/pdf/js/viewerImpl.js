@@ -958,6 +958,7 @@ function hideToolbarAndFooter(){
         if (thumbnailBarVisible) {
            $('#thumbnailView').hide();
            App.onToggleThumbnailbar(false);  //notify APP Thumbnailbar is hidden.
+           thumbnailBarVisible = false; //always down Thumbnailbar
         }
         $('#footer').hide();
         toolBarVisible = !(toolBarVisible);

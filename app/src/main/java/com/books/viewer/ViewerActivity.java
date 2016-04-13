@@ -24,6 +24,7 @@ import android.webkit.ValueCallback;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.content.res.Resources;
 
 import com.books.sandbox.R;
 
@@ -48,6 +49,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
     private GestureController mGestureController;
     private ScaleGestureDetector mScaleGestureDetector;
     private ScaleGestureController mScaleGestureController;
+    public static final float DENSITY = Resources.getSystem().getDisplayMetrics().density;
     // End : [Bruce]
 
     @Override
@@ -366,6 +368,8 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
         @Override
         public boolean onScaleBegin(ScaleGestureDetector detector) {
             isScaling = true;
+            // Set center point before scale start
+            mBridge.gesturableCenterCoordinate(detector.getFocusX()/DENSITY,detector.getFocusY()/DENSITY);
             float currentScale = detector.getScaleFactor() * previousScaleFactor;
             float ds = currentScale - previousScaleFactor;
             mBridge.gesturableOnStart(currentScale,ds);

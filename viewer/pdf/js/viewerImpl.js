@@ -5246,18 +5246,6 @@ var PDFPageView = (function PDFPageViewClosure() {
     } else {
         container.appendChild(div);
     }
-    // [Bruce] interact.js
-    div.addEventListener('touchmove', function(event) {
-        if((PageAnimation.gestureX0 !== undefined && PageAnimation.gestureY0 !== undefined)
-            && (PageAnimation.gestureX0 !== 0 || PageAnimation.gestureY0 !== 0)) {
-            return;
-        }
-        if (event.touches.length > 1) {
-            PageAnimation.gestureX0 = (event.touches[0].pageX + event.touches[1].pageX)/2;
-            PageAnimation.gestureY0 = (event.touches[0].pageY + event.touches[1].pageY)/2;
-        }
-    }, false);
-    //End : [Bruce]
   }
 
   PDFPageView.prototype = {
@@ -7993,19 +7981,6 @@ var TwoPageViewMode = {
       } else {
         this.viewer.appendChild(div);
       }
-      // [Bruce] interact.js
-      div.addEventListener('touchmove', function(event) {
-          if((PageAnimation.gestureX0 !== undefined && PageAnimation.gestureY0 !== undefined)
-              && (PageAnimation.gestureX0 !== 0 || PageAnimation.gestureY0 !== 0)) {
-              return;
-          }
-          if (event.touches.length > 1) {
-              console.log("touchmove event.touches.length > 1 ");
-              PageAnimation.gestureX0 = (event.touches[0].pageX + event.touches[1].pageX)/2;
-              PageAnimation.gestureY0 = (event.touches[0].pageY + event.touches[1].pageY)/2;
-          }
-      }, false);
-      //End : [Bruce]
     }
     var pageDiv, index;
     for (var i = 1; i <= this.numPages; i++) {

@@ -398,6 +398,10 @@ Viewer.gesturableOnEnd = function(scale,ds) {
     PageAnimation.gestureX0 = 0;
     PageAnimation.gestureY0 = 0;
 }
+Viewer.gesturableCenterCoordinate = function(centerX,centerY) {
+    PageAnimation.gestureX0 = centerX;
+    PageAnimation.gestureY0 = centerY;
+}
 
 Viewer.draggableOnMove = function(dx,dy) {
     var event = {dx:parseFloat(dx),

@@ -488,6 +488,9 @@ public class ViewerBridge {
     public void gesturableOnEnd(float scale,float ds) {
         eval("Viewer.gesturableOnEnd(\"" + scale + "\",\"" + ds + "\")", null);
     }
+    public void gesturableCenterCoordinate(float centerX,float centerY) {
+        eval("Viewer.gesturableCenterCoordinate(\"" + centerX + "\",\"" + centerY + "\")", null);
+    }
 
     public void draggableOnMove(float dx,float dy) {
         eval("Viewer.draggableOnMove(\"" + dx + "\",\"" + dy + "\")", null);

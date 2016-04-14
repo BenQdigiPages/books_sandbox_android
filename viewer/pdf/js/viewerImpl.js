@@ -309,7 +309,7 @@ var PageAnimation =  {
                     }
                 }
             }
-            hideToolbarAndFooter();
+            //hideToolbarAndFooter();  //Fix #2051, manipulate on footer shouldn't hide it, e.g drag
             // NOTE : We should use carousel index to trigger carousel
             $viewerOwl.trigger('to.owl.carousel', [targetCarouselIndex,200,true]);
         },

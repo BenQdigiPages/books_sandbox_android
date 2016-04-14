@@ -34537,7 +34537,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           var fullRequestXhr = networkManager.getRequestXhr(fullRequestXhrId);
           if (!source.legacy && fullRequestXhr.getResponseHeader('Accept-Ranges') !== 'bytes') {
             warn('onHeadersReceived() Accept-Ranges != bytes');
-            return;
+            //return;
           }
 
           var contentEncoding =

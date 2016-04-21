@@ -410,7 +410,7 @@ public class ViewerActivity extends Activity implements PopupMenu.OnClickPopupLi
                 isFirstScrollEvent = false;
                 return false;
             }
-            mBridge.draggableOnMove((-1)*distanceX,(-1)*distanceY);
+            mBridge.draggableOnMove((-1)*distanceX / DENSITY,(-1)*distanceY / DENSITY);
             return false;
         }
 

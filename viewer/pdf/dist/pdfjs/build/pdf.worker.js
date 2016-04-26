@@ -1860,7 +1860,6 @@ var NetworkManager = (function NetworkManagerClosure() {
       } else if (pendingRequest.onProgressiveData) {
         pendingRequest.onDone(null);
       } else if (chunk){
-        if (PDFJS.Range_debug) console.log("onStateChange onDone() begin:" + begin  + ", xhrStatus: " + xhrStatus + ", legacy: " + this.legacy);
         if (this.legacy) {
           if (chunk === null) {
             if (PDFJS.Range_debug) console.log("onStateChange onDone() legacy and chunk is null");
@@ -1871,6 +1870,8 @@ var NetworkManager = (function NetworkManagerClosure() {
           var matches = /(\d+)-(\d+)\/(\d+)/.exec(data[1]);
           if (matches !== null) {
             var begin = parseInt(matches[1], 10);
+            if (PDFJS.Range_debug) console.log("onStateChange onDone() begin:" + begin  + ", chunk.byteLength: "+ chunk.byteLength +
+                                                                          ", xhrStatus: " + xhrStatus + ", legacy: " + this.legacy);
             pendingRequest.onDone({
               begin: begin,
               chunk: chunk

@@ -2856,7 +2856,7 @@ var Page = (function PageClosure() {
         }
 
         var annotationsReadyPromise = Annotation.appendToOperatorList(
-          annotations, pageOpList, pdfManager, partialEvaluator, intent);
+          annotations, pageOpList, pdfManager, partialEvaluator, task, intent);
         return annotationsReadyPromise.then(function () {
           pageOpList.flush(true);
           return pageOpList;
@@ -2864,7 +2864,7 @@ var Page = (function PageClosure() {
       });
     },
 
-    extractTextContent: function Page_extractTextContent() {
+    extractTextContent: function Page_extractTextContent(task) {
       var handler = {
         on: function nullHandlerOn() {},
         send: function nullHandlerSend() {}

@@ -879,8 +879,8 @@
 
 		if ($.support.transform3d && $.support.transition) {
 			this.$stage.css({
-				transform: 'translate3d(' + coordinate + 'px,0px,0px)',
-				transition: (this.speed() / 1000) + 's'
+				transform: 'translate3d(' + coordinate + 'px,0px,0px)'
+				//transition: (this.speed() / 1000) + 's' //workaround, rtl case can't apply, so we don't want transition effect
 			});
 		} else if (animate) {
 			this.$stage.animate({

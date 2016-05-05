@@ -6614,6 +6614,7 @@ var PDFViewer = (function pdfViewer() {
 
         var scale = this.currentScale;
         var viewport = pdfPage.getViewport(scale * CSS_UNITS);
+        /*
         // [Bruce]
         // Only push the first two PageView's
         var pagesCountBefore = (pagesCount <= 1)?1:2;
@@ -6667,8 +6668,8 @@ var PDFViewer = (function pdfViewer() {
 
           }.bind(this));
         }
+        */
 
-        /*
         for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           var textLayerFactory = null;
           if (!PDFJS.disableTextLayer) {
@@ -6686,7 +6687,7 @@ var PDFViewer = (function pdfViewer() {
           bindOnAfterAndBeforeDraw(pageView);
           this._pages.push(pageView);
         }
-        */
+        customEventsManager['onDelayedPageDIVsReady'].confirmThisIsReady();
         // End : [Bruce]
         var linkService = this.linkService;
 		
@@ -9508,7 +9509,7 @@ function webViewerInitialized() {
             touchDrag: false,
             items: 1,
             margin: 0,
-            rtl:true,
+            //rtl:true, //pdf.js font not support rtl, we can't use it
             onInitialized: onViewerCarouselInitialized,
         });
         $viewThumbnailOwl = $('#thumbnailView').owlCarousel({

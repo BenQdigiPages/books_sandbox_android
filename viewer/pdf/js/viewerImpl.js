@@ -56,6 +56,18 @@ var PageAnimation =  {
           if (val === undefined || isNaN(val))  {
             return;
           }
+          // Correct if reverse direction
+          if(direct_reverse) {
+              var isTwoPageMode = TwoPageViewMode.active;
+              var ModifiedCarouselIndex;
+              if(isTwoPageMode) {
+                  ModifiedCarouselIndex = Math.floor(this.containerUpperBound/2) - val;
+              } else {
+                  ModifiedCarouselIndex = this.containerUpperBound - val;
+              }
+              val = ModifiedCarouselIndex;
+          }
+
           if (TwoPageViewMode.active){
               /*  PATTERN : 
                   _currentCarouselIndex                 :   0    1    2    3    4     5     ...
@@ -241,7 +253,19 @@ var PageAnimation =  {
                 return;
             }
             hideToolbarAndFooter();
-            $viewerOwl.trigger('to.owl.carousel', [this._currentCarouselIndex - 1,200,true]);
+
+            if(direct_reverse) {
+                var isTwoPageMode = TwoPageViewMode.active;
+                var ModifiedCarouselIndex;
+                if(isTwoPageMode) {
+                    ModifiedCarouselIndex = Math.floor(this.containerUpperBound/2) - this._currentCarouselIndex;
+                } else {
+                    ModifiedCarouselIndex = this.containerUpperBound - this._currentCarouselIndex;
+                }
+                $viewerOwl.trigger('to.owl.carousel', [ModifiedCarouselIndex + 1,200,true]);
+            } else {
+                $viewerOwl.trigger('to.owl.carousel', [this._currentCarouselIndex - 1,200,true]);
+            }
         },
         onNextPage     : function PageAnimation_onNextPage(){
             if (!canRead()){
@@ -262,7 +286,18 @@ var PageAnimation =  {
             }
             hideToolbarAndFooter();
             // NOTE : We should use carousel index to trigger carousel
-            $viewerOwl.trigger('to.owl.carousel', [this._currentCarouselIndex + 1,200,true]);
+            if(direct_reverse) {
+                var isTwoPageMode = TwoPageViewMode.active;
+                var ModifiedCarouselIndex;
+                if(isTwoPageMode) {
+                    ModifiedCarouselIndex = Math.floor(this.containerUpperBound/2) - this._currentCarouselIndex;
+                } else {
+                    ModifiedCarouselIndex = this.containerUpperBound - this._currentCarouselIndex;
+                }
+                $viewerOwl.trigger('to.owl.carousel', [ModifiedCarouselIndex - 1,200,true]);
+            } else {
+                $viewerOwl.trigger('to.owl.carousel', [this._currentCarouselIndex + 1,200,true]);
+            }
         },
 
         gotoPage     : function PageAnimation_gotoPage(targetPageProp){
@@ -311,7 +346,17 @@ var PageAnimation =  {
             }
             //hideToolbarAndFooter();  //Fix #2051, manipulate on footer shouldn't hide it, e.g drag
             // NOTE : We should use carousel index to trigger carousel
-            $viewerOwl.trigger('to.owl.carousel', [targetCarouselIndex,200,true]);
+            if(direct_reverse) {
+                var ModifiedCarouselIndex;
+                if(isTwoPageMode) {
+                    ModifiedCarouselIndex = Math.floor(this.containerUpperBound/2) - targetCarouselIndex;
+                } else {
+                    ModifiedCarouselIndex = this.containerUpperBound - targetCarouselIndex;
+                }
+                $viewerOwl.trigger('to.owl.carousel', [ModifiedCarouselIndex,200,true]);
+            } else {
+                $viewerOwl.trigger('to.owl.carousel', [targetCarouselIndex,200,true]);
+            }
         },
 
         EXCEED_LEFT   : 1,   //0001
@@ -721,7 +766,7 @@ function onFirstPageRendered() {
     }
 
     // Set this page forcefully to let Carousel to start run
-    PageAnimation.gotoPage({pageNum:PageAnimation.currentPageNum});
+    //PageAnimation.gotoPage({pageNum:PageAnimation.currentPageNum});
 
     //Henry add here
     getThumbnailList(opfFile).then(function(thumbnailNames) {
@@ -5242,7 +5287,11 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     //[Bruce]
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-        $viewerOwl.trigger('add.owl.carousel',[this.div]);
+        if(options.isOwlCarouselAddedFromHead) {
+            $viewerOwl.trigger('add.owl.carousel',[this.div,0]);
+        } else {
+            $viewerOwl.trigger('add.owl.carousel',[this.div]);
+        }
     } else {
         container.appendChild(div);
     }
@@ -6614,14 +6663,20 @@ var PDFViewer = (function pdfViewer() {
 
         var scale = this.currentScale;
         var viewport = pdfPage.getViewport(scale * CSS_UNITS);
-        /*
         // [Bruce]
         // Only push the first two PageView's
-        var pagesCountBefore = (pagesCount <= 1)?1:2;
-        var pagesCountAfter = pagesCount - pagesCountBefore;
+        var pagesCountBeforeStart = 1;
+        var pagesCountBeforeEnd = (pagesCountBeforeStart == pagesCount)? pagesCountBeforeStart : (pagesCountBeforeStart + 1);
 
+        var pagesAfterStart = pagesCountBeforeEnd + 1;
+        var pagesAfterEnd = pagesCount;
+
+        var isOwlCarouselAddedFromHead = direct_reverse;
+
+        //                                 |----(before)(1,2)-----|----(after)-----|
+        // |----(direct_reverse after)-----|----(before)(2,1)-----|
         // Get before
-        for (var pageNum = 1; pageNum <= pagesCountBefore; ++pageNum) {
+        for (var pageNum = pagesCountBeforeStart; pageNum <= pagesCountBeforeEnd; pageNum++) {
           var textLayerFactory = null;
           if (!PDFJS.disableTextLayer) {
             textLayerFactory = this;
@@ -6633,16 +6688,18 @@ var PDFViewer = (function pdfViewer() {
             defaultViewport: viewport.clone(),
             renderingQueue: this.renderingQueue,
             textLayerFactory: textLayerFactory,
-            annotationsLayerFactory: this
+            annotationsLayerFactory: this,
+            isOwlCarouselAddedFromHead: isOwlCarouselAddedFromHead
           });
           bindOnAfterAndBeforeDraw(pageView);
           this._pages.push(pageView);
         }
 
         // Get after
-        if(this._pages.length < pagesCount) {
+        if(pagesAfterStart < pagesCount) {
           customEventsManager['onFirstPageRendered'].promise.then(function () {
-            for (var pageNum = this._pages.length + 1; pageNum <= pagesCount; ++pageNum) {
+
+            for (var pageNum = pagesAfterStart; pageNum <= pagesAfterEnd; pageNum++) {
               var textLayerFactory = null;
               if (!PDFJS.disableTextLayer) {
                 textLayerFactory = this;
@@ -6654,22 +6711,22 @@ var PDFViewer = (function pdfViewer() {
                 defaultViewport: viewport.clone(),
                 renderingQueue: this.renderingQueue,
                 textLayerFactory: textLayerFactory,
-                annotationsLayerFactory: this
+                annotationsLayerFactory: this,
+                isOwlCarouselAddedFromHead: isOwlCarouselAddedFromHead
               });
               bindOnAfterAndBeforeDraw(pageView);
               this._pages.push(pageView);
 
               // We should set proper scale value(the first two PDFPageView has been set in setInitialView() )
               pageView.update(this._currentScale);
-
-              customEventsManager['onDelayedPageDIVsReady'].confirmThisIsReady();
             }
             $viewerOwl.trigger('refresh.owl.carousel');
+            customEventsManager['onDelayedPageDIVsReady'].confirmThisIsReady();
 
           }.bind(this));
         }
-        */
 
+        /*
         for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           var textLayerFactory = null;
           if (!PDFJS.disableTextLayer) {
@@ -6687,7 +6744,7 @@ var PDFViewer = (function pdfViewer() {
           bindOnAfterAndBeforeDraw(pageView);
           this._pages.push(pageView);
         }
-        customEventsManager['onDelayedPageDIVsReady'].confirmThisIsReady();
+        */
         // End : [Bruce]
         var linkService = this.linkService;
 		
@@ -7978,41 +8035,72 @@ var TwoPageViewMode = {
 	  }
 	  this.div=div;
       if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-        $viewerOwl.trigger('add.owl.carousel',[this.div]);
+        if(direct_reverse) {
+            // NOTE: We must offset this.numTwoPageContainers because we will call remove.owl.carousel later from carousel-index-0 position
+            $viewerOwl.trigger('add.owl.carousel',[this.div,0]);
+        } else {
+            $viewerOwl.trigger('add.owl.carousel',[this.div]);
+        }
       } else {
         this.viewer.appendChild(div);
       }
     }
     var pageDiv, index;
-    for (var i = 1; i <= this.numPages; i++) {
-      pageDiv = PDFViewerApplication.pdfViewer.getPageView(i - 1).div;
-      index = i + (this.containers[i] ? 0 : (this.showCoverPage ? 1: -1));
-      pageDiv.style.display = "inline-block";
-      //[Phoebe]Clone page1 to create fake page0.
-      if (i == 1){
-          var pageDivTmp = (PDFViewerApplication.pdfViewer.getPageView(0).div).cloneNode(true);
-          pageDivTmp.id = 'pageContainer0';
-          this.containers[index].appendChild(pageDivTmp);
-          this.isPagePlacedOnRightSideInContainer[i] = false;
-      }
-      this.containers[index].appendChild(pageDiv);
-      if ((i & 1) === 0) { // Even page number.
-          this.isPagePlacedOnRightSideInContainer[i] = !this.showCoverPage;
-      } else { // Odd page number.
-          this.isPagePlacedOnRightSideInContainer[i] = (this.showCoverPage &&
+    if(direct_reverse) {
+	for (var i = this.numPages; i >= 1 ; i--) {
+          pageDiv = PDFViewerApplication.pdfViewer.getPageView(i - 1).div;
+          index = i + (this.containers[i] ? 0 : (this.showCoverPage ? 1: -1));
+          pageDiv.style.display = "inline-block";
+          //[Phoebe]Clone page1 to create fake page0.
+          if (i == 1){
+              var pageDivTmp = (PDFViewerApplication.pdfViewer.getPageView(0).div).cloneNode(true);
+              pageDivTmp.id = 'pageContainer0';
+              this.containers[index].appendChild(pageDivTmp);
+              this.isPagePlacedOnRightSideInContainer[i] = false;
+          }
+          this.containers[index].appendChild(pageDiv);
+          if ((i & 1) === 0) { // Even page number.
+              this.isPagePlacedOnRightSideInContainer[i] = !this.showCoverPage;
+          } else { // Odd page number.
+              this.isPagePlacedOnRightSideInContainer[i] = (this.showCoverPage &&
                                                          i !== 1);
-      }
-      //[Phoebe]page 1 should be at right side.
-      if (i ==1){
-          this.isPagePlacedOnRightSideInContainer[i] = true; 
-      }	  
+          }
+          //[Phoebe]page 1 should be at right side.
+          if (i ==1){
+              this.isPagePlacedOnRightSideInContainer[i] = true; 
+          }	  
+        }
+    } else {
+        for (var i = 1; i <= this.numPages; i++) {
+          pageDiv = PDFViewerApplication.pdfViewer.getPageView(i - 1).div;
+          index = i + (this.containers[i] ? 0 : (this.showCoverPage ? 1: -1));
+          pageDiv.style.display = "inline-block";
+          //[Phoebe]Clone page1 to create fake page0.
+          if (i == 1){
+              var pageDivTmp = (PDFViewerApplication.pdfViewer.getPageView(0).div).cloneNode(true);
+              pageDivTmp.id = 'pageContainer0';
+              this.containers[index].appendChild(pageDivTmp);
+              this.isPagePlacedOnRightSideInContainer[i] = false;
+          }
+          this.containers[index].appendChild(pageDiv);
+          if ((i & 1) === 0) { // Even page number.
+              this.isPagePlacedOnRightSideInContainer[i] = !this.showCoverPage;
+          } else { // Odd page number.
+              this.isPagePlacedOnRightSideInContainer[i] = (this.showCoverPage &&
+                                                         i !== 1);
+          }
+          //[Phoebe]page 1 should be at right side.
+          if (i ==1){
+              this.isPagePlacedOnRightSideInContainer[i] = true; 
+          }	  
+        }
     }
     this.active = true;
     this.inProcess = false;
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
         //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)        
         for (var i = 1; i <= this.numPages; i++) {
-            $viewerOwl.trigger('remove.owl.carousel',0);
+            $viewerOwl.trigger('remove.owl.carousel',this.numTwoPageContainers);
         }
         // NOTE : This must be called after "this.active = true"
         PageAnimation.gotoPage({pageNum:PageAnimation.currentPageNum});
@@ -8027,7 +8115,11 @@ var TwoPageViewMode = {
     for (var i = 1, ii = this.numPages; i <= ii; i++) {
         pageDiv = PDFViewerApplication.pdfViewer.getPageView(i - 1).div;
         if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-            $viewerOwl.trigger('add.owl.carousel',[pageDiv]);
+          if(direct_reverse) {
+              $viewerOwl.trigger('add.owl.carousel',[pageDiv,0]);
+          } else {
+              $viewerOwl.trigger('add.owl.carousel',[pageDiv]);
+          }
         } else {
 			this.viewer.appendChild(pageDiv);
         }
@@ -8035,7 +8127,7 @@ var TwoPageViewMode = {
     //[Phoebe]PageContainer0 will be delete below.
     for (var uid in this.containers) {
         if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-            $viewerOwl.trigger('remove.owl.carousel',0);
+            $viewerOwl.trigger('remove.owl.carousel',this.numPages);
         } else {
             this.viewer.removeChild(this.containers[uid]);
         }

@@ -361,11 +361,15 @@ Viewer.searchText = function(keyword) {
 
 //Henry add, trigger change page from app has better performance
 Viewer.gotoPrevious =function(){
-    PageAnimation.onPrevPage();
+    var event = {target:PageAnimation.getCurrentPageDiv()};
+    PageAnimation.callback_finger_move_trigger_page_change(event);
+    //PageAnimation.onPrevPage();
 }
 
 Viewer.gotoNext = function(){
-    PageAnimation.onNextPage();
+    var event = {target:PageAnimation.getCurrentPageDiv()};
+    PageAnimation.callback_finger_move_trigger_page_change(event);
+    //PageAnimation.onNextPage();
 }
 
 // [Bruce] interact.js

@@ -232,10 +232,10 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
 
 #mainContainer {
   position: absolute;
-  top: 40px; /* Henry modify, lower to match title bar */
+  /*top: 40px;*/ /* Henry modify, lower to match title bar */
   right: 0;
   left: 0;
-  height: 100%
+  height: 100%;
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
   transition-duration: 200ms;
@@ -276,6 +276,10 @@ html[dir='rtl'] #sidebarContent {
   -webkit-overflow-scrolling: touch;
   height: 100%
   width: 100%
+}
+
+.owl-carousel .owl-stage-outer {
+    overflow: visible;
 }
 
 html[dir='ltr'] #viewerContainer {

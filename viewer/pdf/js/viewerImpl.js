@@ -626,17 +626,6 @@ var PageAnimation =  {
                 PageAnimation.onPrevPage();
             }
         },
-
-        callback_finger_move_trigger_page_change: function callback_finger_move_trigger_page_change(event) {
-            var scaleElement = event.target;
-            var mode = PageAnimation.isExceedLeftOrRightPageChangeThreshold(scaleElement);
-
-            if((mode & PageAnimation.EXCEED_LEFT) !== 0) {
-                PageAnimation.onNextPage();
-            } else if((mode & PageAnimation.EXCEED_RIGHT) !== 0) {
-                PageAnimation.onPrevPage();
-            }
-        },
         //End : [Bruce]
 };
 

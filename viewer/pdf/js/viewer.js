@@ -361,15 +361,21 @@ Viewer.searchText = function(keyword) {
 
 //Henry add, trigger change page from app has better performance
 Viewer.gotoPrevious =function(){
-    var event = {target:PageAnimation.getCurrentPageDiv()};
-    PageAnimation.callback_finger_move_trigger_page_change(event);
-    //PageAnimation.onPrevPage();
+    var scaleElement = PageAnimation.getCurrentPageDiv();
+    var mode = PageAnimation.isExceedLeftOrRightPageChangeThreshold(scaleElement);
+
+    if((mode & (PageAnimation.EXCEED_LEFT | PageAnimation.EXCEED_RIGHT)) !== 0) {
+        PageAnimation.onPrevPage();
+    }
 }
 
 Viewer.gotoNext = function(){
-    var event = {target:PageAnimation.getCurrentPageDiv()};
-    PageAnimation.callback_finger_move_trigger_page_change(event);
-    //PageAnimation.onNextPage();
+    var scaleElement = PageAnimation.getCurrentPageDiv();
+    var mode = PageAnimation.isExceedLeftOrRightPageChangeThreshold(scaleElement);
+
+    if((mode & (PageAnimation.EXCEED_LEFT | PageAnimation.EXCEED_RIGHT)) !== 0) {
+        PageAnimation.onNextPage();
+    }
 }
 
 // [Bruce] interact.js

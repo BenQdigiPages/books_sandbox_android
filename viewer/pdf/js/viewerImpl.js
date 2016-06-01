@@ -5246,6 +5246,8 @@ var PDFPageView = (function PDFPageViewClosure() {
     var textLayerFactory = options.textLayerFactory;
     var annotationsLayerFactory = options.annotationsLayerFactory;
 
+	// [maison]keep original container 
+	this.container = container; 
     this.id = id;
     this.renderingId = 'page' + id;
 
@@ -5325,8 +5327,10 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var div = this.div;
       div.style.width = Math.floor(this.viewport.width) + 'px';
-      div.style.height = Math.floor(this.viewport.height) + 'px';
-
+	  //[maison]fix #2208 放大後畫面有白邊
+      //div.style.height = Math.floor(this.viewport.height) + 'px';
+	  div.style.height = $(document).height(); //拿到全螢幕的高度
+		
       var childNodes = div.childNodes;
       var currentZoomLayerNode = (keepZoomLayer && this.zoomLayer) || null;
       var currentAnnotationNode = (keepAnnotations && this.annotationLayer &&
@@ -5515,8 +5519,12 @@ var PDFPageView = (function PDFPageViewClosure() {
       // Wrap the canvas so if it has a css transform for highdpi the overflow
       // will be hidden in FF.
       var canvasWrapper = document.createElement('div');
-      canvasWrapper.style.width = div.style.width;
-      canvasWrapper.style.height = div.style.height;
+	  
+	  //[maison] workaround for issues 2153, using container width as div width 
+      //canvasWrapper.style.width = div.style.width;
+      canvasWrapper.style.width = this.container.clientWidth + 'px';//div.style.width;
+      canvasWrapper.style.height = this.container.clientHeight + 'px'; //div.style.height;
+	  
       canvasWrapper.classList.add('canvasWrapper');
 
       var canvas = document.createElement('canvas');
@@ -5559,8 +5567,11 @@ var PDFPageView = (function PDFPageViewClosure() {
       var sfy = approximateFraction(outputScale.sy);
       canvas.width = roundToDivide(viewport.width * outputScale.sx, sfx[0]);
       canvas.height = roundToDivide(viewport.height * outputScale.sy, sfy[0]);
-      canvas.style.width = roundToDivide(viewport.width, sfx[1]) + 'px';
+	  //[maison]workaround for issues 2153 每一頁不同大小的問題, using container width as canvas width
+      canvas.style.width = this.container.clientWidth + 'px';//roundToDivide(viewport.width, sfx[1]) + 'px';
       canvas.style.height = roundToDivide(viewport.height, sfy[1]) + 'px';
+	  //canvas.style.top = 'calc(50%)'; //垂直置中
+	  
       // Add the viewport so it's known what it was originally drawn with.
       canvas._viewport = viewport;
 

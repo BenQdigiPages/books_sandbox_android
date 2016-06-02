@@ -8110,8 +8110,14 @@ var TwoPageViewMode = {
     this.inProcess = false;
     if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
         //[Phoebe]Add for new twoPageViewMode(Page: []1  23  45  67  89 ...)        
-        for (var i = 1; i <= this.numPages; i++) {
-            $viewerOwl.trigger('remove.owl.carousel',this.numTwoPageContainers);
+        if(direct_reverse) {
+            for (var i = 1; i <= this.numPages; i++) {
+                $viewerOwl.trigger('remove.owl.carousel',this.numTwoPageContainers);
+            }
+        } else {
+            for (var i = 1; i <= this.numPages; i++) {
+                $viewerOwl.trigger('remove.owl.carousel',0);
+            }
         }
         // NOTE : This must be called after "this.active = true"
         PageAnimation.gotoPage({pageNum:PageAnimation.currentPageNum});
@@ -8136,11 +8142,21 @@ var TwoPageViewMode = {
         }
     }
     //[Phoebe]PageContainer0 will be delete below.
-    for (var uid in this.containers) {
-        if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
-            $viewerOwl.trigger('remove.owl.carousel',this.numPages);
-        } else {
-            this.viewer.removeChild(this.containers[uid]);
+    if(direct_reverse) {
+        for (var uid in this.containers) {
+            if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
+                $viewerOwl.trigger('remove.owl.carousel',this.numPages);
+            } else {
+                this.viewer.removeChild(this.containers[uid]);
+            }
+        }
+    } else  {
+        for (var uid in this.containers) {
+            if(PDFViewerApplication.pdfViewer.isInCarouselMode) {
+                $viewerOwl.trigger('remove.owl.carousel',0);
+            } else {
+                this.viewer.removeChild(this.containers[uid]);
+            }
         }
     }
 
